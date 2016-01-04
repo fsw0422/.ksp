@@ -1,0 +1,15 @@
+nmap gi <Action>(GotoImplementation)
+nmap <c-h> <Action>(Back)
+nmap <c-l> <Action>(Forward)
+nmap <c-x> :e#<cr>
+nmap <c-p> <Action>(SearchEverywhere)
+nmap <c-w>f <Action>(ReformatCode)
+nmap <c-w>r <Action>(Run)
+nmap <c-w>d <Action>(Debug)
+nmap <c-w>s <Action>(Stop)
+
+set visualbell
+set noerrorbells
+set clipboard^=unnamed,unnamedplus
+set hlsearch
+set incsearch
