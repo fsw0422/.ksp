@@ -22,8 +22,6 @@ let g:acp_completeoptPreview = 1
 let g:acp_behaviorPythonOmniLength = -1
 let g:SuperTabDefaultCompletionType = '<c-x><c-o>'
 let g:SuperTabCrMapping = 1
-"let g:PyFlakeForcePyVersion = 2
-"let g:jedi#force_py_version = 2
 
 " Key maps
 "" general maps
@@ -44,7 +42,6 @@ let maplocalleader = ','
 nmap <Localleader>n :NERDTreeToggle<cr>
 nmap <LocalLeader>t :TagbarToggle<cr>
 nmap <LocalLeader>a :PyFlakeAuto<cr>
-"nmap <LocalLeader>s :cal Switch_python_version()<cr>
 nmap <LocalLeader>1 :Gstatus<cr>
 nmap <LocalLeader>2 :Gdiff<cr>
 nmap <LocalLeader>3 :Gblame<cr>
@@ -109,16 +106,3 @@ let &guicursor = &guicursor . ",a:blinkon0"
 
 " Load add-ons
 so ~/.ksp/add-on/c&c++.vim
-
-" function that switches the python version of plugins
-"func Switch_python_version()
-"	if g:PyFlakeForcePyVersion == 2
-"		let g:PyFlakeForcePyVersion = 3
-"	elseif g:PyFlakeForcePyVersion == 3
-"		let g:PyFlakeForcePyVersion = 2
-"	endif
-"
-"	cal jedi#force_py_version_switch()
-"
-"	so %
-"endfunc
