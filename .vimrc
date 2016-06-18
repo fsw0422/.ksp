@@ -62,6 +62,7 @@ filet plugin indent on
 syn on
 hi Pmenusel ctermfg=White ctermbg=Blue cterm=Bold
 
+se enc=utf-8
 se tags=./tags,tags; " load ctags db
 se nocp
 se bs=indent,eol,start
