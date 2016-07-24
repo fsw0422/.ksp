@@ -14,7 +14,6 @@ Bundle 'https://github.com/andviro/flake8-vim.git'
 Bundle 'https://github.com/davidhalter/jedi-vim.git'
 
 "" plugin settings
-let NERDTreeQuitOnOpen = 1
 let NERDTreeShowHidden = 1
 let g:ctrlp_show_hidden = 1
 let g:acp_behaviorKeywordLength = 2
