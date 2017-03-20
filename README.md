@@ -1,4 +1,5 @@
 custom .vimrc settings
 
-reach for tool in order of
-grep cut -> sed -> shell script -> python
+reach for text manipulation tool in order of
+
+grep, cut -> sed -> shell script -> python
