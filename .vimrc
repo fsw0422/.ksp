@@ -9,7 +9,7 @@ Bundle 'https://github.com/vim-scripts/AutoComplPop.git'
 Bundle 'https://github.com/ervandew/supertab.git'
 Bundle 'https://github.com/majutsushi/tagbar.git'
 Bundle 'https://github.com/tpope/vim-fugitive.git'
-Bundle 'https://github.com/basepi/vim-conque.git'
+Bundle 'https://github.com/wkentaro/conque.vim.git'
 Bundle 'https://github.com/andviro/flake8-vim.git'
 Bundle 'https://github.com/davidhalter/jedi-vim.git'
 
