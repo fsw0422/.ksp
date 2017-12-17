@@ -21,6 +21,7 @@ let g:acp_completeoptPreview = 1
 let g:acp_behaviorPythonOmniLength = -1
 let g:SuperTabDefaultCompletionType = '<c-x><c-o>'
 let g:SuperTabCrMapping = 1
+let g:jedi#force_py_version = 3
 
 " Key maps
 "" general maps
