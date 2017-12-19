@@ -2,7 +2,6 @@
 se rtp+=~/.ksp/
 cal vundle#rc()
 "" setup plugins (ctags required)
-Bundle 'https://github.com/altercation/vim-colors-solarized.git'
 Bundle 'https://github.com/scrooloose/nerdtree.git'
 Bundle 'https://github.com/kien/ctrlp.vim.git'
 Bundle 'https://github.com/vim-scripts/AutoComplPop.git'
@@ -78,16 +77,6 @@ se bg=dark
 se pt=<f6>
 se vb
 se noeb
-
-if has('gui_running')
-	au GuiEnter * se vb t_vb= | colo solarized
-
-	if has("gui_gtk2")
-		set gfn=Monospace\ 11
-	elseif has("gui_win32")
-		set gfn=Consolas:h11
-	endif
-endif
 
 au Filetype python se ts=4 | se sw=4 | se et | retab
 
