@@ -4,11 +4,11 @@ cal vundle#rc()
 "" setup plugins (ctags required)
 Bundle 'https://github.com/scrooloose/nerdtree.git'
 Bundle 'https://github.com/kien/ctrlp.vim.git'
-Bundle 'https://github.com/vim-scripts/AutoComplPop.git'
 Bundle 'https://github.com/ervandew/supertab.git'
+Bundle 'https://github.com/vim-scripts/AutoComplPop.git'
 Bundle 'https://github.com/majutsushi/tagbar.git'
 Bundle 'https://github.com/tpope/vim-fugitive.git'
-Bundle 'https://github.com/wkentaro/conque.vim.git'
+Bundle 'https://github.com/lrvick/Conque-Shell'
 Bundle 'https://github.com/andviro/flake8-vim.git'
 Bundle 'https://github.com/davidhalter/jedi-vim.git'
 
