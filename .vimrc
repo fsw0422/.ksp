@@ -8,7 +8,6 @@ Bundle 'https://github.com/ervandew/supertab.git'
 Bundle 'https://github.com/vim-scripts/AutoComplPop.git'
 Bundle 'https://github.com/majutsushi/tagbar.git'
 Bundle 'https://github.com/tpope/vim-fugitive.git'
-Bundle 'https://github.com/lrvick/Conque-Shell'
 Bundle 'https://github.com/andviro/flake8-vim.git'
 Bundle 'https://github.com/davidhalter/jedi-vim.git'
 
@@ -46,14 +45,6 @@ nmap <LocalLeader>2 :Gdiff<cr>
 nmap <LocalLeader>3 :Gblame<cr>
 nmap <LocalLeader>4 :Gpush<cr>
 nmap <LocalLeader>5 :Gbrowse<cr>
-
-if has('unix')
-	nmap <LocalLeader>c :ConqueTermSplit bash<cr><cr>
-	nmap <LocalLeader>vc :ConqueTermVSplit bash<cr><cr>
-elseif has('win32')
-	nmap <LocalLeader>c :ConqueTermSplit cmd.exe<cr><cr>
-	nmap <LocalLeader>vc :ConqueTermVSplit cmd.exe<cr><cr>
-endif
 
 " Global settings
 "" general
