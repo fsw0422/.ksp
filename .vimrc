@@ -10,6 +10,9 @@ Bundle 'https://github.com/majutsushi/tagbar.git'
 Bundle 'https://github.com/tpope/vim-fugitive.git'
 Bundle 'https://github.com/andviro/flake8-vim.git'
 Bundle 'https://github.com/davidhalter/jedi-vim.git'
+Bundle 'https://github.com/jceb/vim-orgmode'
+Bundle 'https://github.com/vim-scripts/utl.vim'
+Bundle 'https://github.com/tpope/vim-speeddating'
 
 "" plugin settings
 let NERDTreeShowHidden = 1
@@ -20,6 +23,7 @@ let g:acp_behaviorPythonOmniLength = -1
 let g:SuperTabDefaultCompletionType = '<c-x><c-o>'
 let g:SuperTabCrMapping = 1
 let g:jedi#force_py_version = 3
+let g:utl_cfg_hdl_scm_http_system = "silent !google-chrome '%u#%f' &"
 
 " Key maps
 "" general maps
@@ -69,6 +73,8 @@ se pt=<f6>
 se vb
 se noeb
 
+"" operation depending on filetype
+au BufRead,BufNewFile *.org set ft=org
 au Filetype python se ts=4 | se sw=4 | se et | retab
 
 "" terminal
