@@ -11,3 +11,5 @@
 	branch = auto
 	interactive = auto
 	diff = auto
+[alias]
+	plog = log --all --decorate --oneline --graph

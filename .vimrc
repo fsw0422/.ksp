@@ -45,6 +45,7 @@ nmap <LocalLeader>2 :Gdiff<cr>
 nmap <LocalLeader>3 :Gblame<cr>
 nmap <LocalLeader>4 :Gpush<cr>
 nmap <LocalLeader>5 :Gbrowse<cr>
+nmap <LocalLeader>b :exe 'silent !sensible-browser %'<cr>:redraw!<cr>
 
 " Global settings
 "" general
@@ -85,6 +86,3 @@ au InsertLeave  * if pumvisible() == 0 | pclose | endif
 
 """ don't wake up system with blinking cursor:
 let &guicursor = &guicursor . ",a:blinkon0"
-
-" Load add-ons
-so ~/.ksp/add-on/c&c++.vim
