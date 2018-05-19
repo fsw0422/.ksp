@@ -1,24 +1,27 @@
-" Plugins
+" Vundle setup
+se nocp
+filet off
 se rtp+=~/.ksp/
-cal vundle#rc()
-"" setup plugins (ctags required)
-Bundle 'https://github.com/scrooloose/nerdtree.git'
-Bundle 'https://github.com/kien/ctrlp.vim.git'
-Bundle 'https://github.com/ervandew/supertab.git'
-Bundle 'https://github.com/vim-scripts/AutoComplPop.git'
-Bundle 'https://github.com/majutsushi/tagbar.git'
-Bundle 'https://github.com/tpope/vim-fugitive.git'
-Bundle 'https://github.com/andviro/flake8-vim.git'
-Bundle 'https://github.com/davidhalter/jedi-vim.git'
+cal vundle#begin()
+
+"" setup plugins
+Plugin 'scrooloose/nerdtree.git'
+Plugin 'kien/ctrlp.vim.git'
+Plugin 'ervandew/supertab.git'
+Plugin 'vim-scripts/AutoComplPop.git'
+Plugin 'majutsushi/tagbar.git'
+Plugin 'andviro/flake8-vim.git'
+Plugin 'davidhalter/jedi-vim.git'
+Plugin 'aklt/plantuml-syntax'
 
 "" plugin settings
 let NERDTreeShowHidden = 1
 let g:ctrlp_show_hidden = 1
+let g:SuperTabCrMapping = 1
 let g:acp_behaviorKeywordLength = 2
 let g:acp_completeoptPreview = 1
 let g:acp_behaviorPythonOmniLength = -1
 let g:SuperTabDefaultCompletionType = '<c-x><c-o>'
-let g:SuperTabCrMapping = 1
 let g:jedi#force_py_version = 3
 
 " Key maps
@@ -36,26 +39,24 @@ vmap <c-v> c<esc>"+p
 imap <c-v> <C-r><C-o>+
 
 "" leader maps
+"" TODO: define key maps depending on filetype
 let maplocalleader = ','
 nmap <Localleader>n :NERDTreeToggle<cr>
 nmap <LocalLeader>t :TagbarToggle<cr>
 nmap <LocalLeader>a :PyFlakeAuto<cr>
-nmap <LocalLeader>1 :Gstatus<cr>
-nmap <LocalLeader>2 :Gdiff<cr>
-nmap <LocalLeader>3 :Gblame<cr>
-nmap <LocalLeader>4 :Gpush<cr>
-nmap <LocalLeader>5 :Gbrowse<cr>
+nmap <LocalLeader>c :exe 'silent !ctags -R --fields=+l --languages=python --python-kinds=-iv -f ./.tags ./'<cr>:redraw!<cr>
 nmap <LocalLeader>b :exe 'silent !sensible-browser %'<cr>:redraw!<cr>
+nmap <LocalLeader>p :exe 'silent !plantuml % && eog %:r.png'<cr>:redraw!<cr>
 
 " Global settings
 "" general
+call vundle#end()
 filet plugin indent on
 syn on
 hi Pmenusel ctermfg=White ctermbg=Blue cterm=Bold
 
 se enc=utf-8
 se tags=./tags,tags; " load ctags db
-se nocp
 se bs=indent,eol,start
 se hi=50 " keep 50 lines of command line history
 se ru " show the cursor position all the time
