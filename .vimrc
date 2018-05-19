@@ -39,14 +39,13 @@ vmap <c-v> c<esc>"+p
 imap <c-v> <C-r><C-o>+
 
 "" leader maps
-"" TODO: define key maps depending on filetype
 let maplocalleader = ','
 nmap <Localleader>n :NERDTreeToggle<cr>
 nmap <LocalLeader>t :TagbarToggle<cr>
-nmap <LocalLeader>a :PyFlakeAuto<cr>
-nmap <LocalLeader>c :exe 'silent !ctags -R --fields=+l --languages=python --python-kinds=-iv -f ./.tags ./'<cr>:redraw!<cr>
-nmap <LocalLeader>b :exe 'silent !sensible-browser %'<cr>:redraw!<cr>
-nmap <LocalLeader>p :exe 'silent !plantuml % && eog %:r.png'<cr>:redraw!<cr>
+au FileType python nmap <buffer><LocalLeader>a :PyFlakeAuto<cr>
+au FileType python nmap <buffer><LocalLeader>c :exe 'silent !ctags -R --fields=+l --languages=python --python-kinds=-iv -f ./.tags ./'<cr>:redraw!<cr>
+au FileType markdown nmap <buffer><LocalLeader>p :exe 'silent !sensible-browser %'<cr>:redraw!<cr>
+au FileType plantuml nmap <buffer><LocalLeader>p :exe 'silent !plantuml % && eog %:r.png'<cr>:redraw!<cr>
 
 " Global settings
 "" general
