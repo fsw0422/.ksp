@@ -18,10 +18,10 @@ Plugin 'aklt/plantuml-syntax'
 let NERDTreeShowHidden = 1
 let g:ctrlp_show_hidden = 1
 let g:SuperTabCrMapping = 1
+let g:SuperTabDefaultCompletionType = '<c-x><c-o>'
 let g:acp_behaviorKeywordLength = 2
 let g:acp_completeoptPreview = 1
 let g:acp_behaviorPythonOmniLength = -1
-let g:SuperTabDefaultCompletionType = '<c-x><c-o>'
 let g:jedi#force_py_version = 3
 
 " Key maps
