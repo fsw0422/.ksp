@@ -1,3 +1,17 @@
 # tmux
-trapHandler () { trap SIGINT; tmux select-pane -P 'bg=default' \; select-pane -P 'fg=default'; }
-ssh () { trap "trapHandler" INT; command ssh "$@"; tmux select-pane -P 'bg=default' \; select-pane -P 'fg=default'; }
+trapHandler () {
+	trap SIGINT
+	if ! [ -z "$TMUX" ]
+	then
+		tmux select-pane -P 'bg=default' \; select-pane -P 'fg=default'
+	fi 
+}
+
+tssh () {
+	trap "trapHandler" INT
+	command ssh "$@"
+	if ! [ -z "$TMUX" ]
+	then
+		tmux select-pane -P 'bg=default' \; select-pane -P 'fg=default'
+	fi 
+}
