@@ -45,7 +45,7 @@ nmap <LocalLeader>t :TagbarToggle<cr>
 au FileType python nmap <buffer><LocalLeader>a :PyFlakeAuto<cr>
 au FileType python nmap <buffer><LocalLeader>c :exe 'silent !ctags -R --fields=+l --languages=python --python-kinds=-iv -f ./.tags ./'<cr>:redraw!<cr>
 au FileType markdown nmap <buffer><LocalLeader>p :exe 'silent !sensible-browser %'<cr>:redraw!<cr>
-au FileType plantuml nmap <buffer><LocalLeader>p :exe 'silent !plantuml % && eog %:r.png'<cr>:redraw!<cr>
+au FileType plantuml nmap <buffer><LocalLeader>p :exe 'silent !plantuml % && open %:r.png'<cr>:redraw!<cr>
 
 " Global settings
 "" general
