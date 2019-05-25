@@ -13,6 +13,6 @@ autoload -Uz compinit; compinit
 stty -ixon
 alias schlaf="systemctl suspend -i"
 alias open="xdg-open"
-if [[ -z "${TMUX}" && "${TERMINAL_EMULATOR}" != "JetBrains-JediTerm" ]]; then tmux; fi
+if [[ -z "${TMUX}" && "${TERMINAL_EMULATOR}" != "JetBrains-JediTerm" && "${TERM_PROGRAM}" != "vscode" ]]; then tmux; fi
 source /usr/local/bin/activate.sh
 
