@@ -16,3 +16,7 @@ alias open="xdg-open"
 if [[ -z "${TMUX}" && "${TERMINAL_EMULATOR}" != "JetBrains-JediTerm" && "${TERM_PROGRAM}" != "vscode" ]]; then tmux; fi
 eval "$(direnv hook zsh)"
 
+# For Session logging in Chrome and Firefox (make sure to open browser in command line to pickup the environmental variable)
+export SSLKEYLOGFILE=~/sslkeylog.log
+
+source ~/.careem
