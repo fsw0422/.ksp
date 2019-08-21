@@ -1,6 +1,3 @@
-[user]
-	name = Kevin Kwon
-	email = fsw0422@gmail.com
 [core]
 	editor = vim
 	autocrlf = input
