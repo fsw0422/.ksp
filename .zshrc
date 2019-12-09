@@ -7,6 +7,9 @@ export ZSH="$HOME/.oh-my-zsh"
 # Theme to load
 ZSH_THEME="powerlevel9k/powerlevel9k"
 
+# Load plugins
+plugins=(docker docker-compose)
+
 source $ZSH/oh-my-zsh.sh
 autoload -Uz compinit; compinit
 
