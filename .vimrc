@@ -11,7 +11,6 @@ Plugin 'ervandew/supertab.git'
 Plugin 'vim-scripts/AutoComplPop.git'
 Plugin 'majutsushi/tagbar.git'
 Plugin 'davidhalter/jedi-vim.git'
-Plugin 'aklt/plantuml-syntax'
 
 "" plugin settings
 let NERDTreeShowHidden = 1
@@ -39,8 +38,6 @@ let maplocalleader = ','
 nmap <Localleader>n :NERDTreeToggle<cr>
 nmap <LocalLeader>t :TagbarToggle<cr>
 auto FileType python nmap <buffer><LocalLeader>c :exe 'silent !ctags -R --fields=+l --languages=python --python-kinds=-iv -f ./.tags ./'<cr>:redraw!<cr>
-auto FileType markdown nmap <buffer><LocalLeader>p :exe 'silent !sensible-browser %'<cr>:redraw!<cr>
-auto FileType plantuml nmap <buffer><LocalLeader>p :exe 'silent !plantuml % && open %:r.png'<cr>:redraw!<cr>
 
 " Global settings
 "" general
