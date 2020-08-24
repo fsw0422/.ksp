@@ -26,9 +26,6 @@ autoload -Uz compinit; compinit
 alias schlaf="systemctl suspend -i"
 if [[ -z "${TMUX}" && "${TERMINAL_EMULATOR}" != "JetBrains-JediTerm" && "${TERM_PROGRAM}" != "vscode" ]]; then tmux; fi
 
-# For Session logging in Chrome and Firefox (make sure to open browser in command line to pickup the environmental variable)
-export SSLKEYLOGFILE=~/sslkeylog.log
-
 # Pyenv setup
 export PATH="${HOME}/.pyenv/bin:${PATH}"
 eval "$(pyenv init -)"
