@@ -1,0 +1,14 @@
+[core]
+	editor = vim
+	autocrlf = input
+[merge]
+	tool = vimdiff
+[color]
+	status = auto
+	branch = auto
+	interactive = auto
+	diff = auto
+[alias]
+	plog = log --all --decorate --oneline --graph
+[credential]
+	helper = store
