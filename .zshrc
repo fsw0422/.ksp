@@ -20,8 +20,9 @@ alias schlaf="systemctl suspend -i"
 if [[ -z "${TMUX}" && "${TERMINAL_EMULATOR}" != "JetBrains-JediTerm" && "${TERM_PROGRAM}" != "vscode" ]]; then tmux; fi
 
 # Pyenv setup
-export PATH="${HOME}/.pyenv/bin:${PATH}"
-eval "$(pyenv init -)"
+export PYENV_ROOT="${HOME}/.pyenv"
+export PATH="${PYENV_ROOT}/bin:${PATH}"
+if command -v pyenv 1>/dev/null 2>&1; then eval "$(pyenv init -)"; fi
 
 # Direnv setup
 eval "$(direnv hook zsh)"
