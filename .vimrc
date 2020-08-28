@@ -37,7 +37,7 @@ imap <c-v> <C-r><C-o>+
 let maplocalleader = ','
 nmap <Localleader>n :NERDTreeToggle<cr>
 nmap <LocalLeader>t :TagbarToggle<cr>
-auto FileType python nmap <buffer><LocalLeader>c :exe 'silent !ctags -R --fields=+l --languages=python --python-kinds=-iv -f ./.tags ./'<cr>:redraw!<cr>
+autocmd FileType python nmap <buffer><LocalLeader>c :exe 'silent !ctags -R --fields=+l --languages=python --python-kinds=-iv -f ./.tags ./'<cr>:redraw!<cr>
 
 " Global settings
 "" general
@@ -63,18 +63,18 @@ set tags=./tags,tags; " load ctags db
 set visualbell
 
 "" operation depending on filetype
-auto Filetype python set tabstop=4 | set shiftwidth=4 | set expandtab | retab
+autocmd Filetype python set tabstop=4 | set shiftwidth=4 | set expandtab | retab
 
 "" terminal
 """ when editing a file, always jump to the last cursor position
-auto BufReadPost *
+autocmd BufReadPost *
 	\ if line("'\"") > 0 && line ("'\"") <= line("$") |
 	\	 exe "normal! g'\"" |
 	\ endif
 
 """ additional window
-auto CursorMovedI * if pumvisible() == 0 | pclose | endif
-auto InsertLeave  * if pumvisible() == 0 | pclose | endif
+autocmd CursorMovedI * if pumvisible() == 0 | pclose | endif
+autocmd InsertLeave  * if pumvisible() == 0 | pclose | endif
 
 """ don't wake up system with blinking cursor:
 let &guicursor = &guicursor . ",a:blinkon0"
