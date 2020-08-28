@@ -16,7 +16,6 @@ source ${ZSH}/oh-my-zsh.sh
 autoload -Uz compinit; compinit
 
 # Common System config
-alias schlaf="systemctl suspend -i"
 if [[ -z "${TMUX}" && "${TERMINAL_EMULATOR}" != "JetBrains-JediTerm" && "${TERM_PROGRAM}" != "vscode" ]]; then tmux; fi
 
 # Pyenv setup
