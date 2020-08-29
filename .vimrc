@@ -78,4 +78,3 @@ autocmd InsertLeave  * if pumvisible() == 0 | pclose | endif
 
 """ don't wake up system with blinking cursor:
 let &guicursor = &guicursor . ",a:blinkon0"
-
