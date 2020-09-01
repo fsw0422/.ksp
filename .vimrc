@@ -24,9 +24,7 @@ let g:jedi#force_py_version = 3
 
 " Key maps
 "" general maps
-nmap <f2> gT
-nmap <f3> gt
-nmap <f4> :q!<cr>
+nmap <f12> :q!<cr>
 
 "" copy / paste maps
 vmap <c-c> "+yi
