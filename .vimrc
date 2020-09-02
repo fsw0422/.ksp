@@ -4,23 +4,28 @@ filetype off
 set runtimepath+=~/.ksp/
 call vundle#begin()
 
+let maplocalleader=','
+
 "" setup plugins
 Plugin 'scrooloose/nerdtree.git'
 Plugin 'kien/ctrlp.vim.git'
-Plugin 'ervandew/supertab.git'
 Plugin 'vim-scripts/AutoComplPop.git'
-Plugin 'majutsushi/tagbar.git'
 Plugin 'davidhalter/jedi-vim.git'
 
 "" plugin settings
 let NERDTreeShowHidden = 1
 let g:ctrlp_show_hidden = 1
-let g:SuperTabCrMapping = 1
-let g:SuperTabDefaultCompletionType = '<c-x><c-o>'
 let g:acp_behaviorKeywordLength = 2
 let g:acp_completeoptPreview = 1
 let g:acp_behaviorPythonOmniLength = -1
 let g:jedi#force_py_version = 3
+let g:jedi#goto_assignments_command = "<LocalLeader>a"
+let g:jedi#goto_command = "<LocalLeader>g"
+let g:jedi#goto_definitions_command = "<LocalLeader>d"
+let g:jedi#goto_stubs_command = "<LocalLeader>s"
+let g:jedi#documentation_command = "D"
+let g:jedi#usages_command = "<LocalLeader>u"
+let g:jedi#rename_command = "<LocalLeader>r"
 
 " Key maps
 "" general maps
@@ -33,10 +38,7 @@ vmap <c-v> c<esc>"+p
 imap <c-v> <C-r><C-o>+
 
 "" leader maps
-let maplocalleader = ','
-nmap <Localleader>n :NERDTreeToggle<cr>
-nmap <LocalLeader>t :TagbarToggle<cr>
-autocmd FileType python nmap <buffer><LocalLeader>c :exe 'silent !ctags -R --fields=+l --languages=python --python-kinds=-iv -f ./.tags ./'<cr>:redraw!<cr>
+nmap <LocalLeader>n :NERDTreeToggle<cr>
 
 " Global settings
 "" general
