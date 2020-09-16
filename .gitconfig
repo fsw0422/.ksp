@@ -9,6 +9,6 @@
 	interactive = auto
 	diff = auto
 [alias]
-	plog = log --all --decorate --oneline --graph
+	plog = log --graph --pretty=format:\"%C(auto)%h%d%Creset %C(cyan)(%ci)%Creset %C(green)%cn <%ce>%Creset %s\"
 [credential]
 	helper = store
