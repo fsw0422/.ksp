@@ -31,6 +31,17 @@ eval "$(direnv hook zsh)"
 
 # Alias
 alias gdiff="git difftool -y --tool=vimdiff"
-alias grep="ggrep --color=auto"
 alias k="kubectl"
 complete -F __start_kubectl k
+
+# OSX specific settings
+if [[ "$OSTYPE" == "darwin"* ]]; then
+	# Java version change shortcut (Assumes using AdoptOpenJDK)
+	# For Linux (Ubuntu), use 'update-alternatives --config java'
+	export JAVA_HOME=`/usr/libexec/java_home -v 1.8`
+	alias j11="export JAVA_HOME=`/usr/libexec/java_home -v 11`"
+	alias j8="export JAVA_HOME=`/usr/libexec/java_home -v 1.8`"
+
+        # Use GNU Grep
+	alias grep="ggrep --color=auto"
+fi
