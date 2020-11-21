@@ -31,3 +31,6 @@ eval "$(direnv hook zsh)"
 
 # Alias
 alias gdiff="git difftool -y --tool=vimdiff"
+alias grep="ggrep --color=auto"
+alias k="kubectl"
+complete -F __start_kubectl k
