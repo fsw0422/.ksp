@@ -19,13 +19,13 @@ let g:acp_behaviorKeywordLength = 2
 let g:acp_completeoptPreview = 1
 let g:acp_behaviorPythonOmniLength = -1
 let g:jedi#force_py_version = 3
-let g:jedi#goto_assignments_command = "<LocalLeader>a"
-let g:jedi#goto_command = "<LocalLeader>g"
-let g:jedi#goto_definitions_command = "<LocalLeader>d"
-let g:jedi#goto_stubs_command = "<LocalLeader>s"
+let g:jedi#goto_assignments_command = "<localleader>a"
+let g:jedi#goto_command = "<localleader>g"
+let g:jedi#goto_definitions_command = "<localleader>d"
+let g:jedi#goto_stubs_command = "<localleader>s"
 let g:jedi#documentation_command = "D"
-let g:jedi#usages_command = "<LocalLeader>u"
-let g:jedi#rename_command = "<LocalLeader>r"
+let g:jedi#usages_command = "<localleader>u"
+let g:jedi#rename_command = "<localleader>r"
 
 " Key maps
 "" general maps
@@ -38,7 +38,7 @@ vmap <c-v> c<esc>"+p
 imap <c-v> <C-r><C-o>+
 
 "" leader maps
-nmap <LocalLeader>n :NERDTreeToggle<cr>
+nmap <localleader>n :NERDTreeToggle<cr>
 
 " Global settings
 "" general
@@ -64,7 +64,7 @@ set tags=./tags,tags; " load ctags db
 set visualbell
 
 "" operation depending on filetype
-autocmd Filetype python set tabstop=4 | set shiftwidth=4 | set expandtab | retab
+autocmd filetype python set tabstop=4 | set shiftwidth=4 | set expandtab | retab
 
 "" terminal
 """ when editing a file, always jump to the last cursor position
