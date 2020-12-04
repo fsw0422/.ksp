@@ -38,6 +38,7 @@ vmap <c-v> c<esc>"+p
 imap <c-v> <C-r><C-o>+
 
 "" leader maps
+nmap <localleader>. <c-^><cr>
 nmap <localleader>n :NERDTreeToggle<cr>
 
 " Global settings
