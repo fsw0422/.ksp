@@ -14,8 +14,6 @@ Plugin 'davidhalter/jedi-vim.git'
 
 "" plugin settings
 let g:NERDTreeShowHidden = 1
-let g:NERDTreeMapActivateNode = ''
-let g:NERDTreeMapOpenInTab = 'o'
 let g:ctrlp_show_hidden = 1
 let g:acp_behaviorKeywordLength = 2
 let g:acp_completeoptPreview = 1
