@@ -13,7 +13,9 @@ Plugin 'vim-scripts/AutoComplPop.git'
 Plugin 'davidhalter/jedi-vim.git'
 
 "" plugin settings
-let NERDTreeShowHidden = 1
+let g:NERDTreeShowHidden = 1
+let g:NERDTreeMapActivateNode = ''
+let g:NERDTreeMapOpenInTab = 'o'
 let g:ctrlp_show_hidden = 1
 let g:acp_behaviorKeywordLength = 2
 let g:acp_completeoptPreview = 1
@@ -28,18 +30,16 @@ let g:jedi#usages_command = "<localleader>u"
 let g:jedi#rename_command = "<localleader>r"
 
 " Key maps
-"" general maps
-nmap <f12> :q!<cr>
-
 "" copy / paste maps
-vmap <c-c> "+yi
-vmap <c-x> "+c
-vmap <c-v> c<esc>"+p
-imap <c-v> <C-r><C-o>+
+vmap <C-c> "+yi
+vmap <C-x> "+c
+vmap <C-v> c<esc>"+p
+imap <C-v> <C-r><C-o>+
 
-"" leader maps
-nmap <localleader>. <c-^><cr>
-nmap <localleader>n :NERDTreeToggle<cr>
+"" custom maps
+nmap <f12> :q!<cr>
+nmap <C-x> <C-^><cr>
+nmap <C-n> :NERDTreeToggle<cr>
 
 " Global settings
 "" general

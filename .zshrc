@@ -31,6 +31,7 @@ eval "$(direnv hook zsh)"
 
 # Alias
 alias gdiff="git difftool -y --tool=vimdiff"
+alias v="view"
 alias k="kubectl"
 complete -F __start_kubectl k
 
