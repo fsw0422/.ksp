@@ -36,7 +36,7 @@ imap <C-v> <C-r><C-o>+
 nmap <f12> :q!<cr>
 nmap <C-x> <C-^><cr>
 nmap <C-w>n :NERDTreeToggle<cr>
-nmap <C-w>rr :NERDTreeFocus<cr>R<C-w><C-p>
+nmap <C-w>rr :CtrlPClearCache<cr> :NERDTreeFocus<cr>R<C-w><C-p>
 nmap <C-w>R :so $MYVIMRC<cr>
 
 " Global settings
