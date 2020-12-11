@@ -1,5 +1,4 @@
 export LC_ALL=C.UTF-8
-export LANG=C.UTF-8
 export TERM="xterm-256color"
 
 # Path to your oh-my-zsh installation.
@@ -37,6 +36,9 @@ complete -F __start_kubectl k
 
 # OSX specific settings
 if [[ "$OSTYPE" == "darwin"* ]]; then
+	# OSX does not support C.UTF-8
+	export LC_ALL=C
+
 	# Java version change shortcut (Assumes using AdoptOpenJDK)
 	# For Linux (Ubuntu), use 'update-alternatives --config java'
 	export JAVA_HOME=`/usr/libexec/java_home -v 1.8`
