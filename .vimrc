@@ -35,7 +35,8 @@ imap <C-v> <C-r><C-o>+
 "" custom maps
 nmap <f12> :q!<cr>
 nmap <C-x> <C-^><cr>
-nmap <C-n> :NERDTreeToggle<cr>
+nmap <C-w>n :NERDTreeToggle<cr>
+nmap <C-w>R :NERDTreeFocus<cr>R<C-w><C-p>
 
 " Global settings
 "" general
