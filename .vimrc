@@ -4,8 +4,6 @@ filetype off
 set runtimepath+=~/.ksp/
 call vundle#begin()
 
-let maplocalleader=','
-
 "" setup plugins
 Plugin 'scrooloose/nerdtree.git'
 Plugin 'kien/ctrlp.vim.git'
@@ -19,13 +17,13 @@ let g:acp_behaviorKeywordLength = 2
 let g:acp_completeoptPreview = 1
 let g:acp_behaviorPythonOmniLength = -1
 let g:jedi#force_py_version = 3
-let g:jedi#goto_assignments_command = "<localleader>a"
-let g:jedi#goto_command = "<localleader>g"
-let g:jedi#goto_definitions_command = "<localleader>d"
-let g:jedi#goto_stubs_command = "<localleader>s"
-let g:jedi#documentation_command = "D"
-let g:jedi#usages_command = "<localleader>u"
-let g:jedi#rename_command = "<localleader>r"
+let g:jedi#goto_assignments_command = "<C-w>a"
+let g:jedi#goto_command = "<C-w>c"
+let g:jedi#goto_definitions_command = "<C-w>d"
+let g:jedi#goto_stubs_command = "<C-w>s"
+let g:jedi#documentation_command = "<C-w>D"
+let g:jedi#usages_command = "<C-w>u"
+let g:jedi#rename_command = "<C-w>r"
 
 " Key maps
 "" copy / paste maps
