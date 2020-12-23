@@ -49,6 +49,7 @@ highlight Pmenusel ctermfg=White ctermbg=Blue cterm=Bold
 set autochdir
 set backspace=indent,eol,start
 set background=dark
+set clipboard=unnamedplus
 set completeopt=longest,menuone,preview
 set encoding=utf-8
 set history=50 " keep 50 lines of command line history

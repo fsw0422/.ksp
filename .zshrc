@@ -34,7 +34,7 @@ alias v="view"
 alias k="kubectl"
 complete -F __start_kubectl k
 
-# OSX specific settings
+# OS specific settings
 if [[ "$OSTYPE" == "darwin"* ]]; then
 	# OSX does not support C.UTF-8
 	export LC_ALL=C
@@ -47,4 +47,8 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
 
         # Use GNU Grep
 	alias grep="ggrep --color=auto"
+elif [[ -z ${WSLENV} ]]; then
+	# For X11 workaround in WSL2
+	export DISPLAY=$(awk '/nameserver / {print $2; exit}' /etc/resolv.conf 2>/dev/null):0
+	export LIBGL_ALWAYS_INDIRECT=1
 fi
