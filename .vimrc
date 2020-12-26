@@ -9,6 +9,7 @@ Plugin 'scrooloose/nerdtree.git'
 Plugin 'kien/ctrlp.vim.git'
 Plugin 'vim-scripts/AutoComplPop.git'
 Plugin 'davidhalter/jedi-vim.git'
+Plugin 'tpope/vim-markdown'
 
 "" plugin settings
 let g:NERDTreeShowHidden = 1
@@ -16,6 +17,7 @@ let g:ctrlp_show_hidden = 1
 let g:acp_behaviorKeywordLength = 2
 let g:acp_completeoptPreview = 1
 let g:acp_behaviorPythonOmniLength = -1
+let g:markdown_fenced_languages = ['java', 'python', 'bash=sh']
 let g:jedi#force_py_version = 3
 let g:jedi#goto_assignments_command = "<C-w>a"
 let g:jedi#goto_command = "<C-w>c"
