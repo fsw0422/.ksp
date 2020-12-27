@@ -52,6 +52,6 @@ elif [[ -z ${WSLENV} ]]; then
 	export DISPLAY=$(awk '/nameserver / {print $2; exit}' /etc/resolv.conf 2>/dev/null):0
 	export LIBGL_ALWAYS_INDIRECT=1
 
-	# Ruby virual environment (Used for Jekyll)
+	# Ruby virtual environment (Used for Jekyll)
 	source /etc/profile.d/rvm.sh
 fi
