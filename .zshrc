@@ -1,4 +1,5 @@
-export LC_ALL=C.UTF-8
+export LC_ALL=en_US.UTF-8
+export LANG=en_US.UTF-8
 export TERM="xterm-256color"
 
 # Path to your oh-my-zsh installation.
@@ -33,9 +34,6 @@ complete -F __start_kubectl k
 
 # OS specific settings
 if [[ "$OSTYPE" == "darwin"* ]]; then
-	# OSX does not support C.UTF-8
-	export LC_ALL=C
-
 	# Java version change shortcut (Assumes using AdoptOpenJDK)
 	# For Linux (Ubuntu), use 'update-alternatives --config java'
 	export JAVA_HOME=`/usr/libexec/java_home -v 1.8`
@@ -45,6 +43,9 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
         # Use GNU Grep
 	alias grep="ggrep --color=auto"
 elif [[ -z ${WSLENV} ]]; then
+	# Translation language (may change to another mapping later)
+	export LANGUAGE=en_US.UTF-8
+
 	# For X11 workaround in WSL2
 	export DISPLAY=$(awk '/nameserver / {print $2; exit}' /etc/resolv.conf 2>/dev/null):0
 	export LIBGL_ALWAYS_INDIRECT=1
