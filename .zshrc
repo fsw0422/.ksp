@@ -14,9 +14,6 @@ plugins=(docker docker-compose kubectl zsh-autosuggestions)
 source ${ZSH}/oh-my-zsh.sh
 autoload -Uz compinit; compinit
 
-# Common System config
-if [[ -z "${TMUX}" && "${TERMINAL_EMULATOR}" != "JetBrains-JediTerm" && "${TERM_PROGRAM}" != "vscode" ]]; then tmux; fi
-
 # Pyenv setup
 export PYENV_ROOT="${HOME}/.pyenv"
 export PATH="${PYENV_ROOT}/bin:${PATH}"
@@ -55,3 +52,6 @@ elif [[ -z ${WSLENV} ]]; then
 	# Ruby virtual environment (Used for Jekyll)
 	source /etc/profile.d/rvm.sh
 fi
+
+# Start TMUX
+if [[ -z "${TMUX}" && "${TERMINAL_EMULATOR}" != "JetBrains-JediTerm" && "${TERM_PROGRAM}" != "vscode" ]]; then tmux; fi
