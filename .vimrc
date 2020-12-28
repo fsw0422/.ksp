@@ -28,12 +28,6 @@ let g:jedi#usages_command = "<C-w>u"
 let g:jedi#rename_command = "<C-w>r"
 
 " Key maps
-"" copy / paste maps
-vmap <C-c> "+yi
-vmap <C-x> "+c
-vmap <C-v> c<esc>"+p
-imap <C-v> <C-r><C-o>+
-
 "" custom maps
 nmap <f12> :q!<cr>
 nmap <C-x> <C-^><cr>
@@ -51,7 +45,7 @@ highlight Pmenusel ctermfg=White ctermbg=Blue cterm=Bold
 set autochdir
 set backspace=indent,eol,start
 set background=dark
-set clipboard=unnamedplus
+set clipboard^=unnamed,unnamedplus
 set completeopt=longest,menuone,preview
 set encoding=utf-8
 set history=50 " keep 50 lines of command line history
