@@ -30,6 +30,7 @@ let g:jedi#rename_command = "<c-w>r"
 " Key maps
 "" custom maps
 nmap <f12> :q!<cr>
+nmap <f11> :let _s=@/<bar>:%s/\s\+$//e<Bar>:let @/=_s<bar><cr>
 nmap <c-x> <c-^><cr>
 nmap <c-w>n :NERDTreeToggle<cr>
 nmap <c-w>rr :CtrlPClearCache<cr> :NERDTreeFocus<cr>R<c-w><c-p>
