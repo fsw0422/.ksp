@@ -12,7 +12,7 @@ Plugin 'davidhalter/jedi-vim.git'
 Plugin 'tpope/vim-markdown'
 
 "" plugin settings
-let g:NERDTreeShowHidden = 1
+let g:NERDTreeRespectWildIgnore=1
 let g:ctrlp_show_hidden = 1
 let g:acp_behaviorKeywordLength = 2
 let g:acp_completeoptPreview = 1
@@ -56,6 +56,7 @@ set noerrorbells
 set number
 set ruler
 set visualbell
+set wildignore+=*.pyc,*.o,*.obj,*.svn,*.swp,*.class,*.hg,*.DS_Store,*.min.*
 
 "" operation depending on filetype
 autocmd filetype python set tabstop=4 | set shiftwidth=4 | set expandtab | retab
