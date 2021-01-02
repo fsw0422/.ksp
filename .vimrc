@@ -48,15 +48,12 @@ set background=dark
 set clipboard^=unnamed,unnamedplus
 set completeopt=longest,menuone,preview
 set encoding=utf-8
-set history=50 " keep 50 lines of command line history
 set hlsearch
 set incsearch
 set mouse=a
 set noerrorbells
 set number
-set pastetoggle=<f6>
-set ruler " show the cursor position all the time
-set tags=./tags,tags; " load ctags db
+set ruler
 set visualbell
 
 "" operation depending on filetype
