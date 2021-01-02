@@ -19,21 +19,21 @@ let g:acp_completeoptPreview = 1
 let g:acp_behaviorPythonOmniLength = -1
 let g:markdown_fenced_languages = ['java', 'python', 'bash=sh']
 let g:jedi#force_py_version = 3
-let g:jedi#goto_assignments_command = "<C-w>a"
-let g:jedi#goto_command = "<C-w>c"
-let g:jedi#goto_definitions_command = "<C-w>d"
-let g:jedi#goto_stubs_command = "<C-w>s"
-let g:jedi#documentation_command = "<C-w>D"
-let g:jedi#usages_command = "<C-w>u"
-let g:jedi#rename_command = "<C-w>r"
+let g:jedi#goto_assignments_command = "<c-w>a"
+let g:jedi#goto_command = "<c-w>c"
+let g:jedi#goto_definitions_command = "<c-w>d"
+let g:jedi#goto_stubs_command = "<c-w>s"
+let g:jedi#documentation_command = "<c-w>D"
+let g:jedi#usages_command = "<c-w>u"
+let g:jedi#rename_command = "<c-w>r"
 
 " Key maps
 "" custom maps
 nmap <f12> :q!<cr>
-nmap <C-x> <C-^><cr>
-nmap <C-w>n :NERDTreeToggle<cr>
-nmap <C-w>rr :CtrlPClearCache<cr> :NERDTreeFocus<cr>R<C-w><C-p>
-nmap <C-w>R :so $MYVIMRC<cr>
+nmap <c-x> <c-^><cr>
+nmap <c-w>n :NERDTreeToggle<cr>
+nmap <c-w>rr :CtrlPClearCache<cr> :NERDTreeFocus<cr>R<c-w><c-p>
+nmap <c-w>R :so $MYVIMRC<cr>
 
 " Global settings
 "" general
