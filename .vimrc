@@ -13,6 +13,7 @@ Plugin 'tpope/vim-markdown'
 
 "" plugin settings
 let g:NERDTreeRespectWildIgnore=1
+let g:NERDTreeShowHidden=1
 let g:ctrlp_show_hidden = 1
 let g:acp_behaviorKeywordLength = 2
 let g:acp_completeoptPreview = 1
