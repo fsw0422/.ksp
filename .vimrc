@@ -31,6 +31,7 @@ let g:jedi#rename_command = "<c-w>r"
 " Key maps
 "" custom maps
 nmap <f12> :q!<cr>
+nmap <c-w>g :!lazygit<cr>
 nmap <c-w>w :let _s=@/<bar>:%s/\s\+$//e<bar>:let @/=_s<bar><cr>
 nmap <c-x> <c-^><cr>
 nmap <c-w>n :NERDTreeToggle<cr>
