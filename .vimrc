@@ -18,7 +18,7 @@ let g:ctrlp_show_hidden = 1
 let g:acp_behaviorKeywordLength = 2
 let g:acp_completeoptPreview = 1
 let g:acp_behaviorPythonOmniLength = -1
-let g:markdown_fenced_languages = ['java', 'python', 'bash=sh']
+let g:markdown_fenced_languages = ['java', 'python', 'bash=sh', 'json']
 let g:jedi#force_py_version = 3
 let g:jedi#goto_assignments_command = "<c-w>a"
 let g:jedi#goto_command = "<c-w>c"
