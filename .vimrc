@@ -51,6 +51,7 @@ set background=dark
 set clipboard^=unnamed,unnamedplus
 set completeopt=longest,menuone,preview
 set encoding=utf-8
+set hidden
 set hlsearch
 set incsearch
 set mouse=a
