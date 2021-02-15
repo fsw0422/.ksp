@@ -27,6 +27,7 @@ eval "$(direnv hook zsh)"
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
 # Alias
+alias dswap="find . -type f -name '*.swp' -exec rm -f {} \\;"
 alias gdiff="git difftool -y --tool=vimdiff"
 alias v="view"
 alias k="kubectl"
