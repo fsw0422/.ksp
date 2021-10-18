@@ -21,13 +21,9 @@ let g:acp_completeoptPreview = 1
 let g:acp_behaviorPythonOmniLength = -1
 let g:markdown_fenced_languages = ['java', 'python', 'bash=sh', 'json']
 let g:jedi#force_py_version = 3
-let g:jedi#goto_assignments_command = "<c-w>a"
-let g:jedi#goto_command = "<c-w>c"
-let g:jedi#goto_definitions_command = "<c-w>d"
-let g:jedi#goto_stubs_command = "<c-w>s"
-let g:jedi#documentation_command = "<c-w>D"
-let g:jedi#usages_command = "<c-w>u"
-let g:jedi#rename_command = "<c-w>r"
+let g:jedi#goto_definitions_command = "gi"
+let g:jedi#goto_stubs_command = "gs"
+let g:jedi#usages_command = "fu"
 
 " Key maps
 "" custom maps
