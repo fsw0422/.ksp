@@ -3,10 +3,10 @@ nmap <c-h> <Action>(Back)
 nmap <c-l> <Action>(Forward)
 nmap <c-x> :e#<cr>
 nmap <c-p> <Action>(SearchEverywhere)
-nmap <c-w>f <Action>(ReformatCode)
-nmap <c-w>r <Action>(Run)
-nmap <c-w>d <Action>(Debug)
-nmap <c-w>s <Action>(Stop)
+nmap <a-f> <Action>(ReformatCode)
+nmap <a-r> <Action>(Run)
+nmap <a-d> <Action>(Debug)
+nmap <a-s> <Action>(Stop)
 
 set visualbell
 set noerrorbells
