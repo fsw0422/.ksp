@@ -1,4 +1,6 @@
 nmap gi <Action>(GotoImplementation)
+nmap fu <Action>(FindUsages)
+nmap ch <Action>(CallHierarchy)
 nmap <c-h> <Action>(Back)
 nmap <c-l> <Action>(Forward)
 nmap <c-x> :e#<cr>
@@ -7,6 +9,9 @@ nmap <a-f> <Action>(ReformatCode)
 nmap <a-r> <Action>(Run)
 nmap <a-d> <Action>(Debug)
 nmap <a-s> <Action>(Stop)
+nmap P <Action>(Vcs.Push)
+nmap U <Action>(Git.Pull)
+nmap <f12> :q!<cr>
 
 set visualbell
 set noerrorbells
