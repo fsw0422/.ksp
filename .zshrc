@@ -31,6 +31,11 @@ if [[ ! -z ${WSL_DISTRO_NAME} ]]; then
 	# For X11 workaround in WSL2
 	export DISPLAY=$(awk '/nameserver / {print $2; exit}' /etc/resolv.conf 2>/dev/null):0
 	export LIBGL_ALWAYS_INDIRECT=1
+elif [[ $OSTYPE == "darwin"* ]]; then
+	# Linuxify (https://github.com/fabiomaia/linuxify)
+	alias grep="grep --color=always"
+	alias ls="ls --color=always"
+	source ~/.linuxify
 fi
 
 # Start TMUX
