@@ -30,7 +30,6 @@ sethandler <C-T> a:ide
 sethandler <C-U> a:ide
 sethandler <C-V> a:ide
 sethandler <C-W> a:ide
-sethandler <C-X> a:ide
 sethandler <C-Y> a:ide
 sethandler <C-[> a:ide
 sethandler <C-]> a:ide
