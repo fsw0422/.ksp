@@ -35,3 +35,6 @@ sethandler <C-[> a:ide
 sethandler <C-]> a:ide
 
 nmap <c-x> :e#<cr>
+nmap gi <Action>(GotoImplementation)
+nmap fu <Action>(FindUsages)
+nmap ch <Action>(CallHierarchy)
