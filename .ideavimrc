@@ -4,9 +4,6 @@ set clipboard^=unnamed,unnamedplus
 set hlsearch
 set incsearch
 
-sethandler <C-2> a:ide
-sethandler <C-S-2> a:ide
-sethandler <C-S-6> a:ide
 sethandler <C-A> a:ide
 sethandler <C-B> a:ide
 sethandler <C-C> a:ide
@@ -30,10 +27,9 @@ sethandler <C-T> a:ide
 sethandler <C-U> a:ide
 sethandler <C-W> a:ide
 sethandler <C-Y> a:ide
-sethandler <C-[> a:ide
-sethandler <C-]> a:ide
+sethandler <C-Z> a:ide
 
-nmap <c-x> :e#<cr>
+nmap <C-X> :e#<cr>
 nmap gi <Action>(GotoImplementation)
 nmap fu <Action>(FindUsages)
 nmap ch <Action>(CallHierarchy)
