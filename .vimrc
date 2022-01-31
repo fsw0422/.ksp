@@ -25,16 +25,17 @@ let g:jedi#goto_definitions_command = "gi"
 let g:jedi#goto_stubs_command = "gs"
 let g:jedi#usages_command = "fu"
 
-" Key maps
+"Key maps
 "" custom maps
+let mapleader = ","
 nmap <f12> :q!<cr>
 nmap <c-h> <c-o><cr>
 nmap <c-l> <c-i><cr>
 nmap <c-x> :e#<cr>
-nmap <c-w>g :!lazygit<cr>
-nmap <c-w>n :NERDTreeToggle<cr>
-nmap <c-w>rr :CtrlPClearCache<cr> :NERDTreeFocus<cr>R<c-w><c-p>
-nmap <c-w>R :so $MYVIMRC<cr>
+nmap <leader>c :!lazygit<cr>
+nmap <leader>p :NERDTreeToggle<cr>
+nmap <leader>rr :CtrlPClearCache<cr> :NERDTreeFocus<cr>R<c-w><c-p>
+nmap <leader>R :so $MYVIMRC<cr>
 
 " Global settings
 "" general
