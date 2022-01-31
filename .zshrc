@@ -2,6 +2,9 @@ export LC_ALL=en_US.UTF-8
 export LANG=en_US.UTF-8
 export TERM="xterm-256color"
 
+# Start TMUX
+if [[ -z "${TMUX}" && "${TERMINAL_EMULATOR}" != "JetBrains-JediTerm" && "${TERM_PROGRAM}" != "vscode" ]]; then tmux; fi
+
 # Oh-My-ZSH
 export ZSH="${HOME}/.oh-my-zsh"
 ZSH_THEME="powerlevel10k/powerlevel10k"
@@ -9,12 +12,6 @@ ZSH_THEME="powerlevel10k/powerlevel10k"
 plugins=(docker docker-compose kubectl zsh-autosuggestions)
 source ${ZSH}/oh-my-zsh.sh
 autoload -Uz compinit; compinit
-
-# Direnv
-eval "$(direnv hook zsh)"
-
-# Pyenv
-eval "$(pyenv init -)"
 
 # Alias
 alias del_swp="find . -type f -name '*.swp' -exec rm -f {} \\;"
@@ -38,8 +35,26 @@ elif [[ $OSTYPE == "darwin"* ]]; then
 	source ~/.linuxify
 fi
 
-# Start TMUX
-if [[ -z "${TMUX}" && "${TERMINAL_EMULATOR}" != "JetBrains-JediTerm" && "${TERM_PROGRAM}" != "vscode" ]]; then tmux; fi
+# Direnv
+eval "$(direnv hook zsh)"
+
+# Pyenv
+venv () {
+	if [ -n "$1" ]; then
+		pyenv local ${1}
+		python3 -m venv venv
+		echo "source venv/bin/activate" >> .envrc
+		echo "unset PS1" >> .envrc
+		direnv allow
+	else
+		echo "Python version not specified. Please choose from below versions"
+		pyenv versions
+	fi
+}
+export PYENV_ROOT="${HOME}/.pyenv"
+export PATH="${PYENV_ROOT}/bin:${PATH}"
+eval "$(pyenv init --path)"
+eval "$(pyenv init -)"
 
 # Remove all duplicate environmental variables
 typeset -U path
