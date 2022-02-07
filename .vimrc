@@ -32,7 +32,7 @@ nmap <f12> :q!<cr>
 nmap <c-h> <c-o><cr>
 nmap <c-l> <c-i><cr>
 nmap <c-x> :e#<cr>
-nmap <leader>c :!lazygit<cr>
+nmap <c-g>c :!lazygit<cr>
 nmap <leader>p :NERDTreeToggle<cr>
 nmap <leader>rr :CtrlPClearCache<cr> :NERDTreeFocus<cr>R<c-w><c-p>
 nmap <leader>R :so $MYVIMRC<cr>
