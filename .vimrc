@@ -27,15 +27,14 @@ let g:jedi#usages_command = "fu"
 
 "Key maps
 "" custom maps
-let mapleader = ","
+nmap <f1> :NERDTreeToggle<cr>
 nmap <f12> :q!<cr>
 nmap <c-h> <c-o><cr>
 nmap <c-l> <c-i><cr>
 nmap <c-x> :e#<cr>
 nmap <c-g>c :!lazygit<cr>
-nmap <leader>p :NERDTreeToggle<cr>
-nmap <leader>rr :CtrlPClearCache<cr> :NERDTreeFocus<cr>R<c-w><c-p>
-nmap <leader>R :so $MYVIMRC<cr>
+nmap <c-r>r :CtrlPClearCache<cr> :NERDTreeFocus<cr>R<c-w><c-p>
+nmap <c-r>R :so $MYVIMRC<cr>
 
 " Global settings
 "" general
