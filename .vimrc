@@ -11,6 +11,9 @@ Plugin 'kien/ctrlp.vim.git'
 Plugin 'vim-scripts/AutoComplPop.git'
 Plugin 'davidhalter/jedi-vim.git'
 Plugin 'tpope/vim-markdown'
+Plugin 'weirongxu/plantuml-previewer.vim'
+Plugin 'aklt/plantuml-syntax'
+Plugin 'tyru/open-browser.vim'
 
 "" plugin settings
 let g:NERDTreeRespectWildIgnore=1
@@ -20,6 +23,7 @@ let g:acp_behaviorKeywordLength = 2
 let g:acp_completeoptPreview = 1
 let g:acp_behaviorPythonOmniLength = -1
 let g:markdown_fenced_languages = ['java', 'python', 'bash=sh', 'json']
+let g:plantuml_previewer#save_format = "svg"
 let g:jedi#force_py_version = 3
 let g:jedi#goto_definitions_command = "gi"
 let g:jedi#goto_stubs_command = "gs"
@@ -28,6 +32,7 @@ let g:jedi#usages_command = "fu"
 "Key maps
 "" custom maps
 nmap <f1> :NERDTreeToggle<cr>
+nmap <f2> :PlantumlOpen<cr>
 nmap <f12> :q!<cr>
 nmap <c-h> <c-o><cr>
 nmap <c-l> <c-i><cr>
