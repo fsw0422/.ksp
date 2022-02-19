@@ -23,7 +23,6 @@ let g:acp_behaviorKeywordLength = 2
 let g:acp_completeoptPreview = 1
 let g:acp_behaviorPythonOmniLength = -1
 let g:markdown_fenced_languages = ['java', 'python', 'bash=sh', 'json']
-let g:plantuml_previewer#save_format = "svg"
 let g:jedi#force_py_version = 3
 let g:jedi#goto_definitions_command = "gi"
 let g:jedi#goto_stubs_command = "gs"
