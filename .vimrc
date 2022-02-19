@@ -32,6 +32,7 @@ let g:jedi#usages_command = "fu"
 "" custom maps
 nmap <f1> :NERDTreeToggle<cr>
 nmap <f2> :PlantumlOpen<cr>
+nmap <f3> :PlantumlSave<cr>
 nmap <f12> :q!<cr>
 nmap <c-h> <c-o><cr>
 nmap <c-l> <c-i><cr>
