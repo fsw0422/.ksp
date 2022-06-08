@@ -40,6 +40,7 @@ nmap <c-x> :e#<cr>
 nmap <c-g>c :!lazygit<cr>
 nmap <c-r>r :CtrlPClearCache<cr> :NERDTreeFocus<cr>R<c-w><c-p>
 nmap <c-r>R :so $MYVIMRC<cr>
+nmap <c-r>f :NERDTreeFind<cr>
 
 " Global settings
 "" general
