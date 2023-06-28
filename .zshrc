@@ -82,6 +82,9 @@ gcb() {
     # Switch to 'master' or 'main' branch
     git checkout $master_main_branch
 
+    # Git pull to latest
+    git pull
+
     # Prune remote branches
     git fetch --prune
 
@@ -96,7 +99,7 @@ gcb() {
         if ! git rev-parse --abbrev-ref --symbolic-full-name $branch@{upstream} >/dev/null 2>&1; then
             # If branch does not exist on remote, delete it locally
             echo "Deleting branch $branch"
-            git branch -d $branch
+            git branch -D $branch
         fi
     done
 }
