@@ -66,6 +66,41 @@ grb() {
     fi
 }
 
+gcb() {
+    local master_main_branch=""
+
+    # Check if 'main' branch exists, else fall back to 'master'
+    if git show-ref --quiet refs/heads/main; then
+        master_main_branch="main"
+    elif git show-ref --quiet refs/heads/master; then
+        master_main_branch="master"
+    else
+        echo "Neither 'master' nor 'main' branch exists."
+        return 1
+    fi
+
+    # Switch to 'master' or 'main' branch
+    git checkout $master_main_branch
+
+    # Prune remote branches
+    git fetch --prune
+
+    # Loop over all local branches
+    for branch in $(git branch --format "%(refname:short)"); do
+        # Skip 'master' or 'main' branch
+        if [[ $branch == $master_main_branch ]]; then
+            continue
+        fi
+
+        # Check if branch exists on remote
+        if ! git rev-parse --abbrev-ref --symbolic-full-name $branch@{upstream} >/dev/null 2>&1; then
+            # If branch does not exist on remote, delete it locally
+            echo "Deleting branch $branch"
+            git branch -d $branch
+        fi
+    done
+}
+
 # Direnv
 eval "$(direnv hook zsh)"
 
