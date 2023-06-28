@@ -35,6 +35,37 @@ elif [[ $OSTYPE == "darwin"* ]]; then
 	source ~/.linuxify
 fi
 
+# Git
+grb() {
+    if [ $# -ne 2 ]; then
+        echo "Usage: git-rename-branch <old_branch_name> <new_branch_name>"
+        return 1
+    fi
+
+    local old_branch=$1
+    local new_branch=$2
+
+    # Check if the branch exists on local
+    if ! git rev-parse --verify --quiet $old_branch > /dev/null; then
+        echo "Error: $old_branch does not exist."
+        return 1
+    fi
+
+    # Rename the local branch
+    git branch -m $old_branch $new_branch
+
+    # Check if the branch exists on remote
+    if git ls-remote --quiet | grep $old_branch > /dev/null; then
+        # Push the new branch to remote and reset the upstream branch
+        git push origin -u $new_branch
+
+        # Delete the old branch on remote
+        git push origin --delete $old_branch
+    else
+        echo "Warning: $old_branch does not exist on remote."
+    fi
+}
+
 # Direnv
 eval "$(direnv hook zsh)"
 
