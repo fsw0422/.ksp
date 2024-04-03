@@ -21,7 +21,7 @@ alias k="kubectl"
 complete -F __start_kubectl k
 
 # OS specific settings
-if [[ ! -z ${WSL_DISTRO_NAME} ]]; then
+if [ -d "/run/WSL" ]; then
 	# Translation language (may change to another mapping later)
 	export LANGUAGE=en_US.UTF-8
 
