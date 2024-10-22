@@ -26,7 +26,7 @@ if [ -d "/run/WSL" ]; then
 	export LANGUAGE=en_US.UTF-8
 
 	# For X11 workaround in WSL2
-	export DISPLAY=$(awk '/nameserver / {print $2; exit}' /etc/resolv.conf 2>/dev/null):0
+	export DISPLAY=$(ip route list default | awk '{print $3}'):0
 	export LIBGL_ALWAYS_INDIRECT=1
 elif [[ $OSTYPE == "darwin"* ]]; then
 	# Linuxify (https://github.com/fabiomaia/linuxify)
