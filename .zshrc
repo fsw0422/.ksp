@@ -109,15 +109,28 @@ eval "$(direnv hook zsh)"
 
 # Pyenv
 venv () {
-	if [ -n "$1" ]; then
-		pyenv local ${1}
+	# Clean up
+	rm -rf venv
+	rm .envrc
+
+	# Create virtual environment based on Python version
+	if [ -f ".python-version" ]; then
+		PYTHON_VERSION=$(cat .python-version)
+		pyenv local ${PYTHON_VERSION}
 		python3 -m venv venv
 		echo "source venv/bin/activate" >> .envrc
 		echo "unset PS1" >> .envrc
 		direnv allow
 	else
-		echo "Python version not specified. Please choose from below versions"
+		echo "'.python-version' not found. Please create one"
 		pyenv versions
+	fi
+
+	# Install requirements if exists
+	if [ -f "requirements.txt" ]; then
+		pip3 install -r requirements.txt
+	else
+		echo "No 'requirements.txt' found. Installing no dependencies"
 	fi
 }
 export PYENV_ROOT="${HOME}/.pyenv"
