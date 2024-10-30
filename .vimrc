@@ -6,13 +6,8 @@ call vundle#begin()
 
 "" setup plugins
 Plugin 'scrooloose/nerdtree.git'
-Plugin 'nvie/vim-flake8.git'
 Plugin 'kien/ctrlp.vim.git'
 Plugin 'vim-scripts/AutoComplPop.git'
-Plugin 'davidhalter/jedi-vim.git'
-Plugin 'tpope/vim-markdown'
-Plugin 'weirongxu/plantuml-previewer.vim'
-Plugin 'aklt/plantuml-syntax'
 Plugin 'tyru/open-browser.vim'
 
 "" plugin settings
@@ -21,17 +16,10 @@ let g:NERDTreeShowHidden=1
 let g:ctrlp_show_hidden = 1
 let g:acp_behaviorKeywordLength = 2
 let g:acp_completeoptPreview = 1
-let g:acp_behaviorPythonOmniLength = -1
-let g:jedi#force_py_version = 3
-let g:jedi#goto_definitions_command = "gi"
-let g:jedi#goto_stubs_command = "gs"
-let g:jedi#usages_command = "fu"
 
 "Key maps
 "" custom maps
 nmap <f1> :NERDTreeToggle<cr>
-nmap <f2> :PlantumlOpen<cr>
-nmap <f3> :PlantumlSave<cr>
 nmap <f12> :q!<cr>
 nmap <c-h> <c-o><cr>
 nmap <c-l> <c-i><cr>
@@ -64,12 +52,10 @@ set ruler
 set visualbell
 set wildignore+=*.pyc,*.o,*.obj,*.svn,*.swp,*.class,*.hg,*.DS_Store,*.min.*
 
-"" operation depending on filetype
-autocmd BufWritePre * :%s/\s\+$//e
-autocmd FileType python set tabstop=4 | set shiftwidth=4 | set expandtab | retab
-autocmd BufWritePost *.py call flake8#Flake8()
-
 "" terminal
+""" remove trailing whitspaces for each line on write
+autocmd BufWritePre * :%s/\s\+$//e
+
 """ when editing a file, always jump to the last cursor position
 autocmd BufReadPost *
 	\ if line("'\"") > 0 && line ("'\"") <= line("$") |
