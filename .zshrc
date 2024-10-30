@@ -115,6 +115,7 @@ venv() {
 	# Create virtual environment based on Python version
 	if [ -f ".python-version" ]; then
 		PYTHON_VERSION=$(cat .python-version)
+		echo "Python version found ${PYTHON_VERSION}. Installing venv"
 		pyenv local ${PYTHON_VERSION}
 		python3 -m venv venv
 		echo "source venv/bin/activate" >> .envrc
