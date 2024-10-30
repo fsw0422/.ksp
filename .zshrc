@@ -112,9 +112,18 @@ export PATH="${PYENV_ROOT}/bin:${PATH}"
 eval "$(pyenv init --path)"
 eval "$(pyenv init -)"
 venv() {
-	echo "source venv/bin/activate" >> .envrc
-	echo "unset PS1" >> .envrc
-	direnv allow
+	# Create virtual environment based on Python version
+	if [ -f ".python-version" ]; then
+		PYTHON_VERSION=$(cat .python-version)
+		pyenv local ${PYTHON_VERSION}
+		python3 -m venv venv
+		echo "source venv/bin/activate" >> .envrc
+		echo "unset PS1" >> .envrc
+		direnv allow
+	else
+		echo "'.python-version' not found. Please create one"
+		pyenv versions
+	fi
 
 	# Install requirements if exists
 	if [ -f "requirements.txt" ]; then
