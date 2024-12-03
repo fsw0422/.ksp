@@ -27,6 +27,9 @@ if [ -d "/run/WSL" ]; then
 	# For X11 workaround in WSL2
 	export DISPLAY=$(ip route list default | awk '{print $3}'):0
 	export LIBGL_ALWAYS_INDIRECT=1
+
+	# VSCode warning supress
+	export DONT_PROMPT_WSL_INSTALL=1
 elif [[ $OSTYPE == "darwin"* ]]; then
 	# Linuxify (https://github.com/fabiomaia/linuxify)
 	alias grep="grep --color=always"
