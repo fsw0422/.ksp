@@ -28,8 +28,13 @@ if [ -d "/run/WSL" ]; then
 	export DISPLAY=$(ip route list default | awk '{print $3}'):0
 	export LIBGL_ALWAYS_INDIRECT=1
 
-	# VSCode warning supress
+	# VSCode
 	export DONT_PROMPT_WSL_INSTALL=1
+	export IJ_LAUNCHER_DEBUG=true
+	alias code="code --wait"
+
+	# Intellij
+	export PATH=$PATH:~/.local/share/JetBrains/Toolbox/apps/intellij-idea-community-edition/bin
 elif [[ $OSTYPE == "darwin"* ]]; then
 	# Linuxify (https://github.com/fabiomaia/linuxify)
 	alias grep="grep --color=always"
