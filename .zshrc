@@ -27,6 +27,7 @@ if [ -d "/run/WSL" ]; then
 	# For X11 workaround in WSL2
 	export DISPLAY=$(ip route list default | awk '{print $3}'):0
 	export LIBGL_ALWAYS_INDIRECT=1
+	export XCURSOR_SIZE=16
 
 	# VSCode
 	export DONT_PROMPT_WSL_INSTALL=1
