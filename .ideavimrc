@@ -1,0 +1,34 @@
+set visualbell
+set noerrorbells
+set clipboard^=unnamed,unnamedplus
+set hlsearch
+set incsearch
+
+sethandler <C-A> a:ide
+sethandler <C-B> a:ide
+sethandler <C-C> a:ide
+sethandler <C-D> a:ide
+sethandler <C-E> a:ide
+sethandler <C-F> a:ide
+sethandler <C-G> a:ide
+sethandler <C-H> a:ide
+sethandler <C-I> a:ide
+sethandler <C-J> a:ide
+sethandler <C-K> a:ide
+sethandler <C-L> a:ide
+sethandler <C-M> a:ide
+sethandler <C-N> a:ide
+sethandler <C-O> a:ide
+sethandler <C-P> a:ide
+sethandler <C-Q> a:ide
+sethandler <C-S> a:ide
+sethandler <C-T> a:ide
+sethandler <C-U> a:ide
+sethandler <C-W> a:ide
+sethandler <C-Y> a:ide
+sethandler <C-Z> a:ide
+
+nmap <C-X> :e#<cr>
+nmap gi <Action>(GotoImplementation)
+nmap fu <Action>(FindUsages)
+nmap ch <Action>(CallHierarchy)
