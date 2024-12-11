@@ -134,8 +134,7 @@ grm() {
 	fi
 
 	# Pull the latest changes on the base branch without checking it out
-	git fetch origin "$base_branch"
-	git merge --ff-only "origin/$base_branch"
+	git fetch origin "$base_branch":"$base_branch"
 
 	# Rebase onto base branch
 	git rebase "$base_branch"
