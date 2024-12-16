@@ -67,6 +67,17 @@ get_current_branch() {
 	echo "$current_branch"
 }
 
+grb() {
+	local old_branch="$1"
+	local new_branch="$2"
+
+	git branch -m "$old_branch" "$new_branch"
+	git push origin --delete "$old_branch"
+	git push --set-upstream origin "$new_branch"
+
+	echo "Branch renamed from '$old_branch' to '$new_branch' successfully."
+}
+
 gcb() {
 	local base_branch
 	base_branch=$(get_base_branch) || return 1
