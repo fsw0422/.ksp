@@ -153,6 +153,10 @@ grm() {
 	echo "Branch '$current_branch' rebased on top of '$base_branch'."
 }
 
+grr() {
+	gsb "$1" && grm && git push --force origin
+}
+
 grh() {
 	git reset HEAD~
 }
