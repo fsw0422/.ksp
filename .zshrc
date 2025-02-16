@@ -173,17 +173,11 @@ eval "$(pyenv init -)"
 venv() {
 	if [ -f ".python-version" ]; then
 		PYTHON_VERSION=$(pyenv version-name)
-		echo "${PYTHON_VERSION} Found. Setting to local version.."
+		echo "${PYTHON_VERSION} Found. Setting as local version.."
 
-		echo "Installing virtual environment.."
-		if [[ "$PYTHON_VERSION" == *"miniconda"* ]]; then
-			conda create --prefix ./venv -y
-			echo "layout_conda ./venv" >> .envrc
-		else
-			python3 -m venv venv
-			echo "source venv/bin/activate" >> .envrc
-		fi
-
+		# Install virtual environment
+		python3 -m venv venv
+		echo "source venv/bin/activate" >> .envrc
 		echo "unset PS1" >> .envrc
 		direnv allow
 
@@ -214,8 +208,14 @@ else
 	fi
 fi
 unset __conda_setup
-
 eval "$(direnv hook zsh)"
+
+cenv() {
+	conda create --prefix ./cenv python="${1}" -y
+	echo "layout_conda ./cenv" >> .envrc
+	echo "unset PS1" >> .envrc
+	direnv allow
+}
 
 # Remove all duplicate environmental variables
 typeset -U path
