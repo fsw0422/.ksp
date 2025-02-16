@@ -169,28 +169,53 @@ export PYENV_ROOT="${HOME}/.pyenv"
 export PATH="${PYENV_ROOT}/bin:${PATH}"
 eval "$(pyenv init --path)"
 eval "$(pyenv init -)"
+
 venv() {
-	# Create virtual environment based on Python version
 	if [ -f ".python-version" ]; then
-		PYTHON_VERSION=$(cat .python-version)
-		echo "Python version found ${PYTHON_VERSION}. Installing venv"
-		pyenv local ${PYTHON_VERSION}
-		python3 -m venv venv
-		echo "source venv/bin/activate" >> .envrc
+		PYTHON_VERSION=$(pyenv version-name)
+		echo "${PYTHON_VERSION} Found. Setting to local version.."
+
+		echo "Installing virtual environment.."
+		if [[ "$PYTHON_VERSION" == *"miniconda"* ]]; then
+			conda create --prefix ./venv -y
+			echo "layout_conda ./venv" >> .envrc
+		else
+			python3 -m venv venv
+			echo "source venv/bin/activate" >> .envrc
+		fi
+
 		echo "unset PS1" >> .envrc
 		direnv allow
-	else
-		echo "'.python-version' not found. Please create one"
-		pyenv versions
-	fi
 
-	# Install requirements if exists
-	if [ -f "requirements.txt" ]; then
-		pip3 install -r requirements.txt
+		# Install requirements if exists
+		if [ -f "requirements.txt" ]; then
+			echo "Installing dependencies from requirements.txt..."
+			pip3 install -r requirements.txt
+		else
+			echo "No 'requirements.txt' found. Installing no dependencies."
+		fi
 	else
-		echo "No 'requirements.txt' found. Installing no dependencies"
+		echo "'.python-version' not found. Please create one."
+		pyenv versions
+		return 1
 	fi
 }
+
+# Conda
+export CONDA_HOME="${PYENV_ROOT}/versions/miniconda3-latest"
+__conda_setup="$("${CONDA_HOME}/bin/conda" shell.bash hook 2>/dev/null)" || true
+if [ $? -eq 0 ]; then
+	eval "$__conda_setup"
+else
+	if [ -f "${CONDA_HOME}/etc/profile.d/conda.sh" ]; then
+		. "${CONDA_HOME}/etc/profile.d/conda.sh"
+	else
+		export PATH="${CONDA_HOME}/bin:${PATH}"
+	fi
+fi
+unset __conda_setup
+
+eval "$(direnv hook zsh)"
 
 # Remove all duplicate environmental variables
 typeset -U path
