@@ -29,11 +29,6 @@ if [ -d "/run/WSL" ]; then
 	export LIBGL_ALWAYS_INDIRECT=1
 	export XCURSOR_SIZE=16
 
-	# VSCode
-	export DONT_PROMPT_WSL_INSTALL=1
-	export IJ_LAUNCHER_DEBUG=true
-	alias code="code --wait"
-
 	# Intellij
 	export PATH=$PATH:~/.local/share/JetBrains/Toolbox/apps/intellij-idea-community-edition/bin
 elif [[ $OSTYPE == "darwin"* ]]; then
