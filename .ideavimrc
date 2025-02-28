@@ -4,6 +4,7 @@ set clipboard^=unnamed,unnamedplus
 set hlsearch
 set incsearch
 
+# All except <C-X> is handled by IDE as they are used (or potentially) as initial key stroke of various key bindings
 sethandler <C-A> a:ide
 sethandler <C-B> a:ide
 sethandler <C-C> a:ide
@@ -21,10 +22,13 @@ sethandler <C-N> a:ide
 sethandler <C-O> a:ide
 sethandler <C-P> a:ide
 sethandler <C-Q> a:ide
+sethandler <C-R> a:ide
 sethandler <C-S> a:ide
 sethandler <C-T> a:ide
 sethandler <C-U> a:ide
+sethandler <C-V> a:ide
 sethandler <C-W> a:ide
+sethandler <C-X> a:vim
 sethandler <C-Y> a:ide
 sethandler <C-Z> a:ide
 
