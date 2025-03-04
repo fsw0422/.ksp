@@ -190,27 +190,5 @@ venv() {
 	fi
 }
 
-# Conda
-export CONDA_HOME="${PYENV_ROOT}/versions/miniconda3-latest"
-__conda_setup="$("${CONDA_HOME}/bin/conda" shell.bash hook 2>/dev/null)" || true
-if [ $? -eq 0 ]; then
-	eval "$__conda_setup"
-else
-	if [ -f "${CONDA_HOME}/etc/profile.d/conda.sh" ]; then
-		. "${CONDA_HOME}/etc/profile.d/conda.sh"
-	else
-		export PATH="${CONDA_HOME}/bin:${PATH}"
-	fi
-fi
-unset __conda_setup
-eval "$(direnv hook zsh)"
-
-cenv() {
-	conda create --prefix ./cenv python="${1}" -y
-	echo "layout_conda ./cenv" >> .envrc
-	echo "unset PS1" >> .envrc
-	direnv allow
-}
-
 # Remove all duplicate environmental variables
 typeset -U path
