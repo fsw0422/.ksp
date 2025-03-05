@@ -62,6 +62,17 @@ get_current_branch() {
 	echo "$current_branch"
 }
 
+gpb() {
+	local base_branch
+	base_branch=$(get_base_branch) || return 1
+
+	# Switch to base branch
+	git checkout "$base_branch"
+
+	git push origin --delete "$1"
+	git branch -D "$1"
+}
+
 grb() {
 	local old_branch="$1"
 	local new_branch="$2"
@@ -148,12 +159,8 @@ grm() {
 	echo "Branch '$current_branch' rebased on top of '$base_branch'."
 }
 
-grr() {
+gsbrmfp() {
 	gsb "$1" && grm && git push --force origin
-}
-
-grh() {
-	git reset HEAD~
 }
 
 # Direnv
