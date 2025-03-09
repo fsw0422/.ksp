@@ -186,6 +186,8 @@ eval "$(pyenv init --path)"
 eval "$(pyenv init -)"
 
 venv() {
+	rm -rf venv
+	rm -f .envrc
 	if [ -f ".python-version" ]; then
 		PYTHON_VERSION=$(pyenv version-name)
 		echo "${PYTHON_VERSION} Found. Setting as local version.."
