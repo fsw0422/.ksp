@@ -195,6 +195,7 @@ venv() {
 		echo "source venv/bin/activate" >> .envrc
 		echo "unset PS1" >> .envrc
 		direnv allow
+		venv/bin/pip install --upgrade pip
 
 		# Install requirements if exists
 		if [ -f "requirements.txt" ]; then
