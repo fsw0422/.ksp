@@ -5,6 +5,19 @@ export TERM="xterm-256color"
 # Start TMUX
 if [[ -z "${TMUX}" && "${TERMINAL_EMULATOR}" != "JetBrains-JediTerm" && "${TERM_PROGRAM}" != "vscode" ]]; then tmux; fi
 
+# Disable Vim
+if [[ "$TERMINAL_EMULATOR" == "JetBrains-JediTerm" || "$TERM_PROGRAM" == "vscode" ]]; then
+	vim() {
+		echo "Error: vim should be executed in a dedicated terminal." >&2
+		return 1
+	}
+
+	nano() {
+		echo "Error: nano should be executed in a dedicated terminal." >&2
+		return 1
+	}
+fi
+
 # Oh-My-ZSH
 export ZSH="${HOME}/.oh-my-zsh"
 ZSH_THEME="powerlevel10k/powerlevel10k"
