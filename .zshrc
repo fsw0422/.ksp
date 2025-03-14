@@ -204,7 +204,7 @@ venv() {
 		# Install requirements if exists
 		if [ -f "requirements.txt" ]; then
 			echo "Installing dependencies from requirements.txt..."
-			pip3 install -r requirements.txt
+			venv/bin/pip install -r requirements.txt
 		else
 			echo "No 'requirements.txt' found. Installing no dependencies."
 		fi
