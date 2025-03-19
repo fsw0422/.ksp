@@ -29,8 +29,6 @@ autoload -Uz compinit; compinit
 # Alias
 alias del_swp="find . -type f -name '*.swp' -exec rm -f {} \\;"
 alias v="view"
-alias k="kubectl"
-complete -F __start_kubectl k
 
 # OS specific settings
 if [ -d "/run/WSL" ]; then
