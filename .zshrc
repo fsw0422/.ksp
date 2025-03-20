@@ -185,6 +185,27 @@ export PATH="${PYENV_ROOT}/bin:${PATH}"
 eval "$(pyenv init --path)"
 eval "$(pyenv init -)"
 
+PREV_DIR_HAD_PYTHON_VERSION=0
+autoload -U add-zsh-hook
+load_pyenv_version() {
+	if [[ -f .python-version && -r .python-version ]]; then
+		PREV_DIR_HAD_PYTHON_VERSION=1
+		local pyenv_version=$(cat .python-version)
+		if pyenv versions --bare | grep -qx "$pyenv_version"; then
+			echo "✅ Switched to Python $pyenv_version (from .python-version)"
+		else
+			echo "❌ Python version $pyenv_version is not installed. Install it with: pyenv install $pyenv_version"
+		fi
+	else
+		if [[ $PREV_DIR_HAD_PYTHON_VERSION -eq 1 ]]; then
+			echo "🔄 Switched back to the global Python version $(pyenv global)"
+			PREV_DIR_HAD_PYTHON_VERSION=0
+		fi
+	fi
+}
+add-zsh-hook chpwd load_pyenv_version
+load_pyenv_version
+
 venv() {
 	rm -rf venv
 	rm -f .envrc
