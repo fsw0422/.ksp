@@ -218,6 +218,18 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
 
+autoload -U add-zsh-hook
+load_nvmrc() {
+	if [[ -f .nvmrc && -r .nvmrc ]]; then
+		local nvmrc_version=$(cat .nvmrc)
+		nvm use
+	elif [[ $(nvm version) != $(nvm version default) ]]; then
+		nvm use default
+	fi
+}
+add-zsh-hook chpwd load_nvmrc
+load_nvmrc
+
 # SDKMAN
 export SDKMAN_DIR="$HOME/.sdkman"
 [[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
