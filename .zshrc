@@ -5,7 +5,7 @@ export TERM="xterm-256color"
 # Start TMUX
 if [[ -z "${TMUX}" && "${TERMINAL_EMULATOR}" != "JetBrains-JediTerm" && "${TERM_PROGRAM}" != "vscode" ]]; then tmux; fi
 
-# Disable Vim
+# Disable Vim in IDEs
 if [[ "$TERMINAL_EMULATOR" == "JetBrains-JediTerm" || "$TERM_PROGRAM" == "vscode" ]]; then
 	vim() {
 		echo "Error: vim should be executed in a dedicated terminal." >&2
