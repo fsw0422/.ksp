@@ -8,7 +8,6 @@ call vundle#begin()
 Plugin 'scrooloose/nerdtree.git'
 Plugin 'kien/ctrlp.vim.git'
 Plugin 'vim-scripts/AutoComplPop.git'
-Plugin 'tyru/open-browser.vim'
 
 "" plugin settings
 let g:NERDTreeRespectWildIgnore=1
