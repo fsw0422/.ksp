@@ -176,15 +176,13 @@ gsbrmfp() {
 	gsb "$1" && grm && git push --force origin
 }
 
-# Direnv
-eval "$(direnv hook zsh)"
-
 # Pyenv
 export PYENV_ROOT="${HOME}/.pyenv"
 export PATH="${PYENV_ROOT}/bin:${PATH}"
 eval "$(pyenv init --path)"
 eval "$(pyenv init -)"
 
+PREV_DIR_HAD_VENV=0
 PREV_DIR_HAD_PYTHON_VERSION=0
 autoload -U add-zsh-hook
 load_pyenv_version() {
@@ -192,43 +190,70 @@ load_pyenv_version() {
 		PREV_DIR_HAD_PYTHON_VERSION=1
 		local pyenv_version=$(cat .python-version)
 		if pyenv versions --bare | grep -qx "$pyenv_version"; then
-			echo "✅ Switched to Python $pyenv_version (from .python-version)"
+			echo "pyenv) ✅ Switched to Python $pyenv_version (from .python-version)"
 		else
-			echo "❌ Python version $pyenv_version is not installed. Install it with: pyenv install $pyenv_version"
+			echo "pyenv) ❌ Python version $pyenv_version is not installed or is not a valid Python version that Pyenv provides."
 		fi
 	else
 		if [[ $PREV_DIR_HAD_PYTHON_VERSION -eq 1 ]]; then
-			echo "🔄 Switched back to the global Python version $(pyenv global)"
+			echo "pyenv) 🔄 Switched back to the global Python version $(pyenv global)"
 			PREV_DIR_HAD_PYTHON_VERSION=0
 		fi
 	fi
 }
+load_venv() {
+	local venv_dir="$PWD/venv"
+	local in_venv=0
+	[[ -n "$VIRTUAL_ENV" ]] && in_venv=1
+	if [[ -d "$venv_dir" && -f "$venv_dir/bin/activate" ]]; then
+		if [[ "$VIRTUAL_ENV" != "$venv_dir" ]]; then
+			if [[ $in_venv -eq 1 ]]; then
+				deactivate 2>/dev/null
+			fi
+			source "$venv_dir/bin/activate"
+			echo "venv)  ✅ Activated virtual environment at $venv_dir"
+			PREV_DIR_HAD_VENV=1
+		fi
+	else
+		if [[ $PREV_DIR_HAD_VENV -eq 1 && $in_venv -eq 1 ]]; then
+			deactivate 2>/dev/null
+			echo "venv)  🔄 Deactivated virtual environment"
+			PREV_DIR_HAD_VENV=0
+		fi
+	fi
+}
 add-zsh-hook chpwd load_pyenv_version
+add-zsh-hook chpwd load_venv
 load_pyenv_version
+load_venv
 
 venv() {
 	rm -rf venv
-	rm -f .envrc
 	if [ -f ".python-version" ]; then
-		PYTHON_VERSION=$(pyenv version-name)
-		echo "${PYTHON_VERSION} Found. Setting as local version.."
+		local pyenv_version=$(cat .python-version)
+		if pyenv versions --bare | grep -qx "$pyenv_version"; then
+			echo "pyenv) ✅ Switched to Python $pyenv_version (from .python-version)"
+		else
+			echo "pyenv) ❌ Python version $pyenv_version is not installed or is not a valid Python version that Pyenv provides."
+			return 1
+		fi
 
 		# Install virtual environment
 		python3 -m venv venv
-		echo "source venv/bin/activate" >> .envrc
-		echo "unset PS1" >> .envrc
-		direnv allow
-		venv/bin/pip install --upgrade pip
+		local venv_dir="$PWD/venv"
+		source "$venv_dir/bin/activate"
+		echo "venv)  ✅ Activated virtual environment at $venv_dir"
+		pip install --upgrade pip
 
 		# Install requirements if exists
 		if [ -f "requirements.txt" ]; then
 			echo "Installing dependencies from requirements.txt..."
-			venv/bin/pip install -r requirements.txt
+			pip install -r requirements.txt
 		else
 			echo "No 'requirements.txt' found. Installing no dependencies."
 		fi
 	else
-		echo "'.python-version' not found. Please create one."
+		echo "pyenv) ❌ '.python-version' not found. Please create one."
 		pyenv versions
 		return 1
 	fi
