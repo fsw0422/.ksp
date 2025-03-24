@@ -7,11 +7,18 @@ if [[ -z "${TMUX}" && "${TERMINAL_EMULATOR}" != "JetBrains-JediTerm" && "${TERM_
 
 # Disable Vim in IDEs
 if [[ "$TERMINAL_EMULATOR" == "JetBrains-JediTerm" || "$TERM_PROGRAM" == "vscode" ]]; then
+	view() {
+		echo "Error: vim should be executed in a dedicated terminal." >&2
+		return 1
+	}
+	vi() {
+		echo "Error: vim should be executed in a dedicated terminal." >&2
+		return 1
+	}
 	vim() {
 		echo "Error: vim should be executed in a dedicated terminal." >&2
 		return 1
 	}
-
 	nano() {
 		echo "Error: nano should be executed in a dedicated terminal." >&2
 		return 1
