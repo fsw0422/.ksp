@@ -3,3 +3,4 @@
 	name = Sun Phil Kwon
 [core]
 	editor = code --wait
+	autocrlf = true
