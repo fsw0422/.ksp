@@ -59,6 +59,14 @@ elif [[ $OSTYPE == "darwin"* ]]; then
 fi
 
 # Git
+_git_complete() {
+	if [[ $CURRENT -eq 2 ]]; then
+		local -a branches
+		branches=($(git branch --list | sed 's/^[* ]*//'))
+		compadd -a branches
+	fi
+}
+
 get_base_branch() {
 	local base_branch=""
 	if git show-ref --quiet refs/heads/main; then
@@ -85,10 +93,7 @@ get_current_branch() {
 gpb() {
 	local base_branch
 	base_branch=$(get_base_branch) || return 1
-
-	# Switch to base branch
 	git checkout "$base_branch"
-
 	git push origin --delete "$1"
 	git branch -D "$1"
 }
@@ -96,35 +101,23 @@ gpb() {
 grb() {
 	local old_branch="$1"
 	local new_branch="$2"
-
 	git branch -m "$old_branch" "$new_branch"
 	git push origin --delete "$old_branch"
 	git push --set-upstream origin "$new_branch"
-
 	echo "Branch renamed from '$old_branch' to '$new_branch' successfully."
 }
 
 gcb() {
 	local base_branch
 	base_branch=$(get_base_branch) || return 1
-
-	# Switch to base branch and update
 	git checkout "$base_branch"
 	git pull
-
-	# Prune remote branches
 	git fetch --prune
-
-	# Loop over all local branches
 	for branch in $(git branch --format "%(refname:short)"); do
-		# Skip base branch
 		if [[ $branch == "$base_branch" ]]; then
 			continue
 		fi
-
-		# Check if branch exists on remote
 		if ! git rev-parse --abbrev-ref --symbolic-full-name "$branch@{upstream}" >/dev/null 2>&1; then
-			# Delete branch locally if it doesn't exist on remote
 			echo "Deleting branch $branch"
 			git branch -D "$branch"
 		fi
@@ -134,54 +127,41 @@ gcb() {
 gsb() {
 	local base_branch
 	base_branch=$(get_base_branch) || return 1
-
 	local commit_message="$1"
 	if [ -z "$commit_message" ]; then
 		echo "Usage: gsb <commit-message>"
 		return 1
 	fi
-
 	local current_branch
 	current_branch=$(get_current_branch) || return 1
-
-	# Check if the current branch is the base branch
 	if [ "$current_branch" = "$base_branch" ]; then
 		echo "Only branches that are NOT main/master is allowed to perform soft rebase. Aborting"
 		return 1
 	fi
-
-	# Squash commits
 	git reset --soft "$(git merge-base "$base_branch" "$current_branch")"
 	git commit -m "$commit_message"
-
 	echo "Branch '$current_branch' squashed with the commit message: '$commit_message'."
 }
 
 grm() {
 	local base_branch
 	base_branch=$(get_base_branch) || return 1
-
 	local current_branch
 	current_branch=$(get_current_branch) || return 1
-
-	# Check if the current branch is the base branch
 	if [ "$current_branch" = "$base_branch" ]; then
 		echo "Error: You are already on the base branch ('$base_branch'). Rebasing is not allowed."
 		return 1
 	fi
-
-	# Pull the latest changes on the base branch without checking it out
 	git fetch origin "$base_branch":"$base_branch"
-
-	# Rebase onto base branch
 	git rebase "$base_branch"
-
 	echo "Branch '$current_branch' rebased on top of '$base_branch'."
 }
 
 gsbrmfp() {
 	gsb "$1" && grm && git push --force origin
 }
+
+compdef _git_complete gpb grb
 
 # Pyenv
 export PYENV_ROOT="${HOME}/.pyenv"
