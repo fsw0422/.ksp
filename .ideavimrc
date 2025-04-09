@@ -15,7 +15,7 @@ sethandler <C-G> a:ide
 sethandler <C-H> a:ide
 sethandler <C-I> a:ide
 sethandler <C-J> a:ide
-sethandler <C-K> a:vim
+sethandler <C-K> a:ide
 sethandler <C-L> a:ide
 sethandler <C-M> a:ide
 sethandler <C-N> a:ide
