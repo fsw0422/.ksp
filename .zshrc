@@ -174,7 +174,6 @@ eval "$(pyenv init -)"
 typeset -g PREV_DIR_HAD_VENV=0
 typeset -g PREV_DIR_HAD_PYTHON_VERSION=0
 typeset -g LAST_PYENV_LOGGED=""
-typeset -g LAST_NVM_LOGGED=""
 
 find_nearest_file() {
 	local file="$1"
@@ -197,7 +196,7 @@ load_pyenv_version() {
 		if pyenv versions --bare | grep -qx "${pyenv_version}"; then
 			if [[ "${LAST_PYENV_LOGGED}" != "${pyenv_dir}" || "$(pyenv version-name)" != "${pyenv_version}" ]]; then
 				pyenv shell "${pyenv_version}" 2>/dev/null
-				echo "pyenv) ✅ Switched to Python ${pyenv_version} (from ${pyenv_dir}/.python-version)"
+				echo "pyenv) ✅ Switched to local Python ${pyenv_version} (from ${pyenv_dir}/.python-version)"
 				LAST_PYENV_LOGGED="${pyenv_dir}"
 			fi
 		else
@@ -237,7 +236,7 @@ venv() {
 	if [[ -f .python-version ]]; then
 		local pyenv_version=$(< .python-version)
 		if pyenv versions --bare | grep -qx "${pyenv_version}"; then
-			echo "pyenv) ✅ Switched to Python ${pyenv_version} (from .python-version)"
+			echo "pyenv) ✅ Switched to local Python ${pyenv_version} (from .python-version)"
 		else
 			echo "pyenv) ❌ Python version ${pyenv_version} is not installed or valid."
 			return 1
@@ -261,6 +260,9 @@ venv() {
 }
 
 # NVM
+typeset -g PREV_DIR_HAD_NVM_VERSION=0
+typeset -g LAST_NVM_LOGGED=""
+
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
@@ -268,13 +270,23 @@ export NVM_DIR="$HOME/.nvm"
 load_nvm_version() {
 	local nvm_dir=$(find_nearest_file ".nvmrc")
 	if [[ -n "${nvm_dir}" ]]; then
+		PREV_DIR_HAD_NVM_VERSION=1
 		local nvmrc_version=$(< "${nvm_dir}/.nvmrc")
-		if [[ "$(nvm current)" != "$(nvm version "${nvmrc_version}")" || "${LAST_NVM_LOGGED}" != "${nvm_dir}" ]]; then
-			nvm use "${nvmrc_version}" 2>/dev/null || echo "nvm) ❌ Node version ${nvmrc_version} not installed."
-			LAST_NVM_LOGGED="${nvm_dir}"
+		if nvm ls "${nvmrc_version}" >/dev/null 2>&1; then
+			if [[ "${LAST_NVM_LOGGED}" != "${nvm_dir}" || "$(nvm current)" != "$(nvm version "${nvmrc_version}")" ]]; then
+				nvm use "${nvmrc_version}" >/dev/null 2>&1
+				echo "nvm) ✅ Switched to local Node $(nvm current) (from ${nvm_dir}/.nvmrc)"
+				LAST_NVM_LOGGED="${nvm_dir}"
+			fi
+		else
+			echo "nvm) ❌ Node version ${nvmrc_version} is not installed or valid."
+			PREV_DIR_HAD_NVM_VERSION=0
+			LAST_NVM_LOGGED=""
 		fi
-	elif [[ $(nvm current) != $(nvm version default) ]]; then
-		nvm use default 2>/dev/null
+	elif [[ ${PREV_DIR_HAD_NVM_VERSION} -eq 1 ]]; then
+		nvm use default >/dev/null 2>&1
+		echo "nvm) 🔄 Switched to default Node $(nvm current)"
+		PREV_DIR_HAD_NVM_VERSION=0
 		LAST_NVM_LOGGED=""
 	fi
 }
