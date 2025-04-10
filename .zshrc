@@ -285,12 +285,9 @@ export NVM_DIR="$HOME/.nvm"
 
 load_nvm_version() {
 	if [[ -f .nvmrc && -r .nvmrc ]]; then
-		local nvmrc_version=$(< .nvmrc)
-		if [[ "$(nvm current)" != "$(nvm version "${nvmrc_version}")" ]]; then
-			nvm use "${nvmrc_version}" 2>/dev/null || echo "nvm) ❌ Node version ${nvmrc_version} not installed."
-		fi
+		nvm use "$(< .nvmrc)"
 	elif [[ $(nvm current) != $(nvm version default) ]]; then
-		nvm use default 2>/dev/null
+		nvm use default
 	fi
 }
 
