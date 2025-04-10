@@ -36,6 +36,8 @@ autoload -Uz compinit; compinit
 # Alias
 alias del_swp="find . -type f -name '*.swp' -exec rm -f {} \\;"
 alias v="view"
+alias cs="gh copilot suggest"
+alias ce="gh copilot explain"
 
 # OS specific settings
 if [ -d "/run/WSL" ]; then
