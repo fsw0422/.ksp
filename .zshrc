@@ -173,45 +173,32 @@ eval "$(pyenv init -)"
 
 typeset -g PREV_DIR_HAD_VENV=0
 typeset -g PREV_DIR_HAD_PYTHON_VERSION=0
-typeset -g PROJECT_ROOT=""
 typeset -g LAST_PYENV_LOGGED=""
+typeset -g LAST_NVM_LOGGED=""
 
-is_within_project() {
-	[[ -n "${PROJECT_ROOT}" && "${PWD}" == "${PROJECT_ROOT}" || "${PWD}" =~ ^"${PROJECT_ROOT}/" ]]
-}
-
-check_project_root() {
-	if [[ -f "${PWD}/.python-version" && -d "${PWD}/venv" && -f "${PWD}/venv/bin/activate" ]]; then
-		PROJECT_ROOT="${PWD}"
-	elif ! is_within_project; then
-		PROJECT_ROOT=""
-	fi
+find_nearest_file() {
+	local file="$1"
+	local dir="$PWD"
+	while [[ "${dir}" != "/" ]]; do
+		if [[ -f "${dir}/${file}" && -r "${dir}/${file}" ]]; then
+			echo "${dir}"
+			return 0
+		fi
+		dir=$(dirname "${dir}")
+	done
+	return 1
 }
 
 load_pyenv_version() {
-	check_project_root
-	if [[ -n "${PROJECT_ROOT}" && -f "${PROJECT_ROOT}/.python-version" ]]; then
+	local pyenv_dir=$(find_nearest_file ".python-version")
+	if [[ -n "${pyenv_dir}" ]]; then
 		PREV_DIR_HAD_PYTHON_VERSION=1
-		local pyenv_version=$(< "${PROJECT_ROOT}/.python-version")
+		local pyenv_version=$(< "${pyenv_dir}/.python-version")
 		if pyenv versions --bare | grep -qx "${pyenv_version}"; then
-			if [[ "${LAST_PYENV_LOGGED}" != "${PROJECT_ROOT}" || "$(pyenv version-name)" != "${pyenv_version}" ]]; then
+			if [[ "${LAST_PYENV_LOGGED}" != "${pyenv_dir}" || "$(pyenv version-name)" != "${pyenv_version}" ]]; then
 				pyenv shell "${pyenv_version}" 2>/dev/null
-				echo "pyenv) ✅ Switched to Python ${pyenv_version} (from ${PROJECT_ROOT}/.python-version)"
-				LAST_PYENV_LOGGED="${PROJECT_ROOT}"
-			fi
-		else
-			echo "pyenv) ❌ Python version ${pyenv_version} is not installed or valid."
-			PREV_DIR_HAD_PYTHON_VERSION=0
-			LAST_PYENV_LOGGED=""
-		fi
-	elif [[ -f "${PWD}/.python-version" && -r "${PWD}/.python-version" ]]; then
-		PREV_DIR_HAD_PYTHON_VERSION=1
-		local pyenv_version=$(< "${PWD}/.python-version")
-		if pyenv versions --bare | grep -qx "${pyenv_version}"; then
-			if [[ "${LAST_PYENV_LOGGED}" != "${PWD}" || "$(pyenv version-name)" != "${pyenv_version}" ]]; then
-				pyenv shell "${pyenv_version}" 2>/dev/null
-				echo "pyenv) ✅ Switched to Python ${pyenv_version} (from .python-version)"
-				LAST_PYENV_LOGGED="${PWD}"
+				echo "pyenv) ✅ Switched to Python ${pyenv_version} (from ${pyenv_dir}/.python-version)"
+				LAST_PYENV_LOGGED="${pyenv_dir}"
 			fi
 		else
 			echo "pyenv) ❌ Python version ${pyenv_version} is not installed or valid."
@@ -227,21 +214,16 @@ load_pyenv_version() {
 }
 
 load_venv() {
-	check_project_root
-	local venv_dir="${PROJECT_ROOT:-${PWD}}/venv"
-	if [[ -n "${PROJECT_ROOT}" && -d "${venv_dir}" && -f "${venv_dir}/bin/activate" ]]; then
-		if [[ "${VIRTUAL_ENV}" != "${venv_dir}" ]]; then
-			[[ -n "${VIRTUAL_ENV}" ]] && deactivate 2>/dev/null
-			source "${venv_dir}/bin/activate"
-			echo "venv) ✅ Activated virtual environment at ${venv_dir}"
-			PREV_DIR_HAD_VENV=1
-		fi
-	elif [[ -d "${PWD}/venv" && -f "${PWD}/venv/bin/activate" ]]; then
-		if [[ "${VIRTUAL_ENV}" != "${PWD}/venv" ]]; then
-			[[ -n "${VIRTUAL_ENV}" ]] && deactivate 2>/dev/null
-			source "${PWD}/venv/bin/activate"
-			echo "venv) ✅ Activated virtual environment at ${PWD}/venv"
-			PREV_DIR_HAD_VENV=1
+	local venv_dir=$(find_nearest_file "venv/bin/activate")
+	if [[ -n "${venv_dir}" ]]; then
+		venv_dir="${venv_dir}/venv"
+		if [[ -d "${venv_dir}" && -f "${venv_dir}/bin/activate" ]]; then
+			if [[ "${VIRTUAL_ENV}" != "${venv_dir}" ]]; then
+				[[ -n "${VIRTUAL_ENV}" ]] && deactivate 2>/dev/null
+				source "${venv_dir}/bin/activate"
+				echo "venv) ✅ Activated virtual environment at ${venv_dir}"
+				PREV_DIR_HAD_VENV=1
+			fi
 		fi
 	elif [[ ${PREV_DIR_HAD_VENV} -eq 1 && -n "${VIRTUAL_ENV}" ]]; then
 		deactivate 2>/dev/null
@@ -284,10 +266,16 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
 
 load_nvm_version() {
-	if [[ -f .nvmrc && -r .nvmrc ]]; then
-		nvm use "$(< .nvmrc)"
+	local nvm_dir=$(find_nearest_file ".nvmrc")
+	if [[ -n "${nvm_dir}" ]]; then
+		local nvmrc_version=$(< "${nvm_dir}/.nvmrc")
+		if [[ "$(nvm current)" != "$(nvm version "${nvmrc_version}")" || "${LAST_NVM_LOGGED}" != "${nvm_dir}" ]]; then
+			nvm use "${nvmrc_version}" 2>/dev/null || echo "nvm) ❌ Node version ${nvmrc_version} not installed."
+			LAST_NVM_LOGGED="${nvm_dir}"
+		fi
 	elif [[ $(nvm current) != $(nvm version default) ]]; then
-		nvm use default
+		nvm use default 2>/dev/null
+		LAST_NVM_LOGGED=""
 	fi
 }
 
