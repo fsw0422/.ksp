@@ -213,9 +213,9 @@ load_pyenv_version() {
 }
 
 load_venv() {
-	local venv_dir=$(find_nearest_file "venv/bin/activate")
-	if [[ -n "${venv_dir}" ]]; then
-		venv_dir="${venv_dir}/venv"
+	local base_dir=$(find_nearest_file ".venv/bin/activate")
+	if [[ -n "${base_dir}" ]]; then
+		local venv_dir="${base_dir}/.venv"
 		if [[ -d "${venv_dir}" && -f "${venv_dir}/bin/activate" ]]; then
 			if [[ "${VIRTUAL_ENV}" != "${venv_dir}" ]]; then
 				[[ -n "${VIRTUAL_ENV}" ]] && deactivate 2>/dev/null
@@ -232,28 +232,34 @@ load_venv() {
 }
 
 venv() {
-	rm -rf venv
+	echo "Removing existing '.venv' directory if present..."
+	rm -rf .venv
 	if [[ -f .python-version ]]; then
 		local pyenv_version=$(< .python-version)
 		if pyenv versions --bare | grep -qx "${pyenv_version}"; then
-			echo "pyenv) ✅ Switched to local Python ${pyenv_version} (from .python-version)"
+			echo "pyenv) ✅ Using Python ${pyenv_version} (from .python-version)"
 		else
 			echo "pyenv) ❌ Python version ${pyenv_version} is not installed or valid."
 			return 1
 		fi
-		python3 -m venv venv
-		local venv_dir="${PWD}/venv"
+		python3 -m venv .venv
+		local venv_dir="${PWD}/.venv"
 		source "${venv_dir}/bin/activate"
 		echo "venv) ✅ Activated virtual environment at ${venv_dir}"
+		echo "Upgrading pip..."
 		pip install --upgrade pip
-		if [[ -f requirements.txt ]]; then
-			echo "Installing dependencies from requirements.txt..."
+
+		if [[ -f pyproject.toml ]]; then
+			echo "Found 'pyproject.toml'. Installing project package..."
+			pip install .
+		elif [[ -f requirements.txt ]]; then
+			echo "Found 'requirements.txt' (no pyproject.toml). Installing dependencies..."
 			pip install -r requirements.txt
 		else
-			echo "No 'requirements.txt' found. No dependencies installed."
+			echo "No 'pyproject.toml' or 'requirements.txt' found. No dependencies installed."
 		fi
 	else
-		echo "pyenv) ❌ '.python-version' not found. Please create one."
+		echo "pyenv) ❌ '.python-version' not found in current directory. Please create one."
 		pyenv versions
 		return 1
 	fi
