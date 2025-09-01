@@ -41,12 +41,7 @@ alias ce="gh copilot explain"
 
 # OS specific settings
 if [ -d "/run/WSL" ]; then
-	# Translation language (may change to another mapping later)
 	export LANGUAGE=en_US.UTF-8
-
-	# For X11 workaround in WSL2
-	export DISPLAY=$(ip route list default | awk '{print $3}'):0
-	export LIBGL_ALWAYS_INDIRECT=1
 	export XCURSOR_SIZE=16
 
 	# Intellij
