@@ -3,7 +3,7 @@
 	name = Sun Phil Kwon
 [core]
 	editor = code --wait
-	autocrlf = true
+	autocrlf = input
 [credential "https://github.com"]
 	helper = !/usr/bin/gh auth git-credential
 [credential "https://gist.github.com"]
