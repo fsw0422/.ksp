@@ -36,8 +36,6 @@ autoload -Uz compinit; compinit
 # Alias
 alias del_swp="find . -type f -name '*.swp' -exec rm -f {} \\;"
 alias v="view"
-alias cs="gh copilot suggest"
-alias ce="gh copilot explain"
 
 # OS specific settings
 if [ -d "/run/WSL" ]; then
@@ -160,152 +158,12 @@ gsbrmfp() {
 
 compdef _git_complete gpb grb
 
-# Pyenv
-export PYENV_ROOT="${HOME}/.pyenv"
-export PATH="${PYENV_ROOT}/bin:${PATH}"
-eval "$(pyenv init --path)"
-eval "$(pyenv init -)"
-
-typeset -g PREV_DIR_HAD_VENV=0
-typeset -g PREV_DIR_HAD_PYTHON_VERSION=0
-typeset -g LAST_PYENV_LOGGED=""
-
-find_nearest_file() {
-	local file="$1"
-	local dir="$PWD"
-	while [[ "${dir}" != "/" ]]; do
-		if [[ -f "${dir}/${file}" && -r "${dir}/${file}" ]]; then
-			echo "${dir}"
-			return 0
-		fi
-		dir=$(dirname "${dir}")
-	done
-	return 1
-}
-
-load_pyenv_version() {
-	local pyenv_dir=$(find_nearest_file ".python-version")
-	if [[ -n "${pyenv_dir}" ]]; then
-		PREV_DIR_HAD_PYTHON_VERSION=1
-		local pyenv_version=$(< "${pyenv_dir}/.python-version")
-		if pyenv versions --bare | grep -qx "${pyenv_version}"; then
-			if [[ "${LAST_PYENV_LOGGED}" != "${pyenv_dir}" || "$(pyenv version-name)" != "${pyenv_version}" ]]; then
-				pyenv shell "${pyenv_version}" 2>/dev/null
-				echo "pyenv) ✅ Switched to local Python ${pyenv_version} (from ${pyenv_dir}/.python-version)"
-				LAST_PYENV_LOGGED="${pyenv_dir}"
-			fi
-		else
-			echo "pyenv) ❌ Python version ${pyenv_version} is not installed or valid."
-			PREV_DIR_HAD_PYTHON_VERSION=0
-			LAST_PYENV_LOGGED=""
-		fi
-	elif [[ ${PREV_DIR_HAD_PYTHON_VERSION} -eq 1 ]]; then
-		pyenv shell --unset 2>/dev/null
-		echo "pyenv) 🔄 Switched to global Python $(pyenv global)"
-		PREV_DIR_HAD_PYTHON_VERSION=0
-		LAST_PYENV_LOGGED=""
-	fi
-}
-
-load_venv() {
-	local base_dir=$(find_nearest_file ".venv/bin/activate")
-	if [[ -n "${base_dir}" ]]; then
-		local venv_dir="${base_dir}/.venv"
-		if [[ -d "${venv_dir}" && -f "${venv_dir}/bin/activate" ]]; then
-			if [[ "${VIRTUAL_ENV}" != "${venv_dir}" ]]; then
-				[[ -n "${VIRTUAL_ENV}" ]] && deactivate 2>/dev/null
-				source "${venv_dir}/bin/activate"
-				echo "venv) ✅ Activated virtual environment at ${venv_dir}"
-				PREV_DIR_HAD_VENV=1
-			fi
-		fi
-	elif [[ ${PREV_DIR_HAD_VENV} -eq 1 && -n "${VIRTUAL_ENV}" ]]; then
-		deactivate 2>/dev/null
-		echo "venv) 🔄 Deactivated virtual environment"
-		PREV_DIR_HAD_VENV=0
-	fi
-}
-
-venv() {
-	echo "Removing existing '.venv' directory if present..."
-	rm -rf .venv
-	if [[ -f .python-version ]]; then
-		local pyenv_version=$(< .python-version)
-		if pyenv versions --bare | grep -qx "${pyenv_version}"; then
-			echo "pyenv) ✅ Using Python ${pyenv_version} (from .python-version)"
-		else
-			echo "pyenv) ❌ Python version ${pyenv_version} is not installed or valid."
-			return 1
-		fi
-		python3 -m venv .venv
-		local venv_dir="${PWD}/.venv"
-		source "${venv_dir}/bin/activate"
-		echo "venv) ✅ Activated virtual environment at ${venv_dir}"
-		echo "Upgrading pip..."
-		pip install --upgrade pip
-
-		if [[ -f pyproject.toml ]]; then
-			echo "Found 'pyproject.toml'. Installing project package..."
-			pip install .
-		elif [[ -f requirements.txt ]]; then
-			echo "Found 'requirements.txt' (no pyproject.toml). Installing dependencies..."
-			pip install -r requirements.txt
-		else
-			echo "No 'pyproject.toml' or 'requirements.txt' found. No dependencies installed."
-		fi
-	else
-		echo "pyenv) ❌ '.python-version' not found in current directory. Please create one."
-		pyenv versions
-		return 1
-	fi
-}
-
-# NVM
-typeset -g PREV_DIR_HAD_NVM_VERSION=0
-typeset -g LAST_NVM_LOGGED=""
-
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
-
-load_nvm_version() {
-	local nvm_dir=$(find_nearest_file ".nvmrc")
-	if [[ -n "${nvm_dir}" ]]; then
-		PREV_DIR_HAD_NVM_VERSION=1
-		local nvmrc_version=$(< "${nvm_dir}/.nvmrc")
-		if nvm ls "${nvmrc_version}" >/dev/null 2>&1; then
-			if [[ "${LAST_NVM_LOGGED}" != "${nvm_dir}" || "$(nvm current)" != "$(nvm version "${nvmrc_version}")" ]]; then
-				nvm use "${nvmrc_version}" >/dev/null 2>&1
-				echo "nvm) ✅ Switched to local Node $(nvm current) (from ${nvm_dir}/.nvmrc)"
-				LAST_NVM_LOGGED="${nvm_dir}"
-			fi
-		else
-			echo "nvm) ❌ Node version ${nvmrc_version} is not installed or valid."
-			PREV_DIR_HAD_NVM_VERSION=0
-			LAST_NVM_LOGGED=""
-		fi
-	elif [[ ${PREV_DIR_HAD_NVM_VERSION} -eq 1 ]]; then
-		nvm use default >/dev/null 2>&1
-		echo "nvm) 🔄 Switched to default Node $(nvm current)"
-		PREV_DIR_HAD_NVM_VERSION=0
-		LAST_NVM_LOGGED=""
-	fi
-}
-
 # SDKMAN
 export SDKMAN_DIR="$HOME/.sdkman"
 [[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
 
 # Load all functions
 autoload -U add-zsh-hook
-
-add-zsh-hook chpwd load_pyenv_version
-add-zsh-hook chpwd load_venv
-add-zsh-hook chpwd load_nvm_version
-
-load_pyenv_version
-load_venv
-load_nvm_version
 
 # Remove all duplicate environmental variables
 typeset -U path
