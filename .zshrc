@@ -41,9 +41,6 @@ alias v="view"
 if [ -d "/run/WSL" ]; then
 	export LANGUAGE=en_US.UTF-8
 	export XCURSOR_SIZE=16
-
-	# Intellij
-	export PATH=$PATH:~/.local/share/JetBrains/Toolbox/apps/intellij-idea-community-edition/bin
 elif [[ $OSTYPE == "darwin"* ]]; then
 	# Linuxify (https://github.com/fabiomaia/linuxify)
 	alias grep="grep --color=always"
