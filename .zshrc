@@ -164,10 +164,14 @@ if command -v fnm >/dev/null 2>&1; then
 	eval "$(fnm env --use-on-cd)"
 fi
 
+# UV
+if [ -f "$HOME/.local/bin/env" ]; then
+    . "$HOME/.local/bin/env"
+fi
+
 # Load all functions
 autoload -U add-zsh-hook
 
 # Remove all duplicate environmental variables
 typeset -U path
 
-. "$HOME/.local/bin/env"
