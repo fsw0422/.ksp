@@ -160,8 +160,10 @@ export SDKMAN_DIR="$HOME/.sdkman"
 [[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
 
 # FNM
-if command -v fnm >/dev/null 2>&1; then
-	eval "$(fnm env --use-on-cd)"
+FNM_PATH="${HOME}/.local/share/fnm"
+if [ -d "$FNM_PATH" ]; then
+	export PATH="$FNM_PATH:$PATH"
+	eval "`fnm env`"
 fi
 
 # UV
