@@ -168,7 +168,7 @@ fi
 
 # UV
 if [ -f "$HOME/.local/bin/env" ]; then
-    . "$HOME/.local/bin/env"
+	. "$HOME/.local/bin/env"
 fi
 
 # Load all functions
