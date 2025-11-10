@@ -155,10 +155,6 @@ gsbrmfp() {
 
 compdef _git_complete gpb grb
 
-# SDKMAN
-export SDKMAN_DIR="$HOME/.sdkman"
-[[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
-
 # FNM
 FNM_PATH="${HOME}/.local/share/fnm"
 if [ -d "$FNM_PATH" ]; then
@@ -176,4 +172,3 @@ autoload -U add-zsh-hook
 
 # Remove all duplicate environmental variables
 typeset -U path
-
