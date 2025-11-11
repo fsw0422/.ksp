@@ -1,4 +1,3 @@
 Host github.com
 	Hostname github.com
-	User fsw022
 	IdentityFile ~/.ssh/github
