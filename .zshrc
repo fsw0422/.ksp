@@ -6,7 +6,7 @@ export TERM="xterm-256color"
 if [[ -z "${TMUX}" && "${TERMINAL_EMULATOR}" != "JetBrains-JediTerm" && "${TERM_PROGRAM}" != "vscode" ]]; then tmux; fi
 
 # Disable Vim in IDEs
-if [[ "$TERMINAL_EMULATOR" == "JetBrains-JediTerm" || "$TERM_PROGRAM" == "vscode" ]]; then
+if [[ "${TERMINAL_EMULATOR}" == "JetBrains-JediTerm" || "${TERM_PROGRAM}" == "vscode" ]]; then
 	view() {
 		echo "Error: vim should be executed in a dedicated terminal." >&2
 		return 1
@@ -41,7 +41,7 @@ alias v="view"
 if [ -d "/run/WSL" ]; then
 	export LANGUAGE=en_US.UTF-8
 	export XCURSOR_SIZE=16
-elif [[ $OSTYPE == "darwin"* ]]; then
+elif [[ ${OSTYPE} == "darwin"* ]]; then
 	# Linuxify (https://github.com/fabiomaia/linuxify)
 	alias grep="grep --color=always"
 	alias ls="ls --color=always"
@@ -52,7 +52,7 @@ fi
 
 # Git
 _git_complete() {
-	if [[ $CURRENT -eq 2 ]]; then
+	if [[ ${CURRENT} -eq 2 ]]; then
 		local -a branches
 		branches=($(git branch --list | sed 's/^[* ]*//'))
 		compadd -a branches
@@ -69,23 +69,23 @@ get_base_branch() {
 		echo "Neither 'master' nor 'main' branch exists."
 		return 1
 	fi
-	echo "$base_branch"
+	echo "${base_branch}"
 }
 
 get_current_branch() {
 	local current_branch
 	current_branch=$(git branch --show-current)
-	if [ -z "$current_branch" ]; then
+	if [ -z "${current_branch}" ]; then
 		echo "Error: Unable to determine the current branch."
 		return 1
 	fi
-	echo "$current_branch"
+	echo "${current_branch}"
 }
 
 gpb() {
 	local base_branch
 	base_branch=$(get_base_branch) || return 1
-	git checkout "$base_branch"
+	git checkout "${base_branch}"
 	git push origin --delete "$1"
 	git branch -D "$1"
 }
@@ -93,25 +93,25 @@ gpb() {
 grb() {
 	local old_branch="$1"
 	local new_branch="$2"
-	git branch -m "$old_branch" "$new_branch"
-	git push origin --delete "$old_branch"
-	git push --set-upstream origin "$new_branch"
-	echo "Branch renamed from '$old_branch' to '$new_branch' successfully."
+	git branch -m "${old_branch}" "${new_branch}"
+	git push origin --delete "${old_branch}"
+	git push --set-upstream origin "${new_branch}"
+	echo "Branch renamed from '${old_branch}' to '${new_branch}' successfully."
 }
 
 gcb() {
 	local base_branch
 	base_branch=$(get_base_branch) || return 1
-	git checkout "$base_branch"
+	git checkout "${base_branch}"
 	git pull
 	git fetch --prune
 	for branch in $(git branch --format "%(refname:short)"); do
-		if [[ $branch == "$base_branch" ]]; then
+		if [[ ${branch} == "${base_branch}" ]]; then
 			continue
 		fi
-		if ! git rev-parse --abbrev-ref --symbolic-full-name "$branch@{upstream}" >/dev/null 2>&1; then
-			echo "Deleting branch $branch"
-			git branch -D "$branch"
+		if ! git rev-parse --abbrev-ref --symbolic-full-name "${branch}@{upstream}" >/dev/null 2>&1; then
+			echo "Deleting branch ${branch}"
+			git branch -D "${branch}"
 		fi
 	done
 }
@@ -120,19 +120,19 @@ gsb() {
 	local base_branch
 	base_branch=$(get_base_branch) || return 1
 	local commit_message="$1"
-	if [ -z "$commit_message" ]; then
+	if [ -z "${commit_message}" ]; then
 		echo "Usage: gsb <commit-message>"
 		return 1
 	fi
 	local current_branch
 	current_branch=$(get_current_branch) || return 1
-	if [ "$current_branch" = "$base_branch" ]; then
+	if [ "${current_branch}" = "${base_branch}" ]; then
 		echo "Only branches that are NOT main/master is allowed to perform soft rebase. Aborting"
 		return 1
 	fi
-	git reset --soft "$(git merge-base "$base_branch" "$current_branch")"
-	git commit -m "$commit_message"
-	echo "Branch '$current_branch' squashed with the commit message: '$commit_message'."
+	git reset --soft "$(git merge-base "${base_branch}" "${current_branch}")"
+	git commit -m "${commit_message}"
+	echo "Branch '${current_branch}' squashed with the commit message: '${commit_message}'."
 }
 
 grm() {
@@ -140,13 +140,13 @@ grm() {
 	base_branch=$(get_base_branch) || return 1
 	local current_branch
 	current_branch=$(get_current_branch) || return 1
-	if [ "$current_branch" = "$base_branch" ]; then
-		echo "Error: You are already on the base branch ('$base_branch'). Rebasing is not allowed."
+	if [ "${current_branch}" = "${base_branch}" ]; then
+		echo "Error: You are already on the base branch ('${base_branch}'). Rebasing is not allowed."
 		return 1
 	fi
-	git fetch origin "$base_branch":"$base_branch"
-	git rebase "$base_branch"
-	echo "Branch '$current_branch' rebased on top of '$base_branch'."
+	git fetch origin "${base_branch}":"${base_branch}"
+	git rebase "${base_branch}"
+	echo "Branch '${current_branch}' rebased on top of '${base_branch}'."
 }
 
 gsbrmfp() {
@@ -157,14 +157,14 @@ compdef _git_complete gpb grb
 
 # FNM
 FNM_PATH="${HOME}/.local/share/fnm"
-if [ -d "$FNM_PATH" ]; then
-	export PATH="$FNM_PATH:$PATH"
+if [ -d "${FNM_PATH}" ]; then
+	export PATH="${FNM_PATH}:${PATH}"
 	eval "`fnm env`"
 fi
 
 # UV
-if [ -f "$HOME/.local/bin/env" ]; then
-	. "$HOME/.local/bin/env"
+if [ -f "${HOME}/.local/bin/env" ]; then
+	. "${HOME}/.local/bin/env"
 fi
 
 # Load all functions
