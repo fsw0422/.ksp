@@ -45,7 +45,6 @@ elif [[ ${OSTYPE} == "darwin"* ]]; then
 	# Linuxify (https://github.com/fabiomaia/linuxify)
 	alias grep="grep --color=always"
 	alias ls="ls --color=always"
-	source ~/.linuxify
 	export CPPFLAGS="-I$(brew --prefix)/include"
 	export LDFLAGS="-L$(brew --prefix)/lib"
 fi

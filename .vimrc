@@ -23,7 +23,6 @@ nmap <f12> :q!<cr>
 nmap <c-h> <c-o><cr>
 nmap <c-l> <c-i><cr>
 nmap <c-x> :e#<cr>
-nmap <c-g>c :!lazygit<cr>
 nmap <c-r>r :CtrlPClearCache<cr> :NERDTreeFocus<cr>R<c-w><c-p>
 nmap <c-r>R :so $MYVIMRC<cr>
 nmap <c-a> :NERDTreeFind<cr>
