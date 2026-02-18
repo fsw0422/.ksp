@@ -27,11 +27,12 @@ fi
 
 # Oh-My-ZSH
 export ZSH="${HOME}/.oh-my-zsh"
+export ZSH_COMPDUMP="$ZSH/cache/.zcompdump-${HOST}-${ZSH_VERSION}"
 ZSH_THEME="powerlevel10k/powerlevel10k"
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 plugins=(docker docker-compose kubectl zsh-autosuggestions)
 source ${ZSH}/oh-my-zsh.sh
-autoload -Uz compinit; compinit
+autoload -Uz compinit; compinit -d "$ZSH_COMPDUMP"
 
 # Alias
 alias del_swp="find . -type f -name '*.swp' -exec rm -f {} \\;"
