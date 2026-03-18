@@ -43,6 +43,9 @@ if [ -d "/run/WSL" ]; then
 	export LANGUAGE=en_US.UTF-8
 	export XCURSOR_SIZE=16
 elif [[ ${OSTYPE} == "darwin"* ]]; then
+	# Use brew packages in shell
+	eval "$(brew shellenv)"
+
 	# Linuxify (https://github.com/fabiomaia/linuxify)
 	alias grep="grep --color=always"
 	alias ls="ls --color=always"
