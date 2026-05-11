@@ -170,8 +170,13 @@ if [ -f "${HOME}/.local/bin/env" ]; then
 	. "${HOME}/.local/bin/env"
 fi
 
+# SDKMAN!
+export SDKMAN_DIR="$HOME/.sdkman"
+[[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
+
 # Load all functions
 autoload -U add-zsh-hook
 
 # Remove all duplicate environmental variables
 typeset -U path
+
