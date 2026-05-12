@@ -3,7 +3,7 @@ export LANG=en_US.UTF-8
 export TERM="xterm-256color"
 
 # Start TMUX
-if [[ -z "${TMUX}" && "${TERMINAL_EMULATOR}" != "JetBrains-JediTerm" && "${TERM_PROGRAM}" != "vscode" ]]; then tmux; fi
+if [[ -z "${TMUX}" && "${TERMINAL_EMULATOR}" != "JetBrains-JediTerm" && "${TERM_PROGRAM}" != "vscode" && -z "${SSH_CONNECTION}" ]]; then tmux; fi
 
 # Disable Vim in IDEs
 if [[ "${TERMINAL_EMULATOR}" == "JetBrains-JediTerm" || "${TERM_PROGRAM}" == "vscode" ]]; then
