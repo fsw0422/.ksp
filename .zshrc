@@ -2,11 +2,15 @@ export LC_ALL=en_US.UTF-8
 export LANG=en_US.UTF-8
 export TERM="xterm-256color"
 
+is_vscode_session() {
+	[[ "${TERM_PROGRAM}" == "vscode" || -n "${VSCODE_IPC_HOOK_CLI}" || -n "${VSCODE_GIT_IPC_HANDLE}" || -n "${VSCODE_INJECTION}" || -n "${VSCODE_SHELL_INTEGRATION}" ]]
+}
+
 # Start TMUX
-if [[ -z "${TMUX}" && "${TERMINAL_EMULATOR}" != "JetBrains-JediTerm" && "${TERM_PROGRAM}" != "vscode" && -z "${SSH_CONNECTION}" ]]; then tmux; fi
+if [[ -z "${TMUX}" && "${TERMINAL_EMULATOR}" != "JetBrains-JediTerm" && -z "${SSH_CONNECTION}" ]] && ! is_vscode_session; then tmux; fi
 
 # Disable Vim in IDEs
-if [[ "${TERMINAL_EMULATOR}" == "JetBrains-JediTerm" || "${TERM_PROGRAM}" == "vscode" ]]; then
+if [[ "${TERMINAL_EMULATOR}" == "JetBrains-JediTerm" ]] || is_vscode_session; then
 	view() {
 		echo "Error: vim should be executed in a dedicated terminal." >&2
 		return 1
@@ -180,3 +184,6 @@ autoload -U add-zsh-hook
 # Remove all duplicate environmental variables
 typeset -U path
 
+
+# opencode
+export PATH=/Users/kev/.opencode/bin:$PATH
