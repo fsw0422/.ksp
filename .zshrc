@@ -175,15 +175,14 @@ if [ -f "${HOME}/.local/bin/env" ]; then
 fi
 
 # SDKMAN!
-export SDKMAN_DIR="$HOME/.sdkman"
-[[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
+export SDKMAN_DIR="${HOME}/.sdkman"
+[[ -s "${SDKMAN_DIR}/bin/sdkman-init.sh" ]] && source "${SDKMAN_DIR}/bin/sdkman-init.sh"
+
+# Opencode
+export PATH="${HOME}/.opencode/bin:${PATH}"
 
 # Load all functions
 autoload -U add-zsh-hook
 
 # Remove all duplicate environmental variables
 typeset -U path
-
-
-# opencode
-export PATH=/Users/kev/.opencode/bin:$PATH
