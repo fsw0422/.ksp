@@ -35,6 +35,7 @@ syntax on
 highlight Pmenusel ctermfg=White ctermbg=Blue cterm=Bold
 
 set autochdir
+set autoread
 set backspace=indent,eol,start
 set background=dark
 set clipboard^=unnamed,unnamedplus
@@ -47,6 +48,7 @@ set mouse=a
 set noerrorbells
 set number
 set ruler
+set updatetime=1000
 set visualbell
 set wildignore+=*.pyc,*.o,*.obj,*.svn,*.swp,*.class,*.hg,*.DS_Store,*.min.*
 
@@ -63,6 +65,11 @@ autocmd BufReadPost *
 """ additional window
 autocmd CursorMovedI * if pumvisible() == 0 | pclose | endif
 autocmd InsertLeave  * if pumvisible() == 0 | pclose | endif
+
+augroup ksp_autoread
+	autocmd!
+	autocmd FocusGained,BufEnter,CursorHold,CursorHoldI * if mode() != 'c' | checktime | endif
+augroup END
 
 """ don't wake up system with blinking cursor:
 let &guicursor = &guicursor . ",a:blinkon0"
