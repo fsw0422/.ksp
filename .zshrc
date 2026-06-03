@@ -6,8 +6,15 @@ is_vscode_session() {
 	[[ "${TERM_PROGRAM}" == "vscode" || -n "${VSCODE_IPC_HOOK_CLI}" || -n "${VSCODE_GIT_IPC_HANDLE}" || -n "${VSCODE_INJECTION}" || -n "${VSCODE_SHELL_INTEGRATION}" ]]
 }
 
+# JetBrains IDEs set INTELLIJ_ENVIRONMENT_READER when they launch a background
+# shell to read environment variables. That shell is not a real terminal session,
+# so skip terminal UI setup like tmux, prompts, and completions during that pass.
+is_intellij_environment_reader() {
+	[[ -n "${INTELLIJ_ENVIRONMENT_READER}" ]]
+}
+
 # Start TMUX
-if [[ -z "${TMUX}" && "${TERMINAL_EMULATOR}" != "JetBrains-JediTerm" && -z "${SSH_CONNECTION}" ]] && ! is_vscode_session; then
+if [[ -z "${TMUX}" && "${TERMINAL_EMULATOR}" != "JetBrains-JediTerm" && -z "${SSH_CONNECTION}" ]] && ! is_vscode_session && ! is_intellij_environment_reader; then
 	tmux_session_name="${TMUX_SESSION_NAME:-main}"
 
 	tmux new-session -d -s "${tmux_session_name}" 2>/dev/null
@@ -36,13 +43,15 @@ if [[ "${TERMINAL_EMULATOR}" == "JetBrains-JediTerm" ]] || is_vscode_session; th
 fi
 
 # Oh-My-ZSH
-export ZSH="${HOME}/.oh-my-zsh"
-export ZSH_COMPDUMP="$ZSH/cache/.zcompdump-${HOST}-${ZSH_VERSION}"
-ZSH_THEME="powerlevel10k/powerlevel10k"
-[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
-plugins=(docker docker-compose kubectl zsh-autosuggestions)
-source ${ZSH}/oh-my-zsh.sh
-autoload -Uz compinit; compinit -d "$ZSH_COMPDUMP"
+if ! is_intellij_environment_reader; then
+	export ZSH="${HOME}/.oh-my-zsh"
+	export ZSH_COMPDUMP="$ZSH/cache/.zcompdump-${HOST}-${ZSH_VERSION}"
+	ZSH_THEME="powerlevel10k/powerlevel10k"
+	[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+	plugins=(docker docker-compose kubectl zsh-autosuggestions)
+	source ${ZSH}/oh-my-zsh.sh
+	autoload -Uz compinit; compinit -d "$ZSH_COMPDUMP"
+fi
 
 # Alias
 alias del_swp="find . -type f -name '*.swp' -exec rm -f {} \\;"
@@ -166,7 +175,9 @@ gsbrmfp() {
 	gsb "$1" && grm && git push --force origin
 }
 
-compdef _git_complete gpb grb
+if ! is_intellij_environment_reader; then
+	compdef _git_complete gpb grb
+fi
 
 # FNM
 FNM_PATH="${HOME}/.local/share/fnm"
