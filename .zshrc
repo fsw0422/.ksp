@@ -13,8 +13,19 @@ is_intellij_environment_reader() {
 	[[ -n "${INTELLIJ_ENVIRONMENT_READER}" ]]
 }
 
+# VS Code sets VSCODE_RESOLVING_ENVIRONMENT when it launches an interactive
+# login shell to resolve environment variables after starting from the Dock or
+# another UI. That shell is not a real terminal session, so skip terminal UI setup.
+is_vscode_environment_reader() {
+	[[ -n "${VSCODE_RESOLVING_ENVIRONMENT}" ]]
+}
+
+is_editor_environment_reader() {
+	is_intellij_environment_reader || is_vscode_environment_reader
+}
+
 # Start TMUX
-if [[ -z "${TMUX}" && "${TERMINAL_EMULATOR}" != "JetBrains-JediTerm" && -z "${SSH_CONNECTION}" ]] && ! is_vscode_session && ! is_intellij_environment_reader; then
+if [[ -z "${TMUX}" && "${TERMINAL_EMULATOR}" != "JetBrains-JediTerm" && -z "${SSH_CONNECTION}" ]] && ! is_vscode_session && ! is_editor_environment_reader; then
 	tmux_session_name="${TMUX_SESSION_NAME:-main}"
 
 	tmux new-session -d -s "${tmux_session_name}" 2>/dev/null
@@ -43,7 +54,7 @@ if [[ "${TERMINAL_EMULATOR}" == "JetBrains-JediTerm" ]] || is_vscode_session; th
 fi
 
 # Oh-My-ZSH
-if ! is_intellij_environment_reader; then
+if ! is_editor_environment_reader; then
 	export ZSH="${HOME}/.oh-my-zsh"
 	export ZSH_COMPDUMP="$ZSH/cache/.zcompdump-${HOST}-${ZSH_VERSION}"
 	ZSH_THEME="powerlevel10k/powerlevel10k"
@@ -175,7 +186,7 @@ gsbrmfp() {
 	gsb "$1" && grm && git push --force origin
 }
 
-if ! is_intellij_environment_reader; then
+if ! is_editor_environment_reader; then
 	compdef _git_complete gpb grb
 fi
 
