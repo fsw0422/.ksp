@@ -7,7 +7,13 @@ is_vscode_session() {
 }
 
 # Start TMUX
-if [[ -z "${TMUX}" && "${TERMINAL_EMULATOR}" != "JetBrains-JediTerm" && -z "${SSH_CONNECTION}" ]] && ! is_vscode_session; then tmux; fi
+if [[ -z "${TMUX}" && "${TERMINAL_EMULATOR}" != "JetBrains-JediTerm" && -z "${SSH_CONNECTION}" ]] && ! is_vscode_session; then
+	tmux_session_name="${TMUX_SESSION_NAME:-main}"
+
+	tmux new-session -d -s "${tmux_session_name}" 2>/dev/null
+	tmux kill-session -a -t "=${tmux_session_name}" 2>/dev/null
+	exec tmux new-session -A -s "${tmux_session_name}"
+fi
 
 # Disable Vim in IDEs
 if [[ "${TERMINAL_EMULATOR}" == "JetBrains-JediTerm" ]] || is_vscode_session; then
