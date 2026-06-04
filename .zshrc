@@ -13,11 +13,11 @@ is_intellij_environment_reader() {
 	[[ -n "${INTELLIJ_ENVIRONMENT_READER}" ]]
 }
 
-# VS Code sets VSCODE_RESOLVING_ENVIRONMENT when it launches an interactive
-# login shell to resolve environment variables after starting from the Dock or
-# another UI. That shell is not a real terminal session, so skip terminal UI setup.
+# VS Code sets VSCODE_RESOLVING_ENVIRONMENT when resolving shell env vars, but
+# real VS Code terminals can inherit it too. Only treat it as the resolver when
+# stdout is not a terminal, then skip terminal UI setup during that background pass.
 is_vscode_environment_reader() {
-	[[ -n "${VSCODE_RESOLVING_ENVIRONMENT}" ]]
+	[[ -n "${VSCODE_RESOLVING_ENVIRONMENT}" && ! -t 1 ]]
 }
 
 is_editor_environment_reader() {
