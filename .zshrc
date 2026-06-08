@@ -33,6 +33,15 @@ if [[ -z "${TMUX}" && "${TERMINAL_EMULATOR}" != "JetBrains-JediTerm" && -z "${SS
 	exec tmux new-session -A -s "${tmux_session_name}"
 fi
 
+# Manual continuum restore
+# Gives chance for Tmux to inject something in-between the Continuum restore and Tmux start session (compared to auto restore from Continuum)
+if [[ -n "${TMUX}" ]] \
+	&& [[ "$(tmux show-environment -g TMUX_AUTO_RESTORED 2>/dev/null)" != TMUX_AUTO_RESTORED=1 ]] \
+	&& [[ -e ~/.local/share/tmux/resurrect/last ]]; then
+	tmux set-environment -g TMUX_AUTO_RESTORED 1
+	tmux run-shell -b ~/.tmux/plugins/tmux-resurrect/scripts/restore.sh
+fi
+
 # Disable Vim in IDEs
 if [[ "${TERMINAL_EMULATOR}" == "JetBrains-JediTerm" ]] || is_vscode_session; then
 	view() {
