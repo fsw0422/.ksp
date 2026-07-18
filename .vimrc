@@ -36,6 +36,9 @@ highlight Pmenusel ctermfg=White ctermbg=Blue cterm=Bold
 
 set autochdir
 set autoread
+set noswapfile
+set undofile
+set undodir=~/.vim/undo//
 set backspace=indent,eol,start
 set background=dark
 set clipboard^=unnamed,unnamedplus
