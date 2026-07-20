@@ -1,32 +1,9 @@
-# 1Password secrets loader — publishes secrets to the tmux global environment.
-#
-# Every "API Credential" item in $OP_SECRETS_VAULT becomes an environment
-# variable, named after the item title (upcased, non-alphanumerics → _):
-#   "Atlassian API Key" → ATLASSIAN_API_KEY
-# No template file and no manual mapping — 1Password is the single source of
-# truth. Adding a secret = create an API Credential item in the vault, then
-# run `refresh-op-secrets`.
-#
-# Values are resolved once by an authenticated pane and published (plus a
-# manifest of names in OP_INJECTED_VARS) to the tmux global environment, so
-# every (re)spawned pane — including tmux-resurrect restored ones — inherits
-# them without re-authenticating against op. (Restore is manual via
-# prefix+C-r, so an authenticated pane publishes first.)
-#
-# Configuration (set before sourcing to override):
-#   OP_SECRETS_VAULT   1Password vault to read from (default Employee)
-
 OP_SECRETS_VAULT=${OP_SECRETS_VAULT:-Employee}
 
-# "<VAR_NAME>\t<item title>" for every API Credential item in the vault.
 _op_secret_rows() {
-	op item list --vault "$OP_SECRETS_VAULT" --categories "API Credential" --format json | jq -r '
-		sort_by(.title)[] |
-		[(.title | ascii_upcase | gsub("[^A-Z0-9]+"; "_") | gsub("^_+|_+$"; "")),
-		 .title] | @tsv'
+	op item list --vault "$OP_SECRETS_VAULT" --categories "API Credential" --format json | jq -r 'sort_by(.title)[] | [(.title | ascii_upcase | gsub("[^A-Z0-9]+"; "_") | gsub("^_+|_+$"; "")), .title] | @tsv'
 }
 
-# Succeeds only when every variable in the manifest is set and non-empty.
 _op_secrets_complete() {
 	[[ -n "$OP_INJECTED_VARS" ]] || return 1
 	local var
@@ -36,10 +13,20 @@ _op_secrets_complete() {
 	return 0
 }
 
-# Discover the vault's API Credential items, resolve them with op, export the
-# results, and publish them (plus the name manifest) to the tmux global env so
-# sibling/restored panes inherit them without calling op themselves. Run after
-# adding an item or rotating a key in 1Password.
+_op_secrets_import() {
+	[[ -n "$TMUX" ]] || return 1
+	local manifest var line
+	manifest=$(tmux show-environment -g OP_INJECTED_VARS 2>/dev/null)
+	manifest=${manifest#OP_INJECTED_VARS=}
+	[[ -n "$manifest" && "$manifest" != -* ]] || return 1
+	for var in ${(s: :)manifest}; do
+		line=$(tmux show-environment -g "$var" 2>/dev/null)
+		[[ "$line" == "$var="* && "$line" != "$var=-"* ]] && export "$var=${line#${var}=}"
+	done
+	export OP_INJECTED_VARS="$manifest"
+	_op_secrets_complete
+}
+
 refresh-op-secrets() {
 	local rows var title template resolved
 	local -a names
@@ -65,36 +52,38 @@ refresh-op-secrets() {
 			tmux set-environment -g "$var" "${(P)var}"
 		done
 		tmux set-environment -g OP_INJECTED_VARS "$OP_INJECTED_VARS"
+
+		# Bump the epoch: open panes re-import at their next prompt (precmd hook).
+		_OP_SECRETS_SEEN_EPOCH=$(date +%s)
+		tmux set-environment -g OP_SECRETS_EPOCH "$_OP_SECRETS_SEEN_EPOCH"
 	fi
 	print -r -- "refresh-op-secrets: loaded ${#names} secrets from vault '$OP_SECRETS_VAULT'."
 }
 
 _load_op_secrets() {
-	# Everything from the manifest is already set and non-empty — nothing to do.
 	_op_secrets_complete && return 0
+	_op_secrets_import && return 0
 
-	# Prefer values already published to the tmux global environment by an earlier,
-	# authenticated pane — no op call (and no auth prompt) needed.
-	if [[ -n "$TMUX" ]]; then
-		local manifest var line
-		manifest=$(tmux show-environment -g OP_INJECTED_VARS 2>/dev/null)
-		manifest=${manifest#OP_INJECTED_VARS=}
-		if [[ -n "$manifest" && "$manifest" != -* ]]; then
-			for var in ${(s: :)manifest}; do
-				line=$(tmux show-environment -g "$var" 2>/dev/null)
-				[[ "$line" == "$var="* && "$line" != "$var=-"* ]] && export "$var=${line#${var}=}"
-			done
-			export OP_INJECTED_VARS="$manifest"
-			_op_secrets_complete && return 0
-		fi
-	fi
-
-	# Still missing or empty variables. Only invoke op where its auth prompt can
-	# actually be satisfied (a real interactive TTY). During an unattended restore
-	# there's no one to approve the prompt, so skip silently and inherit later.
 	[[ -o interactive && -t 0 ]] || return 0
 
 	refresh-op-secrets >/dev/null 2>&1 || return 0
 }
+
+_op_secrets_precmd() {
+	local line epoch
+	line=$(tmux show-environment -g OP_SECRETS_EPOCH 2>/dev/null) || return 0
+	epoch=${line#OP_SECRETS_EPOCH=}
+	[[ -z "$epoch" || "$epoch" == "$_OP_SECRETS_SEEN_EPOCH" ]] && return 0
+	_OP_SECRETS_SEEN_EPOCH=$epoch
+	_op_secrets_import
+	return 0
+}
+
 _load_op_secrets
 unset -f _load_op_secrets
+if [[ -n "$TMUX" && -o interactive ]]; then
+	_OP_SECRETS_SEEN_EPOCH=$(tmux show-environment -g OP_SECRETS_EPOCH 2>/dev/null)
+	_OP_SECRETS_SEEN_EPOCH=${_OP_SECRETS_SEEN_EPOCH#OP_SECRETS_EPOCH=}
+	autoload -Uz add-zsh-hook
+	add-zsh-hook precmd _op_secrets_precmd
+fi
