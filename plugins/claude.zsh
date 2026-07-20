@@ -1,16 +1,3 @@
-# Claude Code launcher (always --permission-mode auto).
-#
-# Every interactive session carries a session ID in its argv, so the command
-# tmux-resurrect saves and replays after a reboot resumes the same conversation
-# instead of starting a fresh one.
-#
-#   claude                     new session under a minted ID (restart-proof)
-#   claude -n <name>           named session: <name> maps to a fixed ID per
-#                              directory, created once, resumed ever after
-#   claude --session-id <id>   what a resurrect replay looks like: resumes
-#                              <id> if it exists in this directory
-#   everything else            passed through untouched (-r, -c, -p, ...)
-
 unalias claude 2>/dev/null
 claude() {
 	# Named session: map <name> to a fixed session ID, bootstrapped on first use.
@@ -32,6 +19,7 @@ claude() {
 		return
 	fi
 
+	# Add `permission-mode` params
 	local -a args=("$@")
 	(( ${args[(I)--permission-mode]} )) || args=(--permission-mode auto "${args[@]}")
 
