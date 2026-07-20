@@ -223,3 +223,6 @@ autoload -U add-zsh-hook
 
 # Remove all duplicate environmental variables
 typeset -U path
+
+# Load any plugins that are enabled
+[[ -r ~/.ksp/load-plugins.zsh ]] && source ~/.ksp/load-plugins.zsh
