@@ -13,6 +13,16 @@ claude() {
 		return
 	fi
 
+	# Resolve it to a concrete `-r <id>`
+	local ci=${args[(I)-c]}; (( ci )) || ci=${args[(I)--continue]}
+	if (( ci )) && ! (( ${args[(I)-p]} + ${args[(I)--print]} )); then
+		local -a sess=( "$HOME/.claude/projects/${PWD//[\/.]/-}"/*.jsonl(N.om) )
+		if (( ${#sess} )); then
+			args[ci]=-r
+			args[ci+1,ci]=("${sess[1]:t:r}")
+		fi
+	fi
+
 	# Plain interactive launch: mint a session ID so this pane's command line is resumable.
 	# Skip resumes, one-shots, and subcommands.
 	local a skip=0
