@@ -1,25 +1,5 @@
 unalias claude 2>/dev/null
 claude() {
-	# Named session: map <name> to a fixed session ID. The first run creates the session interactively (headless -p bootstraps never show in the --resume # picker); later runs resume it.
-	# A map entry without a transcript means the first run was quit before any message - create again with the same ID.
-	if [[ $1 == -n && -n $2 ]]; then
-		local name=$2 map="$HOME/.claude/named-sessions$PWD/$2" id
-		shift 2
-		if [[ -r $map ]]; then
-			id=$(<"$map")
-		else
-			id=$(uuidgen | tr '[:upper:]' '[:lower:]')
-			mkdir -p "${map:h}"
-			print -r -- "$id" >"$map"
-		fi
-		if [[ -s "$HOME/.claude/projects/${PWD//[\/.]/-}/$id.jsonl" ]]; then
-			command claude --permission-mode auto -r "$id" "$@"
-		else
-			command claude --permission-mode auto --session-id "$id" -n "$name" "$@"
-		fi
-		return
-	fi
-
 	# Add `permission-mode` params
 	local -a args=("$@")
 	(( ${args[(I)--permission-mode]} )) || args=(--permission-mode auto "${args[@]}")
