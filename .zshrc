@@ -24,6 +24,11 @@ is_editor_environment_reader() {
 	is_intellij_environment_reader || is_vscode_environment_reader
 }
 
+# Load any plugins that are enabled. Must happen before the tmux block below:
+# its exec replaces this shell, so anything later in this file never runs in
+# the terminal's initial shell (op-secrets' 1Password waiter must fire here).
+[[ -r ~/.ksp/load-plugins.zsh ]] && source ~/.ksp/load-plugins.zsh
+
 # Start TMUX
 if [[ -z "${TMUX}" && "${TERMINAL_EMULATOR}" != "JetBrains-JediTerm" && -z "${SSH_CONNECTION}" ]] && ! is_vscode_session && ! is_editor_environment_reader; then
 	tmux_session_name="${TMUX_SESSION_NAME:-main}"
@@ -224,5 +229,3 @@ autoload -U add-zsh-hook
 # Remove all duplicate environmental variables
 typeset -U path
 
-# Load any plugins that are enabled
-[[ -r ~/.ksp/load-plugins.zsh ]] && source ~/.ksp/load-plugins.zsh
