@@ -134,7 +134,7 @@ _op_secrets_waiter() {
 	{
 		local delay i
 		_op_secrets_launch_1password
-		for delay in ${(s: :)${OP_SECRETS_WAITER_DELAYS:-0 15 45 120}}; do
+		for delay in ${(s: :)${OP_SECRETS_WAITER_DELAYS:-0 5 10 20 40}}; do
 			sleep "$delay"
 			if refresh-op-secrets >/dev/null 2>&1; then
 				_op_secrets_notify "Secrets loaded into environment"
