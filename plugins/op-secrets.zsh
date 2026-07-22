@@ -29,7 +29,6 @@ _op_secrets_rows() {
 	print -r -- "$rows"
 }
 
-# Owner-only and written via rename so concurrent shells never read a torn file.
 _op_secrets_write_cache() {
 	local tmp="$_OP_SECRETS_ROWS_CACHE.$$"
 	mkdir -p "${_OP_SECRETS_ROWS_CACHE:h}"
@@ -39,9 +38,6 @@ _op_secrets_write_cache() {
 	mv -f -- "$tmp" "$_OP_SECRETS_ROWS_CACHE"
 }
 
-# Only accept variable names the row mapper could have produced (uppercase
-# alnum/underscore) and never shell-critical names: item titles come from the
-# vault, and a title like "path" must not clobber PATH.
 _op_secrets_var_ok() {
 	[[ $1 =~ '^[A-Z0-9][A-Z0-9_]*$' ]] || return 1
 	case $1 in
@@ -62,13 +58,6 @@ _op_secrets_launch_1password() {
 	return 0
 }
 
-# Read every secret for the rows on stdin and print them framed by $1 (a
-# per-run random sentinel a value cannot forge): "SEP VAR" then the raw value
-# lines, ending with "SEP ." only after every read succeeded — a partial
-# fetch prints nothing. Values are plain data end to end: never sourced or
-# evaluated, so quotes or $(…) inside a credential cannot execute. The first
-# read runs alone to absorb the single unlock prompt; the rest run in
-# parallel through process substitution (pipes, not files).
 _op_secrets_read_all() {
 	local sep=$1 var title value fd first=1 i ok=1
 	local -a names fds fvars
@@ -116,9 +105,6 @@ _op_secrets_read_all() {
 	print -r -- "$sep ."
 }
 
-# Background half of the async startup fetch: keep trying until the vault
-# unlocks or the deadline passes. A read failure with a cache present usually
-# means a renamed/deleted item — drop the cache so the retry lists live.
 _op_secrets_emit() {
 	local sep=$1 deadline=$2 rows
 	_op_secrets_launch_1password
@@ -132,9 +118,6 @@ _op_secrets_emit() {
 	done
 }
 
-# Parse sentinel-framed secrets from stdin and export them. Nothing is
-# exported unless the end marker arrived, so a truncated fetch leaves the
-# environment untouched. Sets _OP_SECRETS_SUMMARY for the caller.
 _op_secrets_apply() {
 	local sep=$1 line cur="" complete=0 first_line=1
 	local -a names
@@ -195,8 +178,6 @@ _op_secrets_apply() {
 	return 0
 }
 
-# One-shot preexec hook: block until the background fetch finishes so the
-# first command never runs without the secrets, then export and unhook.
 _op_secrets_drain() {
 	[[ -n "$_OP_SECRETS_FD" ]] || return 0
 	local fd=$_OP_SECRETS_FD sep=$_OP_SECRETS_SEP
@@ -234,8 +215,6 @@ refresh-op-secrets() {
 	print -r -- "refresh-op-secrets: $_OP_SECRETS_SUMMARY."
 }
 
-# Load only where secrets belong: tmux panes and IDE terminals. Skip VS
-# Code's headless env-probe shell so opening the app never prompts.
 _op_secrets_wanted_env() {
 	[[ -n "$TMUX" ]] && return 0
 	[[ "$TERM_PROGRAM" == vscode && -z "$VSCODE_RESOLVING_ENVIRONMENT" ]] && return 0
