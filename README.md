@@ -33,8 +33,18 @@ ID — tmux-resurrect replays it after a reboot and the conversation resumes
 instead of starting fresh.
 
 - `claude` — new session under a minted ID (restart-proof automatically)
-- `claude -n <name>` — named session pinned per directory; rerunning resumes it
 - `-r`, `-c`, `-p`, subcommands — pass through untouched
+
+Always install the [`claude-history`](https://crates.io/crates/claude-history)
+Rust tool on new machines:
+
+```zsh
+cargo install claude-history
+```
+
+For now it's a complete replacement for `claude -r` / `claude --resume`: more
+versatile session browsing, and it shows headless (`-p`) sessions that the
+built-in resume picker hides.
 
 ### plugins/op-secrets.zsh
 
