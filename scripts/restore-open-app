@@ -1,0 +1,27 @@
+#!/bin/sh
+
+set -eu
+
+snapshot="${HOME}/.local/share/tmux/resurrect/last"
+target="${TMUX_PANE:?}"
+session="$(tmux display-message -p -t "${target}" '#{session_name}')"
+window="$(tmux display-message -p -t "${target}" '#{window_index}')"
+pane="$(tmux display-message -p -t "${target}" '#{pane_index}')"
+
+app_name="$(
+	/usr/bin/awk -F '	' \
+		-v session="${session}" \
+		-v window="${window}" \
+		-v pane="${pane}" '
+		$1 == "pane" && $2 == session && $3 == window && $6 == pane {
+			command = $11
+			sub(/^:/, "", command)
+			sub(/^open[[:space:]]+-Wna[[:space:]]+/, "", command)
+			print command
+			exit
+		}
+	' "${snapshot}"
+)"
+
+test -n "${app_name}"
+exec /usr/bin/open -Wna "${app_name}"
