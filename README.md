@@ -19,22 +19,11 @@ switches you want, and put machine-local exports in `~/.zlogin`:
 ```zsh
 # ~/.zprofile
 KSP_PLUGIN_OP_SECRETS=1   # 1Password → tmux-cached secrets loader
-KSP_PLUGIN_CLAUDE=1       # Claude Code launcher (restart-proof sessions)
 OP_SECRETS_VAULT=Employee # vault op-secrets reads from
 ```
 
 A switch that is unset or `0` skips that plugin. Details and all config knobs
 are documented in each plugin's header comment.
-
-### plugins/claude.zsh
-
-Wrapper around Claude Code so every session's command line carries a session
-ID — tmux-resurrect replays it after a reboot and the conversation resumes
-instead of starting fresh.
-
-- `claude` — new session under a minted ID (restart-proof automatically)
-- `claude -n <name>` — named session pinned per directory; rerunning resumes it
-- `-r`, `-c`, `-p`, subcommands — pass through untouched
 
 ### plugins/op-secrets.zsh
 
