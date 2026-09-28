@@ -19,6 +19,7 @@ switches you want, and put machine-local exports in `~/.zlogin`:
 ```zsh
 # ~/.zprofile
 KSP_PLUGIN_OP_SECRETS=1   # 1Password → tmux-cached secrets loader
+KSP_PLUGIN_AI_PURGE=1     # purge-ai-sessions: wipe Claude Code / Codex session data
 OP_SECRETS_VAULT=Employee # vault op-secrets reads from
 ```
 
@@ -40,3 +41,15 @@ the tmux global environment; panes inherit without re-authenticating.
   Long-running processes keep the env they started with; restart them if they
   cache the value.
 - Item titles are load-bearing: renaming an item renames the env var.
+
+### plugins/ai-purge.zsh
+
+`purge-ai-sessions` wipes Claude Code and Codex session data: transcripts,
+tool outputs, logs, caches, prompt history, and the session details kept in
+`~/.claude.json` and `~/.codex/config.toml`. Settings, logins, skills, plugins,
+and memory stay.
+
+- `purge-ai-sessions` — dry run: lists what would go, with sizes.
+- `purge-ai-sessions --yes` — deletes permanently. Refuses while Claude Code,
+  `claude agents`, the Claude app, or Codex is running.
+- `--claude-only` / `--codex-only` — limit to one tool.
