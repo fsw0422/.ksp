@@ -69,6 +69,15 @@ open-local-url-in-target-preference = "in-app-browser"
 worktree-keep-count = 1
 sidebar-show-projects-in-recents = false
 
+[projects."/Users/ksp/projects"]
+trust_level = "trusted"
+
+[projects."/Users/ksp/.ksp"]
+trust_level = "trusted"
+
+[projects."/Users/ksp/jobhunt"]
+trust_level = "trusted"
+
 [apps.connector_openai_chatgpt_pets]
 enabled = false
 

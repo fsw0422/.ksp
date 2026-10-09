@@ -1,11 +1,12 @@
 #!/bin/sh
 # Git clean filter for codex/config.toml (see .gitattributes): reads the live config on
 # stdin and prints only the portable personal settings. It drops what Codex writes for
-# this machine: project trust entries, app-managed paths and services, and marketplace
-# update stamps. Output must not change when run on its own output.
+# this machine: project trust entries other than ~/projects, ~/.ksp, and ~/jobhunt,
+# app-managed paths and services, and marketplace update stamps. Output must not change
+# when run on its own output.
 exec awk '
 function machine_only(name) {
-	return name ~ /^projects\./ ||
+	return (name ~ /^projects\./ && name !~ /^projects\."[^"]*\/(projects|\.ksp|jobhunt)"$/) ||
 		name ~ /^mcp_servers\.(node_repl|computer-use)(\.|$)/ ||
 		name ~ /^marketplaces\.openai-(bundled|primary-runtime)$/ ||
 		name ~ /^shell_environment_policy(\.|$)/

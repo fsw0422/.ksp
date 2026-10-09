@@ -68,7 +68,9 @@ extras live outside this repo, in `~/projects` (`.claude/settings.json`,
 | `~/.codex/config.toml` | `codex/config.toml` |
 
 Codex also writes machine-only entries into its config: project trust,
-app-managed paths, and marketplace update stamps. The git clean filter in
+app-managed paths, and marketplace update stamps. Trust for `~/projects`,
+`~/.ksp`, and `~/jobhunt` is kept, so a new machine loads the work layer in
+`~/projects` without asking; other trust entries, such as Codex chat folders, stay local. The git clean filter in
 `codex/clean-config.sh` strips them when the file is staged, so commits and
 `git diff` hold only portable settings. When Codex adds such an entry, `git status`
 may still list the file as modified, because the file size changed; `git add
