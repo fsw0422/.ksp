@@ -92,6 +92,8 @@ _ai_purge_scrub_codex_toml() {
 	python3 - "$HOME/.codex/config.toml" "$1" "$HOME/Documents/Codex/" <<'EOF'
 import os, re, sys
 path, apply, prefix = sys.argv[1], sys.argv[2] == "1", sys.argv[3]
+# The config is usually a link into ~/.ksp; write the target so the link survives.
+path = os.path.realpath(path)
 if not os.path.exists(path):
     print(0); sys.exit(0)
 with open(path) as f:

@@ -1,0 +1,79 @@
+model_context_window = 1000000
+mcp_oauth_callback_port = 3118
+
+service_tier = "priority"
+model = "gpt-6-astra"
+model_reasoning_effort = "xhigh"
+
+[agents]
+max_concurrent_threads_per_session = 25
+
+[marketplaces.claude-plugins-official]
+source_type = "git"
+source = "https://github.com/anthropics/claude-plugins-official.git"
+
+[marketplaces.fsw0422]
+source_type = "git"
+source = "https://github.com/fsw0422/skills.git"
+
+[plugins."visualize@openai-bundled"]
+enabled = true
+
+[plugins."documents@openai-primary-runtime"]
+enabled = true
+
+[plugins."pdf@openai-primary-runtime"]
+enabled = true
+
+[plugins."spreadsheets@openai-primary-runtime"]
+enabled = true
+
+[plugins."presentations@openai-primary-runtime"]
+enabled = true
+
+[plugins."template-creator@openai-primary-runtime"]
+enabled = true
+
+[plugins."browser@openai-bundled"]
+enabled = true
+
+[plugins."chrome@openai-bundled"]
+enabled = false
+
+[plugins."codex-app-tools@openai-bundled"]
+enabled = true
+
+[plugins."computer-use@openai-bundled"]
+enabled = true
+
+[plugins."unified-computer-use@openai-bundled"]
+enabled = true
+
+[plugins."code-review@openai-bundled"]
+enabled = true
+
+[features]
+js_repl = false
+
+[mcp_servers.openaiDeveloperDocs]
+url = "https://developers.openai.com/mcp"
+
+[desktop]
+conversationDetailMode = "STEPS_COMMANDS"
+ambient-suggestions-enabled = false
+followUpQueueMode = "queue"
+show-context-window-usage = true
+preventSleepWhileRunning = true
+open-link-in-target-preference = "in-app-browser"
+open-local-url-in-target-preference = "in-app-browser"
+worktree-keep-count = 1
+sidebar-show-projects-in-recents = false
+
+[apps.connector_openai_chatgpt_pets]
+enabled = false
+
+[apps.connector_20205bf7d4e99a89d7154bb849718324]
+enabled = false
+
+[apps.connector_openai_codex_document_control]
+enabled = false

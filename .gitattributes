@@ -1,0 +1,2 @@
+# Commit only the portable part of the live Codex config; see codex/clean-config.sh.
+codex/config.toml filter=codex-config

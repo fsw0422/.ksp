@@ -53,3 +53,29 @@ and memory stay.
 - `purge-ai-sessions --yes` — deletes permanently. Refuses while Claude Code,
   `claude agents`, the Claude app, or Codex is running.
 - `--claude-only` / `--codex-only` — limit to one tool.
+
+## AI agent configs
+
+Personal base config for Claude Code and Codex, shared by every machine. Work
+extras live outside this repo, in `~/projects` (`.claude/settings.json`,
+`.mcp.json`, `.codex/config.toml`, `AGENTS.md`), and layer on top of these.
+
+| Live file | Links to |
+|---|---|
+| `~/.claude/settings.json` | `claude/settings.json` |
+| `~/.claude/CLAUDE.md` | `AGENTS.md` |
+| `~/.codex/AGENTS.md` | `AGENTS.md` |
+| `~/.codex/config.toml` | `codex/config.toml` |
+
+Codex also writes machine-only entries into its config: project trust,
+app-managed paths, and marketplace update stamps. The git clean filter in
+`codex/clean-config.sh` strips them when the file is staged, so commits and
+`git diff` hold only portable settings. When Codex adds such an entry, `git status`
+may still list the file as modified, because the file size changed; `git add
+codex/config.toml` clears it without adding anything. Git does not clone filter
+settings, so every clone needs them once (ksp-setup does this):
+
+```zsh
+git -C ~/.ksp config filter.codex-config.clean "sh codex/clean-config.sh"
+git -C ~/.ksp config filter.codex-config.required true
+```

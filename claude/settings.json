@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "defaultMode": "default",
+    "deny": [
+      "mcp__claude-in-chrome"
+    ]
+  },
+  "model": "opus[1m]",
+  "enabledPlugins": {
+    "skills@fsw0422": true,
+    "playwright-chromium-browser@fsw0422": true
+  },
+  "extraKnownMarketplaces": {
+    "fsw0422": {
+      "source": {
+        "source": "github",
+        "repo": "fsw0422/skills"
+      }
+    }
+  },
+  "tui": "fullscreen",
+  "preferredNotifChannel": "iterm2",
+  "autoMemoryEnabled": false,
+  "autoDreamEnabled": false
+}
