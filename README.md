@@ -65,19 +65,16 @@ extras live outside this repo, in `~/projects` (`.claude/settings.json`,
 | `~/.claude/settings.json` | `claude/settings.json` |
 | `~/.claude/CLAUDE.md` | `AGENTS.md` |
 | `~/.codex/AGENTS.md` | `AGENTS.md` |
-| `~/.codex/config.toml` | `codex/config.toml` |
+| `/etc/codex/config.toml` | `codex/config.toml` |
 
-Codex also writes machine-only entries into its config: project trust,
-app-managed paths, and marketplace update stamps. Trust for `~/projects`,
-`~/.ksp`, and `~/jobhunt` is kept, so a new machine loads the work layer in
-`~/projects` without asking; other trust entries, such as Codex chat folders, stay local. The git clean filter in
-`codex/clean-config.sh` strips them when the file is staged, so commits and
-`git diff` hold only portable settings. When Codex adds such an entry, `git status`
-may still list the file as modified, because the file size changed; `git add
-codex/config.toml` clears it without adding anything. Git does not clone filter
-settings, so every clone needs them once (ksp-setup does this):
+Codex reads `/etc/codex/config.toml` as its system layer, below the user file
+`~/.codex/config.toml`. The user file stays a plain local file for what Codex
+writes on its own: trust for new folders, app-managed paths, and update stamps.
+Nothing writes to `codex/config.toml`, so it stays as clean as
+`claude/settings.json`, the counterpart of `~/.claude.json` holding Claude's
+machine state. A setting changed in the Codex app lands in the user file and
+overrides the base; copy it into `codex/config.toml` to keep it everywhere.
 
-```zsh
-git -C ~/.ksp config filter.codex-config.clean "sh codex/clean-config.sh"
-git -C ~/.ksp config filter.codex-config.required true
-```
+The base trusts `~/projects`, `~/.ksp`, and `~/jobhunt`, so a new machine loads
+the work layer in `~/projects` without asking. Linking into `/etc` needs `sudo`
+once (ksp-setup does this).
