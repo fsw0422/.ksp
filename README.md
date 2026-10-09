@@ -75,6 +75,6 @@ Nothing writes to `codex/config.toml`, so it stays as clean as
 machine state. A setting changed in the Codex app lands in the user file and
 overrides the base; copy it into `codex/config.toml` to keep it everywhere.
 
-The base trusts `~/projects`, `~/.ksp`, and `~/jobhunt`, so a new machine loads
-the work layer in `~/projects` without asking. Linking into `/etc` needs `sudo`
-once (ksp-setup does this).
+Project trust is machine state too, so it lives only in the user file. On a new
+machine, trust `~/projects` once when Codex asks, or the work layer there does not
+load. Linking into `/etc` needs `sudo` once (ksp-setup does this).
