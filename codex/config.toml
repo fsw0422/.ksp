@@ -12,10 +12,6 @@ max_concurrent_threads_per_session = 25
 source_type = "git"
 source = "https://github.com/anthropics/claude-plugins-official.git"
 
-[marketplaces.fsw0422]
-source_type = "git"
-source = "https://github.com/fsw0422/skills.git"
-
 [plugins."visualize@openai-bundled"]
 enabled = true
 
