@@ -1,11 +1,11 @@
 ---
 name: browser-pilot
-description: Required rules for any browser work on the user's behalf, whichever browser tool is in use - which browser to use (the app's built-in browser, or the playwright-chromium-browser plugin when there is none, never the user's own Chrome), tab hygiene, the allowed browser actions, page loading, sign-in handoff, and reliable form filling and read-back. Use before opening, reading, or acting on any website with a browser tool, including when another skill directs browser work. Not for writing browser automation code or end-to-end tests.
+description: Required rules for any browser work on the user's behalf, whichever browser tool is in use - which browser to use (the app's built-in browser, or the playwright-chromium-browser MCP server when there is none, never the user's own Chrome), tab hygiene, the allowed browser actions, page loading, sign-in handoff, and reliable form filling and read-back. Use before opening, reading, or acting on any website with a browser tool, including when another skill directs browser work. Not for writing browser automation code or end-to-end tests.
 ---
 
 # Browser Pilot
 
-Operate websites the way a careful person would, with the browser's own tools, without disturbing the user's tabs, and without writing code. These rules apply to every browser tool; only the choice of browser and the plugin details in [references/playwright.md](references/playwright.md) depend on which one is in use.
+Operate websites the way a careful person would, with the browser's own tools, without disturbing the user's tabs, and without writing code. These rules apply to every browser tool; only the choice of browser and the MCP server details in [references/playwright.md](references/playwright.md) depend on which one is in use.
 
 A calling skill decides what to do on a site and which actions need the user's approval. This skill decides how to drive the browser. When the two conflict, the calling skill's approval and data rules win.
 
@@ -14,8 +14,8 @@ flowchart TD
     A[Browser task] --> B{App has a built-in browser?}
     B -- Yes --> C[Use the built-in browser]
     B -- No, CLI --> D{playwright-chromium-browser tools available?}
-    D -- Yes --> E[Use the playwright-chromium-browser plugin]
-    D -- No --> X[Stop: ask the user to install or enable the plugin]
+    D -- Yes --> E[Use the playwright-chromium-browser MCP server]
+    D -- No --> X[Stop: ask the user to configure or enable the server]
     C --> F{User asked about the focused tab?}
     E --> F
     F -- Yes --> G[Read the focused tab; do not navigate it away]
@@ -28,7 +28,7 @@ flowchart TD
 ## Choose the browser
 
 - **App with a built-in browser**, such as Claude Code Desktop or the Codex app: use only the built-in browser. If a site or step cannot be completed there, stop and tell the user what failed; do not switch to another browser.
-- **No built-in browser**, such as a CLI session: use the `playwright-chromium-browser` plugin, as [references/playwright.md](references/playwright.md) describes. If its tools are missing, stop and ask the user to install or enable it.
+- **No built-in browser**, such as a CLI session: use the `playwright-chromium-browser` MCP server, as [references/playwright.md](references/playwright.md) describes. If its tools are missing, stop and ask the user to configure or enable it.
 - **Never the user's own Chrome:** do not use Claude in Chrome (`mcp__claude-in-chrome__*`), the Codex Chrome plugin, any other extension-based browser tool, or any other Playwright server, even when their tools are available. They act with the user's real logins, cookies, and tabs.
 
 Say which browser you use and why before the first action.

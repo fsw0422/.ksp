@@ -1,45 +1,64 @@
 # Agent skills
 
-Personal agent skills maintained as ordinary Git source, packaged as the `skills` plugin in the `fsw0422` marketplace. Claude Code and Codex both install it from `.claude-plugin/`. The marketplace also has a separate `playwright-chromium-browser` plugin for CLI browsing; see below.
+Personal agent skills maintained as ordinary Git source. Clone this repo to
+`~/agent-skills` and link the skill folders into Claude Code and Codex. Both tools
+read the same files, independent of which tool was installed first. The
+repo also includes the Playwright Chromium MCP configuration for CLI browsing;
+setup registers it directly in each selected tool.
 
 ## Install
 
-Claude Code:
+For a new machine, use [ksp-setup](https://github.com/fsw0422/ksp-setup) and choose
+`claude`, `codex`, or `both` when `install.sh` asks which AI tool configs to
+install. It links the shared `.ksp` settings, clones this repository to
+`~/agent-skills`, and creates skill links for the selected tools:
+
+- Claude Code: `~/.claude/skills/<name>`
+- Codex: `~/.agents/skills/<name>`
+
+To rerun just this setup from your `ksp-setup` checkout:
 
 ```sh
-claude plugin marketplace add fsw0422/skills
-claude plugin install skills@fsw0422 --scope user
+bash setup-agent-skills.sh both
 ```
 
-Codex (installs are always per user):
+Use `claude` or `codex` instead of `both` to link just that tool. Installing the
+other tool later only adds its links to the same checkout. `link-only` links
+both tools without fetching or changing MCP registrations.
 
-```sh
-codex plugin marketplace add fsw0422/skills
-codex plugin add skills@fsw0422
-```
+The helper needs Git and `jq`. It reads the skill list from
+`.claude-plugin/plugin.json`, creates missing links, and migrates links made by
+the earlier Claude-checkout/standalone-clone setup. Unrelated files and links
+are preserved. The selected tool's CLI must be on PATH for MCP registration;
+the browser server also needs Node.js and `npx`.
 
-If `codex` is not on your `PATH`, the ChatGPT desktop app bundles it at `/Applications/ChatGPT.app/Contents/Resources/codex`.
-
-Skills are namespaced by the plugin, e.g. `skills:linkedin-job-pilot`.
+The old `skills@fsw0422` and `playwright-chromium-browser@fsw0422` Claude plugins
+are disabled to prevent duplicate skills and servers. The shared `.ksp` settings
+also keep them disabled and no longer declare the fsw0422 marketplace. If you
+installed these plugins in Codex, disable those copies as well. Restart the tools after
+changing skill sources. `restore-session` restores Claude Code conversations,
+even when invoked from Codex.
 
 ### Browsers
 
-browser-pilot governs every browser task, and the global instructions tell both tools to load it before any browser tool. The Claude Code Desktop and Codex apps use only their built-in browser. Sessions without one, such as a CLI, use the separate `playwright-chromium-browser` plugin. Your own Chrome is never used: the Claude Code user settings deny Claude in Chrome (`mcp__claude-in-chrome`), and the Codex config turns off the bundled Chrome plugin with `enabled = false` under `[plugins."chrome@openai-bundled"]`.
+browser-pilot governs every browser task, and the global instructions tell both tools to load it before any browser tool. The Claude Code Desktop and Codex apps use only their built-in browser. Sessions without one, such as a CLI, use the directly registered `playwright-chromium-browser` MCP server. Your own Chrome is never used: the Claude Code user settings deny Claude in Chrome (`mcp__claude-in-chrome`), and the Codex config turns off the bundled Chrome plugin with `enabled = false` under `[plugins."chrome@openai-bundled"]`.
 
-The plugin runs Playwright's Chromium (Chrome for Testing), isolated from your own Chrome, with a persistent sign-in profile at `~/.playwright-chromium-browser/profile` and browser output in `~/.playwright-chromium-browser/output`. Never commit either folder; they hold login cookies and page contents.
+Setup reads `playwright-chromium-browser/.mcp.json`, resolves `${HOME}`, and saves
+the server through `claude mcp add-json --scope user` and/or `codex mcp add`.
+It preserves Playwright's Chromium (Chrome for Testing), isolated from your own
+Chrome, with a persistent profile at `~/.playwright-chromium-browser/profile` and
+output in `~/.playwright-chromium-browser/output`. Never commit either folder;
+they hold login cookies and page contents. No marketplace install is needed.
+
+If the browser binary is missing on a new machine, install it once:
 
 ```sh
-claude plugin install playwright-chromium-browser@fsw0422 --scope user
 npx -y @playwright/mcp@latest install-browser chrome-for-testing
 ```
 
-The second command downloads the browser once per machine (about 100 MB); repeat it if Playwright later reports the browser missing after an update.
-
-If you previously ran the old `install.sh`, remove its symlinks so the skill does not load twice:
-
-```sh
-rm ~/.agents/skills/linkedin-job-pilot
-```
+This downloads the browser (about 100 MB); repeat it if Playwright reports the
+browser missing after an update. Rerun setup if the repo's MCP configuration
+changes, since each tool stores a copy of those options.
 
 ## Global instructions and settings
 
@@ -47,37 +66,36 @@ The user-level instructions (`AGENTS.md`), Claude Code settings, and Codex confi
 
 ## Update
 
-Every pushed commit is a new plugin version; there is no `version` field to bump.
-
-Claude Code (restart afterwards):
-
-```sh
-claude plugin marketplace update fsw0422
-claude plugin update skills@fsw0422
-```
-
-Or enable auto-update for the `fsw0422` marketplace in `/plugin`.
-
-Codex:
+Rerun the setup helper to pull `main` with `--ff-only` and link newly added skills.
+To update existing skill files without rerunning setup:
 
 ```sh
-codex plugin marketplace upgrade fsw0422
+git -C ~/agent-skills pull --ff-only
 ```
+
+No plugin version bump is needed. This checkout has no automatic update trigger;
+opening Claude or Codex does not pull it. Skills and browser configuration now
+come from this checkout rather than marketplace updates.
 
 ## Add a skill
 
-Create `<name>/SKILL.md` at the repository root and add `"./<name>"` to the `skills` list in `.claude-plugin/plugin.json`. Both tools load only the listed directories. Optional Codex UI metadata goes in `<name>/agents/openai.yaml`.
+Create `<name>/SKILL.md` at the repository root and add `"./<name>"` to the `skills`
+list in `.claude-plugin/plugin.json`. Rerun `bash setup-agent-skills.sh both`
+from `ksp-setup` to fetch the change and create the new links, then restart the
+tools. Existing skill edits need no new links. The helper does not remove links
+for deleted skills. Optional Codex UI metadata goes
+in `<name>/agents/openai.yaml`.
 
 ## Develop
 
 Load the working copy for one Claude Code session without publishing:
 
 ```sh
-claude --plugin-dir ~/projects/skills
+claude --plugin-dir ~/agent-skills
 ```
 
 Validate the manifests before pushing:
 
 ```sh
-claude plugin validate ~/projects/skills
+claude plugin validate ~/agent-skills
 ```
