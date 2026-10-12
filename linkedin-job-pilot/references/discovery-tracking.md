@@ -41,7 +41,7 @@ Use exactly these eight columns and this order:
 | Summary | One plain line of at most 320 characters, without line breaks or Markdown: what the company does; its revenue, or `revenue not public`, plus funding or ownership; the role's location and work mode; the main fit reason; and the biggest gap or red flag for this role. Use only facts found in research. |
 | Salary Range | Optional. A numeric pay range that the employer itself published for this role and its location, such as `€90K–€160K base + equity`, or a figure the user gives. Leave it blank when the posting has no number, when the only figure is an estimate (Glassdoor, Levels.fyi, Kununu, XING, aggregators, recruiters, or anecdotes), or when it covers another country. Never estimate or guess. |
 | Glassdoor Review | Optional. The company's Glassdoor rating as seen on Glassdoor, with the review count when shown, such as `4.4/5 (17 reviews)`. Prefix a parent company's rating with its name, such as `Labelbox: 2.1/5 (91 reviews)`. Leave it blank when not found. Never estimate or guess. |
-| Status | Application lifecycle only: blank when not started, or `Researching`, `Skipped`, `Closed`, `Applied`, an interview stage (`Recruiter`, `Technical`, or `Behavioral`), or a final `Rejected`, `Offer`, or `No Offer`; see Status lifecycle below. No fit grade; fit comes from LinkedIn when a role is opened. |
+| Status | Application lifecycle only: blank when not started, or `Researching`, `Skipped`, `Closed`, `Applied`, an interview stage (`Recruiter`, `Technical`, or `Behavioral`), or a final `Rejected`, `Offer`, `No Offer`, or `Aborted`; see Status lifecycle below. No fit grade; fit comes from LinkedIn when a role is opened. |
 | Notes | Free text owned by the user, such as recruiters, people contacted individually, or dates like `Waiting cooltime: 23/03/2026`; blank by default. Preserve it on every change and write to it only when the user asks. Separate entries with `; `: status-supporting entries such as `Waiting cooltime: <date>` or `Pipeline kicked-off from other role` first, `PoC: <name>` entries last. |
 
 ### Status lifecycle
@@ -60,14 +60,19 @@ flowchart LR
     B --> F
     F --> O[Offer]
     F --> N[No Offer]
+    S -- User ends pursuit --> AB[Aborted]
+    A -- User withdraws --> AB
+    P -- User withdraws --> AB
+    O -- User declines --> AB
 ~~~
 
 - Before applying: blank (not started), `Researching`, `Skipped`, or `Closed`.
 - `Applied`: the application is confirmed.
 - Interview pipeline: `Recruiter`, `Technical`, or `Behavioral`, in whatever order the employer runs them. Set the stage the user names.
 - Final without interviews: `Rejected`, when the employer turns the application down before any interview stage.
-- Final after interviews: `Offer` or `No Offer`. A rejection or withdrawal after an interview stage is `No Offer`.
-- Use only these values. When the user names a stage differently, map it to the closest one and say so.
+- Final after interviews: `Offer` or `No Offer`. An employer rejection after an interview stage is `No Offer`.
+- `Aborted`: the user explicitly ends pursuit of the role or withdraws, before or after applying, including during interviews or after an offer. Set only that row's Status when the user requests it; preserve Notes and the research columns. A pause, browser failure, or unconfirmed submission alone does not mean `Aborted`. This tracker update does not itself withdraw an application on an employer site or send a message.
+- Use only the complete, case-sensitive Status allowlist in SKILL.md. When the user names a stage differently, map it only when the intended value is unambiguous and say so; otherwise ask which allowed value to use.
 
 The header row is:
 
@@ -85,7 +90,8 @@ Before the first job:
 2. If it is missing, create it with the Write tool containing only the exact header line, then re-read it.
 3. Read the complete file with the Read tool.
 4. Confirm the exact eight-column header.
-5. Confirm the `jobhunt` directory remains inside the active user's home directory.
+5. Check every row's Status against the exact allowlist in SKILL.md. Stop and ask the user to reconcile any unknown value before editing the CSV.
+6. Confirm the `jobhunt` directory remains inside the active user's home directory.
 
 For each stable selected job:
 
@@ -98,7 +104,7 @@ For each stable selected job:
 7. If LinkedIn shows Applied but the row's Status has no `Applied` or later lifecycle, stop and reconcile.
 8. Make the change with the Edit tool: replace one exact, unique row line, or insert a new row line at its sorted position as described in "Row order" below. Never rewrite the whole file.
 9. Keep each row valid RFC-4180 UTF-8: eight fields, and quote a field that contains a comma, quote, or line break.
-10. Re-read with the Read tool and verify the exact row, that nothing else changed, and that the rows around it are still in order, before selecting the next job.
+10. Re-read with the Read tool and verify the exact row, that every Status is allowed, that nothing else changed, and that the rows around it are still in order, before selecting the next job.
 
 Stop on a malformed row or two rows with the same Company and Role.
 
@@ -125,7 +131,7 @@ flowchart TD
 3. **Company name change:** remove the old line with one Edit, then insert the updated line at its new sorted position with another.
 4. **Out-of-order file:** if the rows are not sorted, for example after the user edits the file in a spreadsheet, report it and offer a one-time re-sort that keeps every row and field unchanged. Do not re-sort silently.
 
-After research, set Status back to blank, or to `Closed` or `Skipped` only for a verified blocker. Never write a fit grade. Do not change an existing lifecycle such as `Applied` during research.
+After research, set Status back to blank, or to `Closed` or `Skipped` only for a verified blocker. Never write a fit grade. Do not change an existing lifecycle such as `Applied` or `Aborted` during research.
 
 ## Stable identity and duplicates
 
@@ -174,9 +180,9 @@ Every manually added row requires an explicit preview and approval. The preview 
 
 A role is eligible only when:
 
-- Status is blank: no `Researching`, `Skipped`, `Closed`, `Applied`, or later stage such as `Rejected`, `Recruiter`, `Technical`, `Behavioral`, `Offer`, or `No Offer`.
+- Status is blank: no `Researching`, `Skipped`, `Closed`, `Applied`, or final/interview stage such as `Rejected`, `Recruiter`, `Technical`, `Behavioral`, `Offer`, `No Offer`, or `Aborted`.
 - The posting is open and materially unchanged.
 - No linked repost was applied to.
 - The role is not closed, expired, deferred, or unresolved as a duplicate.
 
-Never auto-reapply. A row with `Applied` or a later lifecycle needs the user's explicit reapply decision. Notes may record rejections, cooldowns, or referrers; mention them in the next-job preview, but do not turn them into rules. Build the full queue after discovery in tracker order.
+Never auto-reapply. A row with `Applied` or a later lifecycle needs the user's explicit reapply decision. An `Aborted` row needs the user's explicit decision to resume, including a reapply decision if it was already submitted. Notes may record rejections, cooldowns, or referrers; mention them in the next-job preview, but do not turn them into rules. Build the full queue after discovery in tracker order.

@@ -11,6 +11,7 @@ stateDiagram-v2
     Researched --> Tracked
     Tracked --> EligibilityCheck
     EligibilityCheck --> ReapplyReview: Status shows Applied or a later lifecycle
+    EligibilityCheck --> ResumeReview: Status is Aborted
     EligibilityCheck --> FormInspection: Never applied and otherwise eligible
     FormInspection --> AdditionalInputReview: Employer site requests extra input
     FormInspection --> PacketReady: No extra input
@@ -34,6 +35,7 @@ Before preparing an application, read the live row and follow [discovery-trackin
 - Find the live official posting from the company's careers page by the row's exact role title, as the main skill's next-job preview describes, and note any repost relationship mentioned in the row's Summary.
 - Verify the official posting is still open and materially matches the researched role.
 - Exclude roles whose repost was already applied to.
+- For an `Aborted` row, require the user's explicit decision to resume before preparing an application; if it was already submitted, require an explicit reapply decision too.
 - Never auto-reapply to a row whose Status shows `Applied` or a later lifecycle; that requires a specific reapply decision from the user. Mention any rejection or cooldown recorded in Notes.
 - Reconcile any mismatch between LinkedIn's `Applied` badge and the tracker before continuing.
 

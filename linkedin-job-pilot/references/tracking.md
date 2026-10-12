@@ -34,7 +34,7 @@ Read tracker.csv with the Read tool, replace only that row's line with the Edit 
 
 ## Later stages
 
-Use the same row for every later stage, following the Status lifecycle in discovery-tracking.md: `Rejected` when the employer declines before any interview, otherwise `Recruiter`, `Technical`, or `Behavioral` in the interview pipeline, then the final `Offer` or `No Offer`. A rejection or withdrawal after an interview stage is `No Offer`. Change only Status. Write dates only into Notes, and only when the user gives them. Each new external write must be authorized by the user's request or an exact approved manifest. Never replace a newer stage with an older one.
+Use the same row for every later stage, following the Status lifecycle in discovery-tracking.md: `Rejected` when the employer declines before any interview, otherwise `Recruiter`, `Technical`, or `Behavioral` in the interview pipeline, then the final `Offer` or `No Offer`. An employer rejection after an interview stage is `No Offer`; use `Aborted` when the user explicitly ends pursuit of the role or withdraws. Change only Status. Write dates only into Notes, and only when the user gives them. Each new external write must be authorized by the user's request or an exact approved manifest. Never replace a newer stage with an older one without the user's explicit decision to resume or reapply.
 
 ## Sibling roles when a pipeline starts
 
@@ -50,9 +50,9 @@ flowchart TD
     D -- Yes --> E{Sibling's Status}
     E -- Blank --> F[Set Status Skipped and add the note]
     E -- Skipped or Closed --> G[Add the note, keep Status]
-    E -- Applied or later --> H[Leave unchanged]
+    E -- Applied, later stage, or Aborted --> H[Leave unchanged]
 ~~~
 
 - The note is exactly `Pipeline kicked-off from other role`. Add it after any existing status-supporting Notes but before any `PoC:` entries, separated by `; `, and never remove existing Notes.
-- A blank sibling becomes `Skipped` with the note. A `Skipped` or `Closed` sibling keeps its Status and gets the note. A sibling with `Applied` or a later stage stays unchanged; mention it to the user.
+- A blank sibling becomes `Skipped` with the note. A `Skipped` or `Closed` sibling keeps its Status and gets the note. A sibling with `Applied`, a later stage, or `Aborted` stays unchanged; mention it to the user.
 - Write nothing to the siblings until the user agrees; the user's reply authorizes only the rows listed in the question.

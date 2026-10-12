@@ -30,7 +30,7 @@ A row's identity is its Company and Role together. Job-board and posting URLs ch
 
 Company Website, Summary, Salary Range, and Glassdoor Review hold the research result for the row; references/discovery-tracking.md defines them. Salary Range and Glassdoor Review are optional: fill them only with a value actually found, and leave them blank otherwise. Never estimate or guess either one.
 
-Status holds only the application lifecycle: blank when not started, or a stage such as `Researching`, `Skipped`, `Closed`, `Applied`, an interview stage (`Recruiter`, `Technical`, or `Behavioral`), or a final `Rejected`, `Offer`, or `No Offer`. It is the only application record; the tracker stores no application or interview dates and no fit label.
+Status holds only the application lifecycle. The cell must be empty or contain exactly one of these case-sensitive values: `Researching`, `Skipped`, `Closed`, `Applied`, `Recruiter`, `Technical`, `Behavioral`, `Rejected`, `Offer`, `No Offer`, or `Aborted`. Never write any other Status value to tracker.csv. Use `Aborted` when the user explicitly ends pursuit of a role or withdraws, before or after applying; see the Status lifecycle in references/discovery-tracking.md. Status is the only application record; the tracker stores no application or interview dates and no fit label.
 
 Fit has one source of truth: LinkedIn's own match assessment for the role, such as its match details or applicant signals, read on LinkedIn when the role is opened. The skill never computes, labels, or stores a fit grade. The Summary may still name the main match and the biggest gap as research context.
 
@@ -111,11 +111,13 @@ The primary agent is the sole writer. Subagents return structured research only.
 For every CSV change:
 
 1. Read the current file with the Read tool.
-2. Change only the target row or section with the Edit tool, replacing one exact, unique line or block; use the Write tool only to create a new file. Never rewrite the whole tracker.
-3. Preserve user-authored content and unrelated fields. Keep tracker rows sorted by Company, case-insensitively, by inserting each new or renamed row at its sorted position; see "Row order" in references/discovery-tracking.md.
-4. Keep CSV rows valid RFC-4180 UTF-8: eight fields, and quote a field that contains a comma, quote, or line break.
-5. Re-read with the Read tool and verify the exact row, and that nothing else changed.
-6. Stop on a malformed row, ambiguous company identity, or path escape.
+2. Check every existing row's Status against the exact allowlist above. If any value is unknown, stop and ask the user how to reconcile it; never silently replace or preserve an unknown Status in a rewritten row.
+3. Before writing, check that each proposed Status is on the allowlist. If the user's wording differs, map it only when the intended stage is unambiguous; otherwise ask which allowed value to use.
+4. Change only the target row or section with the Edit tool, replacing one exact, unique line or block; use the Write tool only to create a new file. Never rewrite the whole tracker.
+5. Preserve user-authored content and unrelated fields. Keep tracker rows sorted by Company, case-insensitively, by inserting each new or renamed row at its sorted position; see "Row order" in references/discovery-tracking.md.
+6. Keep CSV rows valid RFC-4180 UTF-8: eight fields, and quote a field that contains a comma, quote, or line break.
+7. Re-read with the Read tool and verify every Status is allowed, the exact target row is correct, and nothing else changed.
+8. Stop on a malformed row, ambiguous company identity, or path escape.
 
 Use Company plus Role as the row identity, compared case-insensitively after trimming spaces. A job seen again under the same company and title, such as a LinkedIn repost or the same role in another city, reuses the existing row.
 
@@ -178,6 +180,8 @@ A public Reddit fallback is allowed only after ordinary research and CSV verific
 ### Application queue
 
 Build the queue from the local CSV after research: every row with a blank Status, in tracker order, unless the user names a role. Exclude rows with any Status.
+
+Keep `Aborted` rows out of the queue and preserve that Status during discovery and research. Preparing an application for one requires the user's explicit decision to resume that role, including a reapply decision if it was already submitted.
 
 A role must remain open, and its Status must not show `Applied` or a later stage such as `Rejected`, `Recruiter`, `Technical`, `Behavioral`, `Offer`, or `No Offer`. Treat confirmed reposts as one application opportunity. Never auto-reapply; reapplying to such a row needs the user's explicit decision. When Notes mention a rejection, cooldown, or referrer, point it out in the preview.
 
