@@ -12,6 +12,7 @@
   },
   "extraKnownMarketplaces": {
     "fsw0422": {
+      "autoUpdate": true,
       "source": {
         "source": "github",
         "repo": "fsw0422/skills"
