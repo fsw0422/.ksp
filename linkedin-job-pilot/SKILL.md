@@ -52,7 +52,7 @@ Treat the PDF as immutable input. This skill may read it to write the Summary an
 
 ## Applicant profile questionnaire
 
-Before the first application work in a session, read references/applicant-profile.md and the user's profile file. If the catalog has questions the profile does not answer yet, ask all of them in one message, save the answers, and never ask them again. During an application, when a form asks a personal question that the profile does not cover, ask for the answer and whether to save it to the profile. Do not propose skill changes for new questions; the user maintains the catalog.
+Before the first application work in a session, read references/applicant-profile.md and the user's profile file. If the catalog has questions the profile does not answer yet, ask all of them in one message, save the answers, and never ask them again. During an application, when a form asks a personal question that the profile does not cover, ask for the answer and whether it should become a reusable catalog question. If the user says yes, enter the skill PR lifecycle: assign a stable question ID, add it to the source catalog on a branch, validate the skill, commit and push, and open a PR; store the private answer under that ID only in the generated profile. If the user says no, write the question and answer directly under `Additional answers` in the generated profile. Never edit the catalog in place as a side effect of an application.
 
 ## Non-negotiable approvals
 

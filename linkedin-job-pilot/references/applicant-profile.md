@@ -22,7 +22,9 @@ Updated: <YYYY-MM-DD>
 
 "How to apply" is optional and only explains how to map the answer onto different form wordings. Questions the user adds during applications go under a final `## Additional answers` heading in the same shape, with the form's wording as the heading.
 
-## One-off questionnaire
+The catalog is the reusable baseline maintained with the skill. For each new form question that is not a per-company fact, ask whether it belongs in that template. A yes starts the skill PR lifecycle and stores the private answer under the proposed catalog ID in the generated profile. A no writes the question and answer directly under `Additional answers` in the generated profile without changing the skill repository.
+
+## Catalog questionnaire
 
 On the first application work in a session:
 
@@ -37,19 +39,24 @@ Never ask an answered catalog question again. When the user maintains this catal
 
 ```mermaid
 flowchart TD
-    A[Form field] --> B{Per-company question?}
-    B -- Yes --> C[Ask for this application only; never store]
-    B -- No --> D{Profile answer with the same meaning and scope?}
-    D -- Yes --> E[Use it and show it in the packet]
-    D -- No --> F{Answer derivable from the verified resume?}
-    F -- Yes --> G[Use the resume value]
-    F -- No --> H[Ask the user, and ask: save this answer to your profile?]
-    H -- Save --> I[Add it under Additional answers]
-    H -- This application only --> J[Use it once]
+    A[Form field] --> P{Per-company fact?}
+    P -- Yes --> Q[Use for this application only]
+    P -- No --> B{Matching profile answer?}
+    B -- Yes --> C[Use it and show it in the packet]
+    B -- No --> D{Derivable from resume or tracker?}
+    D -- Yes --> E[Use the verified value]
+    D -- No --> F[Ask the user for the answer]
+    F --> G{Add to the catalog template?}
+    G -- Yes --> H[Start the skill PR lifecycle]
+    H --> J[Store the answer under the catalog ID in application-profile.md]
+    G -- No --> I[Write it under Additional answers in application-profile.md]
 ```
 
 - Use an answer only when the field has the same meaning and scope. For example, a German work-permit answer does not answer a US work-authorization question.
-- When a question is not in the profile, ask for the answer together with "save it to your profile?". Do not propose changing this skill or its catalog for new questions; the user maintains the catalog.
+- When a question is not in the profile, ask for the answer and whether to add the question to the reusable catalog template.
+- A yes authorizes the skill PR lifecycle: create a branch, add a stable question ID to the source catalog, validate, commit, push, and open a PR. Keep the answer private by writing it only to the generated profile under that ID.
+- A no writes the question and answer directly under `Additional answers` in the generated profile and continues the application without changing the skill repository.
+- Per-company facts remain application-specific and are not saved to the profile.
 - Profile answers never replace the submit approval for a named role. Every value still appears in the application packet.
 
 ## Question catalog
@@ -60,14 +67,11 @@ flowchart TD
 | --- | --- |
 | WORK-PERMIT-DE | Are you authorized to work in Germany, and with which permit? |
 | SPONSORSHIP | Do you need visa sponsorship now or in the future for Germany? |
-| WORK-AUTH-OTHER | Are you authorized to work in other countries, such as other EU countries, the UK, or the US? |
 | US-PERSON | Are you a "U.S. person" (US citizen, green-card holder, refugee, or asylee)? |
 | SANCTIONS | Are you a citizen, national, or resident of an embargoed or sanctioned country, such as Iran, Cuba, North Korea, or Syria? |
 | NATIONALITY | Your citizenship(s), or "prefer not to say" when a form asks for diversity reporting |
 | RESIDENCE | Which city and country do you live in? |
-| RELOCATION | Which cities or countries would you relocate to, if any? |
 | WORK-MODE | Do you accept hybrid, fully onsite, or remote-only roles? |
-| ON-CALL | Do you accept on-call duty, including weekends? |
 
 ### Availability and pay
 
@@ -76,9 +80,6 @@ flowchart TD
 | NOTICE-PERIOD | What is your notice period? |
 | START-DATE | What is your earliest start date? |
 | SALARY | Desired annual gross salary: your minimum, the single number for exact fields, and the currency |
-| SALARY-BASE-VS-TOTAL | When a form separates base salary from total compensation, what do you answer for each? |
-| CURRENT-SALARY | Do you disclose your current salary, and if so, what is it? |
-| NON-COMPETE | Are you bound by a non-compete or similar restriction? |
 
 ### Personal and legal
 
@@ -92,7 +93,6 @@ flowchart TD
 | AGE-RANGE | Age range for diversity forms, or "prefer not to say" |
 | DISABILITY | Disability status for diversity forms, or "prefer not to say" |
 | CRIMINAL-RECORD | Do you have a criminal record or pending charges? |
-| BACKGROUND-CHECK | Do you consent to a background check or police clearance certificate when an employer requires one? |
 
 ### Profiles and languages
 
@@ -107,7 +107,6 @@ flowchart TD
 | ID | Question |
 | --- | --- |
 | AI-SCREENING | Do you accept the employer's AI-assisted screening of your application? |
-| INTERVIEW-RECORDING | Do you consent to interviews being recorded or AI-transcribed? |
 | OPTIONAL-CONSENTS | Text-message updates, marketing, talent pools, and future-opportunity retention: opt in or out? |
 | REQUIRED-CONSENTS | May the skill agree to a data-processing consent that is required to submit the application? |
 | HOW-HEARD | What do you answer to "How did you hear about this job?" |
