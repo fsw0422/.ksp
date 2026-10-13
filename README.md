@@ -22,15 +22,18 @@ To rerun just this setup from your `ksp-setup` checkout:
 bash setup-agent-skills.sh both
 ```
 
-Use `claude` or `codex` instead of `both` to link just that tool. Installing the
-other tool later only adds its links to the same checkout. `link-only` links
-both tools without fetching or changing MCP registrations.
+Setup verifies which AI tools are installed through their CLI or desktop app
+before creating links. Use `claude` or `codex` instead of `both` to restrict the
+requested targets; unavailable targets are skipped. With no argument, setup
+detects every installed platform. `link-only` also detects installed platforms
+but does not fetch or change MCP registrations.
 
-The helper needs Git and `jq`. It reads the skill list from
-`.claude-plugin/plugin.json`, creates missing links, and migrates links made by
-the earlier Claude-checkout/standalone-clone setup. Unrelated files and links
-are preserved. The selected tool's CLI must be on PATH for MCP registration;
-the browser server also needs Node.js and `npx`.
+The helper discovers every top-level `<name>/SKILL.md`, creates or updates its
+links, removes stale links that point back into this checkout, and migrates
+links made by the earlier Claude-checkout/standalone-clone setup. Unrelated
+files and links are preserved. Full setup also needs `jq` and the selected
+tool's CLI for MCP registration; desktop-only installs still receive skill
+links. The browser server needs Node.js and `npx`.
 
 The old `skills@fsw0422` and `playwright-chromium-browser@fsw0422` Claude plugins
 are disabled to prevent duplicate skills and servers. The shared `.ksp` settings
@@ -79,12 +82,15 @@ come from this checkout rather than marketplace updates.
 
 ## Add a skill
 
-Create `<name>/SKILL.md` at the repository root and add `"./<name>"` to the `skills`
-list in `.claude-plugin/plugin.json`. Rerun `bash setup-agent-skills.sh both`
-from `ksp-setup` to fetch the change and create the new links, then restart the
-tools. Existing skill edits need no new links. The helper does not remove links
-for deleted skills. Optional Codex UI metadata goes
-in `<name>/agents/openai.yaml`.
+Create `<name>/SKILL.md` at the repository root. Rerun
+`bash setup-agent-skills.sh both` from `ksp-setup` to fetch the change and create
+the new links, then restart the tools. Existing skill edits need no new links;
+rerunning setup removes links for deleted skills. Optional Codex UI metadata
+goes in `<name>/agents/openai.yaml`.
+
+The `.claude-plugin` files are packaging metadata for optional plugin
+distribution and `claude --plugin-dir`; local Claude Code and Codex skill links
+do not depend on their skill list.
 
 ## Develop
 
