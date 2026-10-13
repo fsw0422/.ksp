@@ -1,21 +1,21 @@
 # Agent skills
 
-Personal agent skills maintained as ordinary Git source. Clone this repo to
-`~/skills` and link the skill folders into Claude Code and Codex. Both tools
-read the same files, independent of which tool was installed first. The
-repo also owns their shared user-level instructions and the Playwright Chromium
-MCP configuration for CLI browsing; setup links or registers both for each
-selected tool.
+Personal agent skills maintained under `skills/` in the `.ksp` dotfiles
+repository. Clone `.ksp` to `~/.ksp` and link these folders into Claude Code and
+Codex. Both tools read the same files, independent of which tool was installed
+first. This directory also owns their shared user-level instructions and the
+Playwright Chromium MCP configuration for CLI browsing; setup links or
+registers both for each selected tool.
 
 ## Install
 
 For a new machine, use [ksp-setup](https://github.com/fsw0422/ksp-setup) and choose
 `claude`, `codex`, or `both` when `install.sh` asks which AI tool configs to
-install. It links the shared `.ksp` settings, clones this repository to
-`~/skills`, and creates instruction and skill links for the selected tools:
+install. It clones this repository to `~/.ksp`, links the shared settings, and
+creates instruction and skill links for the selected tools:
 
-- Claude Code instructions: `~/.claude/CLAUDE.md` → `~/skills/AGENTS.md`
-- Codex instructions: `~/.codex/AGENTS.md` → `~/skills/AGENTS.md`
+- Claude Code instructions: `~/.claude/CLAUDE.md` → `~/.ksp/skills/AGENTS.md`
+- Codex instructions: `~/.codex/AGENTS.md` → `~/.ksp/skills/AGENTS.md`
 - Claude Code: `~/.claude/skills/<name>`
 - Codex: `~/.agents/skills/<name>`
 
@@ -71,27 +71,31 @@ changes, since each tool stores a copy of those options.
 The shared user-level instructions live here in `AGENTS.md`.
 [ksp-setup](https://github.com/fsw0422/ksp-setup) links that file to
 `~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md`. Claude Code settings and the
-Codex system config remain in the [.ksp](https://github.com/fsw0422/.ksp)
-dotfiles repo and link to `~/.claude/settings.json` and
+Codex system config live alongside this directory in the
+[.ksp](https://github.com/fsw0422/.ksp) dotfiles repo and link to
+`~/.claude/settings.json` and
 `/etc/codex/config.toml`.
 
 ## Update
 
-Rerun the setup helper to pull `main` with `--ff-only` and link newly added skills.
-To update existing skill files without rerunning setup:
+Update the `.ksp` checkout with:
 
 ```sh
-git -C ~/skills pull --ff-only
+git -C ~/.ksp pull --ff-only
 ```
 
-No plugin version bump is needed. This checkout has no automatic update trigger;
-opening Claude or Codex does not pull it. Skills and browser configuration now
-come from this checkout rather than marketplace updates.
+Rerun the setup helper after adding or removing a skill directory or changing
+the browser MCP configuration. Existing instruction and skill file edits are
+visible through their links immediately after the pull.
+
+No plugin version bump is needed. The `.ksp` checkout has no automatic update
+trigger; opening Claude or Codex does not pull it. Instructions, skills, and
+browser configuration come from this checkout rather than marketplace updates.
 
 ## Add a skill
 
-Create `<name>/SKILL.md` at the repository root. Rerun
-`bash setup-agent-skills.sh both` from `ksp-setup` to fetch the change and create
-the new links, then restart the tools. Existing skill edits need no new links;
-rerunning setup removes links for deleted skills. Optional Codex UI metadata
-goes in `<name>/agents/openai.yaml`.
+Create `<name>/SKILL.md` in this directory. After pulling the change, rerun
+`bash setup-agent-skills.sh both` from `ksp-setup` to create the new links, then
+restart the tools. Existing skill edits need no new links; rerunning setup
+removes links for deleted skills. Optional Codex UI metadata goes in
+`<name>/agents/openai.yaml`.

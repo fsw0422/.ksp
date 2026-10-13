@@ -48,6 +48,6 @@ Drafts must read like Kevin wrote them, not like AI output. Before the first dra
 
 When Kevin edits a draft, rejects a phrase, or says he wouldn't write it that way, update `references/style-guide.md` (adjust a rule or add to Avoid) or add the corrected message to `references/examples.md`, and tell him what changed.
 
-- Edit the source in the skills repository (https://github.com/fsw0422/skills), preferably in its active worktree rather than through an installed skill symlink.
-- Commit on a branch and open or update a PR for him to merge; never push to `main`. After the merge, update `~/skills` from `main`. Claude and Codex read the linked files directly, so no plugin update is needed.
+- Edit the source under `skills/` in the `.ksp` repository (https://github.com/fsw0422/.ksp), preferably in its active worktree rather than through an installed skill symlink.
+- Commit on a branch and open or update a PR for him to merge; never push to `master`. After the merge, update `~/.ksp` from `master`. Claude and Codex read the linked files directly, so no plugin update is needed.
 - The repository is public. Keep both files free of workplace-specific names (company, teams, channels, internal services), Slack IDs, people's names, customer details, and secrets. Paraphrase new examples with placeholders.
