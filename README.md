@@ -56,15 +56,17 @@ and memory stay.
 
 ## AI agent configs
 
-Personal base config for Claude Code and Codex, shared by every machine. Work
-extras live outside this repo, in `~/projects` (`.claude/settings.json`,
-`.mcp.json`, `.codex/config.toml`, `AGENTS.md`), and layer on top of these.
+Personal base settings for Claude Code and Codex, shared by every machine.
+Shared user instructions live in the
+[skills](https://github.com/fsw0422/skills) repository at `~/skills/AGENTS.md`.
+Work extras live in `~/projects` (`.claude/settings.json`, `.mcp.json`,
+`.codex/config.toml`, `AGENTS.md`) and layer on top of these.
 
 | Live file | Links to |
 |---|---|
 | `~/.claude/settings.json` | `claude/settings.json` |
-| `~/.claude/CLAUDE.md` | `AGENTS.md` |
-| `~/.codex/AGENTS.md` | `AGENTS.md` |
+| `~/.claude/CLAUDE.md` | `~/skills/AGENTS.md` |
+| `~/.codex/AGENTS.md` | `~/skills/AGENTS.md` |
 | `/etc/codex/config.toml` | `codex/config.toml` |
 
 Codex reads `/etc/codex/config.toml` as its system layer, below the user file
