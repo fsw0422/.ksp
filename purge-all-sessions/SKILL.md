@@ -11,30 +11,40 @@ Run it with `python3 -I`.
 
 ## Live means keep
 
-- **Claude:** the row is on the `claude agents` dashboard, or the session shows in
-  Claude Desktop's Claude Code sidebar, or its process is running, or it was
-  touched in the last 10 minutes. This session is always kept.
+The user decides what to keep. Never guess from `ListAgents` alone: it lists only
+sessions with a running process, and the daemon retires idle finished ones
+(see `~/.claude/daemon.log`, "retire ... idle 61m") while their dashboard rows
+and job folders remain. Deleting from that list once destroyed three rows the
+user still had.
+
+- **Claude:** keep what the user picks. Also always kept: this session, running
+  processes, anything touched in the last 10 minutes, and any session id that
+  Claude Desktop's Code sidebar storage mentions.
 - **Codex:** anything not archived. Only `archived = 1` threads are purged.
 
 ## Steps
 
-1. **Find the dashboard rows.** Call `ListAgents`. Run `purge.py jobs` (job id,
-   session id, name, state). Match each dashboard row to a session id by name.
-   A job folder with no dashboard row is dead, even if it still has a folder.
-   If a name is unclear or duplicated, keep it (add it as live) and say so.
-2. **Plan (no deletion):**
+1. **List candidates.** Run `purge.py jobs` (job id, session id, name, state, last
+   change) and call `ListAgents`. Show the user one numbered list of every
+   Claude session, marking which are running now. Group them as: running,
+   finished/retired.
+2. **Ask which to keep.** Ask the user to reply with the numbers to keep (or "all
+   finished" / "none"). Everything not picked will be deleted. Do not proceed
+   on silence, and do not decide for them.
+3. **Plan (no deletion):**
    `python3 -I purge.py plan --live <id> --live <id> ...`
-   Use the full session id from step 1 (or a unique prefix). Add
+   Pass every kept session id (full id or unique prefix). Add
    `--playwright-profile` only if the user wants browser logins wiped too, since
    it signs them out of every site. The plan refuses to run without `--live`.
-3. **Show the summary** (counts, MB, the kept sessions and why). Ask once before
-   deleting, unless the user already said to go ahead without asking. Deletion is
-   irreversible. If Codex is running, tell the user to quit it first, or the DB
-   cleanup can fail with "locked".
-4. **Apply:** `python3 -I purge.py apply --manifest <path printed by plan>`.
+4. **Confirm the delete list.** Show the summary: counts, MB, the kept sessions,
+   and the names of every job folder that will be deleted. Ask once more, and
+   wait for yes. Deletion is irreversible. If the Codex app is running, tell the
+   user to quit it first, or its database cleanup can fail with "locked".
+5. **Apply:** `python3 -I purge.py apply --manifest <path printed by plan>`.
    Re-run `plan` first if the manifest is over an hour old.
-5. **Check and report:** run `plan` again and confirm it finds nothing new, then
-   tell the user what was deleted and what was kept.
+6. **Check and report:** run `plan` again and confirm it finds nothing new, then
+   tell the user what was deleted and what was kept. Note any database the
+   script could not open and offer to retry after Codex is closed.
 
 ## What gets deleted
 
@@ -42,7 +52,7 @@ Run it with `python3 -I`.
 |---|---|
 | Claude | `projects/*/<id>*` (transcript, subagents, tool results), `jobs/<job>`, `file-history/<id>`, `session-env/<id>`, `tasks/<id>`, `debug/<id>*`, dead `sessions/*.json`, matching lines in `history.jsonl` |
 | Codex | rollout files in `sessions/` and `archived_sessions/`, `shell_snapshots`, `generated_images`, `attachments`, `session_index.jsonl` and `history.jsonl` lines, rows in every `*.sqlite` table with a thread/session id column (`threads`, logs, goals, history, queue, ...) |
-| Playwright | `~/.playwright-chromium-browser/output/*` (profile only with the flag). Skipped if the browser is running. |
+| Playwright | `~/.playwright-chromium-browser/output/*` older than 10 minutes. The profile only with the flag, and only when the browser window is closed. |
 
 Not touched: `plans/`, `paste-cache/`, `shell-snapshots/` for Claude (not keyed by
 session), settings, skills, auth.
@@ -52,5 +62,5 @@ session), settings, skills, auth.
 - Never build a path by splitting on `.` - `~/.claude` has a dot in it. Strip
   suffixes only, and never run a recursive delete on a path you did not verify
   sits inside `~/.claude`, `~/.codex`, or `~/.playwright-chromium-browser`.
-- The jobs folder can lag the dashboard in both directions. Trust `ListAgents`.
+- `ListAgents` is not the dashboard. Ask the user which sessions to keep.
 - Dry-run first, always.

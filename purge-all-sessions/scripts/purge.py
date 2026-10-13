@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Purge dead Claude Code / Codex sessions and the data tied to them.
 
-  purge.py jobs                          list ~/.claude/jobs rows (job id, session id, name)
+  purge.py jobs                          list ~/.claude/jobs rows (job id, session id, name, state, last change)
   purge.py plan  --live ID [--live ID..] [--manifest F] [--no-playwright] [--playwright-profile]
   purge.py apply --manifest F
 
@@ -62,7 +62,9 @@ def job_rows():
             s = json.load(open(sp))
         except Exception:
             continue
-        rows.append((os.path.basename(os.path.dirname(sp)), s.get('sessionId'), s.get('name'), s.get('state')))
+        age = int((time.time() - os.path.getmtime(sp)) / 3600)
+        rows.append((os.path.basename(os.path.dirname(sp)), s.get('sessionId'), s.get('name'),
+                     s.get('state'), f'{age}h ago'))
     return rows
 
 
@@ -97,7 +99,7 @@ def plan_claude(live_args, min_age):
             u = uuid_of(os.path.basename(p))
             if u:
                 cand.add(u)
-    for _, s, _, _ in job_rows():
+    for _, s, *_ in job_rows():
         if s:
             cand.add(s)
     for _, d in read_jsonl(CLAUDE + '/history.jsonl'):
@@ -116,7 +118,7 @@ def plan_claude(live_args, min_age):
                 protect(u, 'on dashboard (--live)')
     cur = os.environ.get('CLAUDE_JOB_DIR')
     if cur:
-        for jid, s, _, _ in job_rows():
+        for jid, s, *_ in job_rows():
             if jid == os.path.basename(cur.rstrip('/')) and s:
                 protect(s, 'this session')
     for sp in glob.glob(CLAUDE + '/sessions/*.json'):
@@ -140,7 +142,7 @@ def plan_claude(live_args, min_age):
         for pat in (f'projects/*/{u}*', f'file-history/{u}', f'session-env/{u}',
                     f'tasks/{u}', f'debug/{u}*'):
             rm += glob.glob(f'{CLAUDE}/{pat}')
-    for jid, s, _, _ in job_rows():
+    for jid, s, *_ in job_rows():
         if s in purge:
             rm.append(f'{CLAUDE}/jobs/{jid}')
     for sp in glob.glob(CLAUDE + '/sessions/*.json'):
@@ -195,15 +197,21 @@ def plan_codex():
 
 
 # ---------- Playwright ----------
-def plan_playwright(include_profile):
+def plan_playwright(include_profile, min_age):
+    """Output files are temporary, so clear them even while the MCP server runs
+    (skipping files touched in the last min_age minutes). The profile holds
+    logins and needs the browser closed: its Chromium process has --user-data-dir."""
     if not os.path.isdir(PW):
         return []
-    if os.system(f"pgrep -f '{PW}/profile' >/dev/null 2>&1") == 0:
-        print('  playwright browser is running - skipping', file=sys.stderr)
-        return []
-    rm = glob.glob(PW + '/output/*')
+    now = time.time()
+    rm = [p for p in glob.glob(PW + '/output/*') if now - os.path.getmtime(p) >= min_age * 60]
     if include_profile:
-        rm += glob.glob(PW + '/profile/*')
+        procs = os.popen('ps -axo command').read().splitlines()
+        if any(PW + '/profile' in c and 'playwright-mcp' not in c and 'npm exec' not in c
+               and not c.startswith('node ') for c in procs):
+            print('  playwright browser is open - skipping profile (close it first)', file=sys.stderr)
+        else:
+            rm += glob.glob(PW + '/profile/*')
     return rm
 
 
@@ -216,10 +224,18 @@ def safe(p):
     raise SystemExit(f'refusing unsafe path: {p}')
 
 
+def safe_file(p):
+    """Index/history/DB files sit directly in a root; they must be regular files."""
+    r = os.path.realpath(p)
+    if any(r.startswith(root + '/') for root in ROOTS) and os.path.isfile(r):
+        return r
+    raise SystemExit(f'refusing unsafe file: {p}')
+
+
 def cmd_plan(a):
     purge_c, live_c, why, rm_c, filt_c = plan_claude(a.live, a.min_age)
     purge_x, rm_x, filt_x, sql = plan_codex()
-    rm_p = [] if a.no_playwright else plan_playwright(a.playwright_profile)
+    rm_p = [] if a.no_playwright else plan_playwright(a.playwright_profile, a.min_age)
     rm = sorted({safe(p) for p in rm_c + rm_x + rm_p})
     man = {'created': time.time(), 'rm': rm, 'filter': filt_c + filt_x, 'sql': sql,
            'codex_ids': sorted(purge_x)}
@@ -249,7 +265,7 @@ def cmd_apply(a):
         n += 1
     print('deleted', n, 'items')
     for f in man['filter']:
-        p = safe(f['path'])
+        p = safe_file(f['path'])
         ids = set(f['ids'])
         if not os.path.exists(p) or not ids:
             continue
@@ -269,7 +285,7 @@ def cmd_apply(a):
     for s in man['sql']:
         by_db.setdefault(s['db'], []).append(s)
     for dbp, items in by_db.items():
-        safe(dbp)
+        safe_file(dbp)
         try:
             c = sqlite3.connect(dbp, timeout=30)
             c.execute('pragma foreign_keys=on')
