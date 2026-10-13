@@ -1,0 +1,4 @@
+interface:
+  display_name: "Browser Pilot"
+  short_description: "Drive websites safely in the built-in or CLI browser, never your own Chrome"
+  default_prompt: "Use $browser-pilot to open this site in a new tab and read it."
