@@ -3,16 +3,19 @@
 Personal agent skills maintained as ordinary Git source. Clone this repo to
 `~/skills` and link the skill folders into Claude Code and Codex. Both tools
 read the same files, independent of which tool was installed first. The
-repo also includes the Playwright Chromium MCP configuration for CLI browsing;
-setup registers it directly in each selected tool.
+repo also owns their shared user-level instructions and the Playwright Chromium
+MCP configuration for CLI browsing; setup links or registers both for each
+selected tool.
 
 ## Install
 
 For a new machine, use [ksp-setup](https://github.com/fsw0422/ksp-setup) and choose
 `claude`, `codex`, or `both` when `install.sh` asks which AI tool configs to
 install. It links the shared `.ksp` settings, clones this repository to
-`~/skills`, and creates skill links for the selected tools:
+`~/skills`, and creates instruction and skill links for the selected tools:
 
+- Claude Code instructions: `~/.claude/CLAUDE.md` → `~/skills/AGENTS.md`
+- Codex instructions: `~/.codex/AGENTS.md` → `~/skills/AGENTS.md`
 - Claude Code: `~/.claude/skills/<name>`
 - Codex: `~/.agents/skills/<name>`
 
@@ -28,12 +31,12 @@ requested targets; unavailable targets are skipped. With no argument, setup
 detects every installed platform. `link-only` also detects installed platforms
 but does not fetch or change MCP registrations.
 
-The helper discovers every top-level `<name>/SKILL.md`, creates or updates its
-links, removes stale links that point back into this checkout, and migrates
-links made by the earlier Claude-checkout/standalone-clone setup. Unrelated
-files and links are preserved. Full setup also needs `jq` and the selected
-tool's CLI for MCP registration; desktop-only installs still receive skill
-links. The browser server needs Node.js and `npx`.
+The helper links `AGENTS.md`, discovers every top-level `<name>/SKILL.md`,
+creates or updates its links, removes stale links that point back into this
+checkout, and migrates links made by earlier setups. Unrelated files and links
+are preserved. Full setup also needs `jq` and the selected tool's CLI for MCP
+registration; desktop-only installs still receive instruction and skill links.
+The browser server needs Node.js and `npx`.
 
 The old `skills@fsw0422` and `playwright-chromium-browser@fsw0422` Claude plugins
 are disabled to prevent duplicate skills and servers. The shared `.ksp` settings
@@ -65,7 +68,12 @@ changes, since each tool stores a copy of those options.
 
 ## Global instructions and settings
 
-The user-level instructions (`AGENTS.md`), Claude Code settings, and Codex config live in the [.ksp](https://github.com/fsw0422/.ksp) dotfiles repo, not here, and [ksp-setup](https://github.com/fsw0422/ksp-setup) links them into place: `~/.claude/settings.json`, `~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md`, and `/etc/codex/config.toml`, the Codex system layer.
+The shared user-level instructions live here in `AGENTS.md`.
+[ksp-setup](https://github.com/fsw0422/ksp-setup) links that file to
+`~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md`. Claude Code settings and the
+Codex system config remain in the [.ksp](https://github.com/fsw0422/.ksp)
+dotfiles repo and link to `~/.claude/settings.json` and
+`/etc/codex/config.toml`.
 
 ## Update
 
