@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Purge dead Claude Code / Codex sessions and the data tied to them.
+"""Purge dead sessions for exactly one host platform and their tied data.
 
   purge.py jobs                          list ~/.claude/jobs rows (job id, session id, name, state, last change)
-  purge.py plan  --live ID [--live ID..] [--manifest F] [--no-playwright] [--playwright-profile]
+  purge.py plan  --platform claude --live ID [--live ID..] [--manifest F]
+  purge.py plan  --platform codex [--manifest F]
   purge.py apply --manifest F
 
 `plan` never deletes. `apply` only touches what the manifest lists, and every
@@ -15,7 +16,6 @@ CLAUDE = HOME + '/.claude'
 CODEX = HOME + '/.codex'
 PW = HOME + '/.playwright-chromium-browser'
 DESKTOP = HOME + '/Library/Application Support/Claude'
-ROOTS = (CLAUDE, CODEX, PW)
 UUID = re.compile(r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
 THREAD_COLS = ('thread_id', 'parent_thread_id', 'child_thread_id', 'session_id')
 
@@ -216,36 +216,51 @@ def plan_playwright(include_profile, min_age):
 
 
 # ---------- safety + apply ----------
-def safe(p):
+def roots_for(platform):
+    if platform == 'claude':
+        return CLAUDE, PW
+    if platform == 'codex':
+        return CODEX, PW
+    raise SystemExit(f'unknown platform: {platform}')
+
+
+def safe(p, platform):
     r = os.path.realpath(p)
-    for root in ROOTS:
+    for root in roots_for(platform):
         if r.startswith(root + '/') and r.count('/') >= root.count('/') + 2:
             return r
     raise SystemExit(f'refusing unsafe path: {p}')
 
 
-def safe_file(p):
+def safe_file(p, platform):
     """Index/history/DB files sit directly in a root; they must be regular files."""
     r = os.path.realpath(p)
-    if any(r.startswith(root + '/') for root in ROOTS) and os.path.isfile(r):
+    if any(r.startswith(root + '/') for root in roots_for(platform)) and os.path.isfile(r):
         return r
     raise SystemExit(f'refusing unsafe file: {p}')
 
 
 def cmd_plan(a):
-    purge_c, live_c, why, rm_c, filt_c = plan_claude(a.live, a.min_age)
-    purge_x, rm_x, filt_x, sql = plan_codex()
+    if a.platform == 'claude':
+        purge_c, live_c, why, rm_c, filt_c = plan_claude(a.live, a.min_age)
+        purge_x, rm_x, filt_x, sql = set(), [], [], []
+    else:
+        purge_c, live_c, why, rm_c, filt_c = set(), set(), {}, [], []
+        purge_x, rm_x, filt_x, sql = plan_codex()
     rm_p = [] if a.no_playwright else plan_playwright(a.playwright_profile, a.min_age)
-    rm = sorted({safe(p) for p in rm_c + rm_x + rm_p})
-    man = {'created': time.time(), 'rm': rm, 'filter': filt_c + filt_x, 'sql': sql,
-           'codex_ids': sorted(purge_x)}
+    rm = sorted({safe(p, a.platform) for p in rm_c + rm_x + rm_p})
+    man = {'version': 2, 'platform': a.platform, 'created': time.time(), 'rm': rm,
+           'filter': filt_c + filt_x, 'sql': sql, 'codex_ids': sorted(purge_x)}
     job_tmp = os.environ.get('CLAUDE_JOB_DIR')
     path = a.manifest or os.path.join(job_tmp + '/tmp' if job_tmp else tempfile.gettempdir(), 'purge-manifest.json')
     json.dump(man, open(path, 'w'))
-    print(f'Claude: purge {len(purge_c)} sessions, keep {len(live_c)} live')
-    for u in sorted(live_c):
-        print(f'  keep {u}  ({why[u]})')
-    print(f'Codex: purge {len(purge_x)} archived threads')
+    print(f'Platform: {a.platform}')
+    if a.platform == 'claude':
+        print(f'Claude: purge {len(purge_c)} sessions, keep {len(live_c)} live')
+        for u in sorted(live_c):
+            print(f'  keep {u}  ({why[u]})')
+    else:
+        print(f'Codex: purge {len(purge_x)} archived threads')
     print(f'Playwright: {len(rm_p)} items')
     print(f'Files/dirs to delete: {len(rm)}  ({sum(size(p) for p in rm if os.path.lexists(p)) / 1e6:.1f} MB)')
     print(f'DB cleanups: {len(sql)} table/column pairs; JSONL filters: {len(man["filter"])}')
@@ -254,18 +269,21 @@ def cmd_plan(a):
 
 def cmd_apply(a):
     man = json.load(open(a.manifest))
+    if man.get('version') != 2 or man.get('platform') not in ('claude', 'codex'):
+        raise SystemExit('unsupported manifest - run a new platform-specific plan')
+    platform = man['platform']
     if time.time() - man['created'] > 3600:
         raise SystemExit('manifest older than 1h - run plan again')
     n = 0
     for p in man['rm']:
-        r = safe(p)
+        r = safe(p, platform)
         if not os.path.lexists(r):
             continue
         shutil.rmtree(r) if os.path.isdir(r) and not os.path.islink(r) else os.remove(r)
         n += 1
     print('deleted', n, 'items')
     for f in man['filter']:
-        p = safe_file(f['path'])
+        p = safe_file(f['path'], platform)
         ids = set(f['ids'])
         if not os.path.exists(p) or not ids:
             continue
@@ -285,7 +303,7 @@ def cmd_apply(a):
     for s in man['sql']:
         by_db.setdefault(s['db'], []).append(s)
     for dbp, items in by_db.items():
-        safe_file(dbp)
+        safe_file(dbp, platform)
         try:
             c = sqlite3.connect(dbp, timeout=30)
             c.execute('pragma foreign_keys=on')
@@ -307,6 +325,7 @@ def main():
     sub = ap.add_subparsers(dest='cmd', required=True)
     sub.add_parser('jobs').set_defaults(f=cmd_jobs)
     p = sub.add_parser('plan')
+    p.add_argument('--platform', choices=('claude', 'codex'), required=True)
     p.add_argument('--live', action='append', default=[], help='session id or prefix on the dashboard')
     p.add_argument('--manifest')
     p.add_argument('--min-age', type=int, default=10, help='protect transcripts touched in the last N minutes')
@@ -317,8 +336,10 @@ def main():
     q.add_argument('--manifest', required=True)
     q.set_defaults(f=cmd_apply)
     a = ap.parse_args()
-    if a.cmd == 'plan' and not a.live:
-        raise SystemExit('plan needs at least one --live id (the dashboard rows). Refusing to guess.')
+    if a.cmd == 'plan' and a.platform == 'claude' and not a.live:
+        raise SystemExit('Claude plan needs at least one --live id (the dashboard rows). Refusing to guess.')
+    if a.cmd == 'plan' and a.platform == 'codex' and a.live:
+        raise SystemExit('--live is only valid for Claude plans')
     a.f(a)
 
 
