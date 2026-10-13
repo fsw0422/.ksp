@@ -1,8 +1,0 @@
-{
-  "name": "playwright-chromium-browser",
-  "description": "A persistent Playwright Chromium browser for sessions without a built-in browser, isolated from your own Chrome",
-  "author": {
-    "name": "fsw0422"
-  },
-  "repository": "https://github.com/fsw0422/skills"
-}

@@ -87,21 +87,3 @@ Create `<name>/SKILL.md` at the repository root. Rerun
 the new links, then restart the tools. Existing skill edits need no new links;
 rerunning setup removes links for deleted skills. Optional Codex UI metadata
 goes in `<name>/agents/openai.yaml`.
-
-The `.claude-plugin` files are packaging metadata for optional plugin
-distribution and `claude --plugin-dir`; local Claude Code and Codex skill links
-do not depend on their skill list.
-
-## Develop
-
-Load the working copy for one Claude Code session without publishing:
-
-```sh
-claude --plugin-dir ~/skills
-```
-
-Validate the manifests before pushing:
-
-```sh
-claude plugin validate ~/skills
-```
