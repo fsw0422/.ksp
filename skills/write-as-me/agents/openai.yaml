@@ -1,0 +1,4 @@
+interface:
+  display_name: "Write As Me"
+  short_description: "Draft messages in your own voice"
+  default_prompt: "Use $write-as-me to draft a reply to this Slack thread in my voice."

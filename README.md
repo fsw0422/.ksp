@@ -57,16 +57,16 @@ and memory stay.
 ## AI agent configs
 
 Personal base settings for Claude Code and Codex, shared by every machine.
-Shared user instructions live in the
-[skills](https://github.com/fsw0422/skills) repository at `~/skills/AGENTS.md`.
-Work extras live in `~/projects` (`.claude/settings.json`, `.mcp.json`,
-`.codex/config.toml`, `AGENTS.md`) and layer on top of these.
+Shared user instructions, personal skills, and the Playwright browser config
+live under [`skills/`](skills/). Work extras live in `~/projects`
+(`.claude/settings.json`, `.mcp.json`, `.codex/config.toml`, `AGENTS.md`) and
+layer on top of these.
 
 | Live file | Links to |
 |---|---|
 | `~/.claude/settings.json` | `claude/settings.json` |
-| `~/.claude/CLAUDE.md` | `~/skills/AGENTS.md` |
-| `~/.codex/AGENTS.md` | `~/skills/AGENTS.md` |
+| `~/.claude/CLAUDE.md` | `skills/AGENTS.md` |
+| `~/.codex/AGENTS.md` | `skills/AGENTS.md` |
 | `/etc/codex/config.toml` | `codex/config.toml` |
 
 Codex reads `/etc/codex/config.toml` as its system layer, below the user file
@@ -80,3 +80,6 @@ overrides the base; copy it into `codex/config.toml` to keep it everywhere.
 Project trust is machine state too, so it lives only in the user file. On a new
 machine, trust `~/projects` once when Codex asks, or the work layer there does not
 load. Linking into `/etc` needs `sudo` once (ksp-setup does this).
+
+`ksp-setup` links each `skills/<name>` directory into the installed platforms.
+Both Claude Code and Codex therefore read the same files from this checkout.

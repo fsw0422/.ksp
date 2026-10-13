@@ -1,0 +1,4 @@
+interface:
+  display_name: "Spec Workflow"
+  short_description: "Keep specs and code in sync and prepare the next worktree"
+  default_prompt: "Use $spec-workflow to keep specs and code in agreement, clean up code before the final $guided-code-review and merge, follow the project's agent choices, and prepare the next worktree."

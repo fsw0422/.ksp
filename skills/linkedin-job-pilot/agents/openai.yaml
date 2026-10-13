@@ -1,0 +1,4 @@
+interface:
+  display_name: "LinkedIn Job Pilot"
+  short_description: "Discover, research, track, and apply safely"
+  default_prompt: "Use $linkedin-job-pilot to start discovery from my open LinkedIn Jobs tab."

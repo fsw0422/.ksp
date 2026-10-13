@@ -1,0 +1,4 @@
+interface:
+  display_name: "Guided Code Review"
+  short_description: "Interactive diff walkthroughs with rationale and diagrams"
+  default_prompt: "Use $guided-code-review to walk me through this change one chunk at a time, explain why each change was made, and use call or data-flow diagrams where useful; wait for my direction between chunks."
