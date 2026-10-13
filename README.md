@@ -1,7 +1,7 @@
 # Agent skills
 
 Personal agent skills maintained as ordinary Git source. Clone this repo to
-`~/agent-skills` and link the skill folders into Claude Code and Codex. Both tools
+`~/skills` and link the skill folders into Claude Code and Codex. Both tools
 read the same files, independent of which tool was installed first. The
 repo also includes the Playwright Chromium MCP configuration for CLI browsing;
 setup registers it directly in each selected tool.
@@ -11,7 +11,7 @@ setup registers it directly in each selected tool.
 For a new machine, use [ksp-setup](https://github.com/fsw0422/ksp-setup) and choose
 `claude`, `codex`, or `both` when `install.sh` asks which AI tool configs to
 install. It links the shared `.ksp` settings, clones this repository to
-`~/agent-skills`, and creates skill links for the selected tools:
+`~/skills`, and creates skill links for the selected tools:
 
 - Claude Code: `~/.claude/skills/<name>`
 - Codex: `~/.agents/skills/<name>`
@@ -70,7 +70,7 @@ Rerun the setup helper to pull `main` with `--ff-only` and link newly added skil
 To update existing skill files without rerunning setup:
 
 ```sh
-git -C ~/agent-skills pull --ff-only
+git -C ~/skills pull --ff-only
 ```
 
 No plugin version bump is needed. This checkout has no automatic update trigger;
@@ -91,11 +91,11 @@ in `<name>/agents/openai.yaml`.
 Load the working copy for one Claude Code session without publishing:
 
 ```sh
-claude --plugin-dir ~/agent-skills
+claude --plugin-dir ~/skills
 ```
 
 Validate the manifests before pushing:
 
 ```sh
-claude plugin validate ~/agent-skills
+claude plugin validate ~/skills
 ```
