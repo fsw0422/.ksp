@@ -7,16 +7,15 @@ description: "Guide spec changes and matching code across repositories with work
 
 Keep specs and code in agreement. Save interrupted work and prepare the next worktree for the user.
 
-```mermaid
-flowchart LR
-    Spec[Agree on and commit needed spec edits] --> Code[Build the matching code]
-    Code --> Review[Review the changes together]
-    Review -->|Merge approved| Merge[Squash into the parent]
-    Merge --> Refresh[Clean up and rebase siblings and their children]
-    Refresh --> Next[Prepare the next task]
-```
+1. Agree on and commit any needed spec edits.
+2. Build the matching code.
+3. Clean up the proposed changes and check the result.
+4. Review the complete change together.
+5. When approved, squash it into the parent.
+6. Remove completed worktrees and rebase siblings and their children.
+7. Prepare the next task.
 
-This skill chooses what to do next. [Git operations](references/git-operations.md) explains the commands and checks. [Guided Code Review](../guided-code-review/SKILL.md) handles the review conversation.
+This skill chooses what to do next and includes code cleanup. [Git operations](references/git-operations.md) explains the commands and checks. [Guided Code Review](../guided-code-review/SKILL.md) handles the review conversation.
 
 Read each repository or worktree's `CONTRIBUTING.md`, when present, before working there. Repeat this when switching worktrees.
 
@@ -144,14 +143,29 @@ A saved commit, or **checkpoint**, preserves unfinished work so a prerequisite c
 
 If several branches share a prerequisite, or depend on each other in a cycle, settle where the work belongs before continuing. Do not merge across siblings or skip parents to bypass that decision.
 
+## Clean up code before merging
+
+Read [Code cleanup](references/code-cleanup.md) and run that pass before every merge through this workflow. This includes child-to-parent merges, code-only changes, and the final merge into main or another release destination. Run it before freezing the final guided-review inputs.
+
+Scope the pass to the proposed diff against the immediate parent, plus affected callers and tests. For a final release, use its complete diff against the destination. Preserve the accepted behavior and domain terms. Avoid unrelated refactors or inherited unfinished work. Under `--not-live`, the accepted replacement remains the target while cleanup removes its already-approved leftovers.
+
+A pass may make no edits. For docs-only or verified unaffected repositories, assess the scope and record that no code cleanup applies. Do not manufacture edits or empty commits. Record each repository's parent/head/spec SHAs, scope, outcome, and checks in the existing work record.
+
+Make cleanup edits in the short-lived worktree that owns the change. If the release source collects reviewed changes, create or reuse a cleanup child of that source branch. Review and squash it into that parent, clean up the child, and update siblings through the normal workflow. Then reassess the release at its new source commit before the final review.
+
+If cleanup makes edits, check them, capture the updated candidate, and include them in guided review. Changes after approval invalidate affected approvals. If it finds an unclear requirement or a behavior defect, route that issue through the spec or implementation workflow before continuing.
+
+At merge time, verify that the cleanup result still covers the candidate. Changed content, bases, spec inputs, or a wider merge scope require a fresh assessment of the affected work. Reuse unchanged check evidence where valid. Expected source-to-squash SHA changes with verified identical approved content do not require duplicate passes. If required checks remain unresolved, hold the affected merge and report the limitation.
+
 ## When can we merge and clean up?
 
 1. For a change involving specs and code, accept the spec on its child branch first. Record that exact spec commit in each code repository's work record.
 2. Before merging, check every required repository. Its change must be current, tested, and covered by approval, or have evidence that it is unaffected. Accepting a spec allows dependent implementation within scope; it does not approve the code or the merge.
-3. Load [Guided Code Review](../guided-code-review/SKILL.md) in this conversation. Pass the repositories, exact parent/head/spec commits, and destination. Reuse a review only while its approval still covers those inputs.
-4. Squash each child into its immediate parent as one commit. This also applies to the final release merge. Follow [Git operations](references/git-operations.md) for setup, checkpoints, merges, rebases, and cleanup.
-5. A parent can return to its own parent, or be removed, only after all its children are resolved and cleaned up. This rule applies at every depth.
-6. After a child merges and is cleaned up, rebase every remaining sibling, then its children, onto their updated immediate parents. Check the results before another dependent merge.
+3. Complete the [cleanup pass](#clean-up-code-before-merging) for the proposed scope before the final review.
+4. Load [Guided Code Review](../guided-code-review/SKILL.md) in this conversation. Pass the repositories, cleanup result, exact parent/head/spec commits, and destination. Reuse a review only while its approval still covers those inputs.
+5. Squash each child into its immediate parent as one commit. This also applies to the final release merge. Follow [Git operations](references/git-operations.md) for setup, checkpoints, merges, rebases, and worktree cleanup.
+6. A parent can return to its own parent, or be removed, only after all its children are resolved and cleaned up. This rule applies at every depth.
+7. After a child merges and is cleaned up, rebase every remaining sibling, then its children, onto their updated immediate parents. Check the results before another dependent merge.
 
 A clean rebase does not prove the code still matches the spec. Check changed requirements, APIs, and callers separately. Adapt code within accepted decisions and test it. If a conflict needs a new decision, leave the affected work blocked and explain the decision needed.
 
@@ -180,7 +194,7 @@ Use the existing workspace ledger, normally `COMMIT_REVIEW_QUEUE.md`. A ledger i
 | --- | --- |
 | Work map | Shared names, repositories and paths, parents, dependencies, priorities, interrupted work to resume, required and unaffected repositories |
 | Versions and recovery | Parent/base/head/spec SHAs, saved tips and old replay boundaries, checkpoints, original-to-squash commit mappings, completed merge or rebase steps |
-| Progress | Every child, each repository's state, spec/code agreement, checks, family and release completion, exact blockers |
+| Progress | Every child, each repository's state, spec/code agreement, cleanup scope/result/input SHAs and checks, family and release completion, exact blockers |
 | Review and next task | [Review record](../guided-code-review/SKILL.md#review-record), current review position, authorized action, next worktree and reason |
 
 The old replay boundary is the saved parent commit that separates inherited work from a child's own commits. Keep it before any history rewrite; [Git operations](references/git-operations.md) uses it to avoid replaying work twice.
@@ -194,6 +208,7 @@ Keep coordination, interactive review, user decisions, and the work record in th
 | Write specs from accepted decisions | `gpt-6.1-sol` | Medium |
 | Resolve domain or requirement decisions | `gpt-6-astra` | High |
 | Implement code | `gpt-6.1-sol` | High |
+| Clean up code before integration | `gpt-6.1-sol` | High |
 | Analyze a diff for guided review | `gpt-6.1-sol` | High |
 | Perform a clean, approved integration | `gpt-6.1-sol` | Medium |
 | Investigate conflicts or recover interrupted operations | `gpt-6.1-sol` | High |

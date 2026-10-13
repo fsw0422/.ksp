@@ -68,7 +68,7 @@ All repairs use the usual shared branches, guided reviews, one squash commit per
 
 ### Where cleanup fits
 
-[Cleanup](../../cleanup/SKILL.md) handles proven dead code and restructuring that preserves behavior. Missing documentation does not make code dead. Removing a feature needs an accepted decision; Cleanup can help remove leftovers once that scope is agreed.
+Spec Workflow's [code cleanup rules](code-cleanup.md) cover proven dead code and restructuring that preserves behavior. Run the [pre-merge pass](../SKILL.md#clean-up-code-before-merging) before integration. Missing documentation does not make code dead. Removing a feature needs an accepted decision; cleanup can remove leftovers once that scope is agreed.
 
 ## Verify and close
 

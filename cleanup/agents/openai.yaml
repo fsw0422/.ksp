@@ -1,4 +1,0 @@
-interface:
-  display_name: "Cleanup"
-  short_description: "Behavior-preserving code cleanup"
-  default_prompt: "Use $cleanup to improve this code without changing observable behavior."

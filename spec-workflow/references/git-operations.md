@@ -50,6 +50,8 @@ Record which repositories were updated so a partial rename can resume safely. Re
 
 ## Freeze the review inputs
 
+Complete the [cleanup pass](../SKILL.md#clean-up-code-before-merging) before freezing the final review. Record its scope, result, checks, and input versions. Include any resulting edits in the child snapshot that follows.
+
 Save the complete child change in a commit within the user's authorization. Record the exact parent baseline and child commit to review:
 
 ```text
@@ -61,10 +63,11 @@ Check status so intended uncommitted or untracked files are not left out. Pass G
 Before merging, verify:
 
 - The [review record](../../guided-code-review/SKILL.md#review-record) covers the current inputs and destination.
+- The cleanup result covers those same inputs and merge scope, or records why no code cleanup applies.
 - The parent is clean, and all children below the merging branch have been resolved and cleaned up.
 - Every required repository is current, checked, and approved, or verified unaffected.
 
-Unexpected changes to the parent, child, or spec invalidate affected approvals. Update and check the work, then review the changed version. Do not substitute a newer tip under an old approval.
+Unexpected changes to the parent, child, or spec require a fresh cleanup assessment of the affected work and invalidate affected approvals. Update and check the work, then review the changed version. Do not substitute a newer tip under an old approval.
 
 ## Squash into the immediate parent
 
