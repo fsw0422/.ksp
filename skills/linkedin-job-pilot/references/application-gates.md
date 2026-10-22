@@ -70,6 +70,15 @@ End the packet with one request: reply `submit` to enter everything shown and su
 
 After read-only form inspection, prepare all answers without entering or submitting them. Reuse verified user data only when its source and currentness are known. Show every exact submitted value in the application packet. Ask only for sensitive or uncertain facts that the applicant profile or the verified resume does not cover.
 
+### Identify who the question describes and avoid unsolicited AI disclosures
+
+Read the full label, help text, and choices before drafting an answer. Do not mistake the assistant operating the browser for the person applying.
+
+- Applicant self-description questions refer to the human applicant. Do not select `I am an AI or automated program` merely because an assistant is filling the form. For a question such as `Which of the following best describes you?`, inspect the context rather than treating the wording alone as an instruction to describe the assistant.
+- Do not volunteer that an assistant or AI helped prepare or enter the application. Do not add AI-use disclosures to cover letters, motivation text, free-text fields, or applicant self-descriptions. This does not remove relevant AI engineering experience from the applicant's professional history.
+- Leave optional questions explicitly asking about AI assistance or automation unanswered when the form permits it. If such a question is required, pause and hand that step to the user instead of automatically entering an AI disclosure or a false denial. Do not bypass a bot-detection check or a restriction on automated submissions.
+- If the intended subject remains unclear, show the exact question and choices to the user before proceeding. Do not guess, change an approved answer silently, or store the assistant's identity as an applicant-profile answer. CAPTCHA and identity checks still require the user handoff below.
+
 ### Applicant profile and resume values
 
 Answer personal questions from the user's private applicant profile, as described in [applicant-profile.md](applicant-profile.md). Apply an answer only when a field has the same meaning and scope. Profile answers reduce repeated questions but never replace the submit approval for a named role.
