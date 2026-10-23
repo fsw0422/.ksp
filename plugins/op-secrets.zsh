@@ -216,8 +216,16 @@ refresh-op-secrets() {
 }
 
 _op_secrets_wanted_env() {
+	# An IDE launched from a tmux pane (`open -na ...`) inherits TMUX, so every
+	# helper shell it spawns (`zsh -ilc ...` for env resolution, extension and
+	# tool shells) would otherwise look like a tmux pane and each fire its own
+	# batch of 1Password prompts. Only real terminals qualify: no `-c` command
+	# shells, no env-resolution pass, and stdin must be a tty.
+	[[ -n "$ZSH_EXECUTION_STRING" ]] && return 1
+	[[ -n "$VSCODE_RESOLVING_ENVIRONMENT" ]] && return 1
+	[[ -t 0 ]] || return 1
 	[[ -n "$TMUX" ]] && return 0
-	[[ "$TERM_PROGRAM" == vscode && -z "$VSCODE_RESOLVING_ENVIRONMENT" ]] && return 0
+	[[ "$TERM_PROGRAM" == vscode ]] && return 0
 	[[ "$TERMINAL_EMULATOR" == JetBrains-JediTerm ]] && return 0
 	return 1
 }
