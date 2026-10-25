@@ -182,7 +182,26 @@ After an interruption, review decision, merge, cleanup, rebase, failure, or resu
 3. Follow the user's highest priority. Work on its deepest ready prerequisite first.
 4. Resume interrupted work when ready; otherwise choose another ready task. Break ties by what unblocks the release, context already available, then a stable order. Branch names and discovery dates alone do not set priority.
 
-Prepare that worktree and report its **change, repository, branch, absolute path, next action, and why it is next**. Open the relevant file or diff when possible. Continue coding only within the user's authorization; otherwise leave the worktree ready. Do not ask what comes next when recorded priorities already answer it.
+Prepare that worktree. **Every next-task summary MUST include:**
+
+- **What:** the specific change or problem and the result we want. A branch name or task label alone is not enough.
+- **Why next:** the priority, prerequisite, or unfinished operation that makes this the next action, and what it unblocks.
+- **Example:** at least one concrete scenario showing the current and intended behavior. For review or Git tasks, show what the action means for the affected changes. Ground examples in the checked specs and code; clearly label hypothetical examples and unknown behavior.
+- **Next action:** the immediate step and how we will know it is done. State any decision needed from the user.
+
+Put the **change name, repository, branch, and absolute worktree path** after that explanation. Open the relevant file or diff when possible.
+
+Hypothetical handoff:
+
+> **What:** Make reopening a Class restore its saved audio.
+>
+> **Why next:** Class recovery is your highest priority, and its storage fix has merged. We can now finish recovery.
+>
+> **Example:** Record a minute, close the app, then reopen the Class. Today the recording is missing; the accepted spec says that saved minute should be available.
+>
+> **Next action:** Check where reopening loses the saved recording, fix that step, and run a test that closes and reopens the Class.
+
+Use the actual task's facts in the handoff. Keep the example short, but never omit it. Continue coding only within the user's authorization; otherwise leave the worktree ready. Do not ask what comes next when recorded priorities already answer it.
 
 Independent work can use many worktrees. Coordinate who writes to each one, and keep one review conversation active with the user.
 
