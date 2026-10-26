@@ -10,14 +10,21 @@ A root branch uses its change name. A child appends `-<change>` to its parent's 
 
 On change branches, use `<full-branch-name>: <short description>` for commit subjects, including checkpoints. For example: `001-initial-class-recovery: Save recovery draft before rebase`. The worktree folder prefix (`<repo>-`) is not part of the subject. For a squash into a parent change branch, use the merged child's full change name, such as `001-initial-class-recovery: Add recovery rules` on `001-initial`; a commit made directly on `001-initial` uses `001-initial:`. For a squash merge into `main`, use a plain descriptive subject without a branch or repository prefix. If commit messages must be corrected later, preserve the old tips, verify unchanged trees, and update affected review SHAs; do not force-push as part of a local correction.
 
-Before branching, verify the intended immediate parent against Git and the work record.
+Before branching, compare the new change's requirements, dependencies, and merge destination with the last active change. Choose where the result belongs before choosing its branch name. The last active worktree is a candidate, not the default. Verify the selected immediate parent against Git and the work record in every affected repository.
 
 Choose the starting point:
 
 | Kind of work | Starting point |
 | --- | --- |
-| Independent change | The accepted branch where reviewed changes are collected |
+| Continue the same change or make a small revision | Reuse its existing worktree |
 | Prerequisite of current work | A checkpoint commit of the current child's in-scope edits |
+| Independent change | The accepted branch that collects reviewed changes for its intended release or scope; this may differ from the last active change's parent |
+
+If the new change needs another branch's unfinished work, inspect that branch's scope before choosing it as the parent. Settle shared prerequisites or unclear ownership before creating a branch; do not inherit unrelated unfinished changes just because that worktree was used recently.
+
+Record the chosen parent worktree path, branch, base SHA, and why the new change belongs there. Explain the choice in the setup handoff before creation. This does not require another approval when the task and parent are already clear and authorized.
+
+For example, suppose `initial-retained-audio` is active. A codec fix needed by that change becomes `initial-retained-audio-codec-fix`, based on its checkpoint. An unrelated profile-settings change for the same release starts from accepted `initial` as `initial-profile-settings`, a sibling. A change for another release uses that release's accepted parent instead.
 
 Include intended new files, renames, deletions, and executable bits in a checkpoint. Save the original staging information. Uncommitted files do not appear automatically in a new worktree. A child can inherit unfinished work, but its review does not approve that inherited work.
 

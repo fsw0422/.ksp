@@ -95,11 +95,14 @@ Link to the existing definition instead of making another catalog. A noun does n
 
 A **change family** is one change across all relevant repositories. Each repository uses the same full branch name. A **parent** is the branch a child will merge back into; a **sibling** is another child of that parent.
 
+Before creating a worktree, choose its parent from the new change's dependencies and intended merge destination. Compare it with the last active change; recent use, shared files, or a similar topic alone do not make that worktree the right parent. Reuse an existing worktree when continuing the same change. Follow the [parent selection steps](references/git-operations.md#prepare-or-branch), record the reason, and explain the choice in the handoff before creating anything.
+
 Build the branch name from its ancestors, called its **lineage**:
 
 ```mermaid
 flowchart LR
     Root[initial] --> Child[initial-retained-audio]
+    Root --> Sibling[initial-profile-settings]
     Child --> Grandchild[initial-retained-audio-codec-fix]
 ```
 
@@ -189,7 +192,7 @@ Prepare that worktree. **Every next-task summary MUST include:**
 - **Example:** at least one concrete scenario showing the current and intended behavior. For review or Git tasks, show what the action means for the affected changes. Ground examples in the checked specs and code; clearly label hypothetical examples and unknown behavior.
 - **Next action:** the immediate step and how we will know it is done. State any decision needed from the user.
 
-Put the **change name, repository, branch, and absolute worktree path** after that explanation. Open the relevant file or diff when possible.
+Put the **change name, worktree folder name, repository, branch, and absolute worktree path** after that explanation. Open the relevant file or diff when possible.
 
 Hypothetical handoff:
 
@@ -211,7 +214,7 @@ Use the existing workspace ledger, normally `COMMIT_REVIEW_QUEUE.md`. A ledger i
 
 | Record | What to keep |
 | --- | --- |
-| Work map | Shared names, repositories and paths, parents, dependencies, priorities, interrupted work to resume, required and unaffected repositories |
+| Work map | Shared names, repositories and paths, parents and reasons for choosing them, dependencies, priorities, interrupted work to resume, required and unaffected repositories |
 | Versions and recovery | Parent/base/head/spec SHAs, saved tips and old replay boundaries, checkpoints, original-to-squash commit mappings, completed merge or rebase steps |
 | Progress | Every child, each repository's state, spec/code agreement, cleanup scope/result/input SHAs and checks, family and release completion, exact blockers |
 | Review and next task | [Review record](../guided-code-review/SKILL.md#review-record), current review position, authorized action, next worktree and reason |

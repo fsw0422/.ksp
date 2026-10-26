@@ -23,6 +23,10 @@ Open the matching diff and provide verified source/line links when possible. If 
 
 Start with the purpose, exact comparison, and a short chunk map; explain the first chunk immediately. A chunk is one meaningful decision or behavior, possibly connecting a spec, contract, backend caller, frontend use, and tests. Follow the behavior/data path rather than file order, and account for the complete diff and required participants.
 
+**Start every new or resumed chunk, including each line-by-line step, with the current worktree folder name and branch.** Repeat them even when unchanged. For local work, link the folder name to its absolute path. If a chunk spans repositories, name each participating worktree and its repository. Identify the worktrees from the recorded review inputs and Git, rather than assuming the chat's working directory is the reviewed worktree. For a remote-only review, state the repository and reviewed branch or commit and say that no local worktree is in use.
+
+Example heading: `Worktree: backend-initial-class-recovery | Branch: initial-class-recovery | Chunk 2: Restore saved audio`.
+
 For the current chunk, explain:
 
 - **What changed:** a small before/after example with source links.
@@ -66,7 +70,7 @@ Use the workflow's existing ledger, or conversation state for a standalone read-
 
 | Record | Content |
 | --- | --- |
-| Identity and scope | Shared change name, participants/unaffected evidence, purpose, destinations; spec/code finding, accepted decision, and live or not-live scope |
+| Identity and scope | Shared change name, participants/unaffected evidence, worktree folder names, branches and paths, purpose, destinations; spec/code finding, accepted decision, and live or not-live scope |
 | Versions | Per-repository parent/base, child/head, accepted spec SHAs, relevant checks and currentness; cleanup result for workflow merge reviews |
 | Progress | Stable chunk IDs, paths/hunks, discussed/accepted/skipped/needs-change status, current line/chunk, questions and edits |
 | Decision | Spec accepted, changes requested, paused/rejected/deferred, walkthrough complete, or exact integration approved; include explicit waivers |
