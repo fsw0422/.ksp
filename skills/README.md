@@ -56,6 +56,15 @@ Chrome, with a persistent profile at `~/.playwright-chromium-browser/profile` an
 output in `~/.playwright-chromium-browser/output`. Never commit either folder;
 they hold login cookies and page contents. No marketplace install is needed.
 
+The server starts through `playwright-chromium-browser/launch.sh`. Inside a
+Claude Code session it loads `session-tabs.cjs`, which keeps that session's open
+tabs in `~/.playwright-chromium-browser/sessions/<session-id>/tabs.json` and
+reopens them when the browser starts again, so each session has its own tabs
+while every session shares the one signed-in profile. Only one session can hold
+the browser at a time; quit it with Cmd+Q to hand it to another session. Set
+`PW_SESSION_RESTORE=0` in the server environment to record tabs without
+reopening them. Codex sessions use the shared profile without tab tracking.
+
 If the browser binary is missing on a new machine, install it once:
 
 ```sh

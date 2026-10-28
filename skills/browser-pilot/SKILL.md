@@ -35,7 +35,7 @@ Say which browser you use and why before the first action.
 
 ## Tabs
 
-- Open a new tab for every browser task, and keep working in the tabs you opened.
+- Open a new tab for every browser task, and keep working in the tabs you opened. Tabs the browser reopens for the current session count as tabs you opened.
 - Never navigate, reuse, or close a tab you did not open, including the currently focused tab, unless the user explicitly asks you to read or act on it.
 - When the user asks about the focused tab, read it without navigating it away.
 - When a task you opened a tab for completes successfully, for example a confirmed form submission, close that tab. Keep it open when the result is unclear, failed, or still needs the user, and never close a tab you did not open.
