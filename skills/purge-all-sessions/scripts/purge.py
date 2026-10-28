@@ -142,6 +142,7 @@ def plan_claude(live_args, min_age):
         for pat in (f'projects/*/{u}*', f'file-history/{u}', f'session-env/{u}',
                     f'tasks/{u}', f'debug/{u}*'):
             rm += glob.glob(f'{CLAUDE}/{pat}')
+        rm += glob.glob(f'{PW}/sessions/{u}')
     for jid, s, *_ in job_rows():
         if s in purge:
             rm.append(f'{CLAUDE}/jobs/{jid}')

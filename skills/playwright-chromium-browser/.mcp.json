@@ -1,9 +1,9 @@
 {
   "mcpServers": {
     "browser": {
-      "command": "npx",
+      "command": "bash",
       "args": [
-        "@playwright/mcp@latest",
+        "${HOME}/.ksp/skills/playwright-chromium-browser/launch.sh",
         "--browser",
         "chromium",
         "--user-data-dir",
