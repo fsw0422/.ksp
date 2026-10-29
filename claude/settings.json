@@ -2,7 +2,8 @@
   "permissions": {
     "defaultMode": "default",
     "deny": [
-      "mcp__claude-in-chrome"
+      "mcp__claude-in-chrome",
+      "mcp__playwright-chromium-browser__browser_close"
     ]
   },
   "model": "opus[1m]",
@@ -13,5 +14,19 @@
   "tui": "fullscreen",
   "preferredNotifChannel": "iterm2",
   "autoMemoryEnabled": false,
-  "autoDreamEnabled": false
+  "autoDreamEnabled": false,
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "mcp__playwright-chromium-browser__.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$HOME/.ksp/skills/playwright-chromium-browser/browser.sh\" hook",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
 }

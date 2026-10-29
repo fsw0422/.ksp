@@ -70,7 +70,7 @@ three rows the user still had.
 
 | Selected platform | Per purged session |
 |---|---|
-| Claude | `projects/*/<id>*` (transcript, subagents, tool results), `jobs/<job>`, `file-history/<id>`, `session-env/<id>`, `tasks/<id>`, `debug/<id>*`, dead `sessions/*.json`, matching lines in `history.jsonl`, the session's browser tab list in `~/.playwright-chromium-browser/sessions/<id>` |
+| Claude | `projects/*/<id>*` (transcript, subagents, tool results), `jobs/<job>`, `file-history/<id>`, `session-env/<id>`, `tasks/<id>`, `debug/<id>*`, dead `sessions/*.json`, matching lines in `history.jsonl` |
 | Codex | rollout files in `sessions/` and `archived_sessions/`, `shell_snapshots`, `generated_images`, `attachments`, `session_index.jsonl` and `history.jsonl` lines, rows in every `*.sqlite` table with a thread/session id column (`threads`, logs, goals, history, queue, ...) |
 | Playwright | `~/.playwright-chromium-browser/output/*` older than 10 minutes. The profile only with the flag, and only when the browser window is closed. |
 

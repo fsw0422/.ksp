@@ -56,14 +56,14 @@ Chrome, with a persistent profile at `~/.playwright-chromium-browser/profile` an
 output in `~/.playwright-chromium-browser/output`. Never commit either folder;
 they hold login cookies and page contents. No marketplace install is needed.
 
-The server starts through `playwright-chromium-browser/launch.sh`. Inside a
-Claude Code session it loads `session-tabs.cjs`, which keeps that session's open
-tabs in `~/.playwright-chromium-browser/sessions/<session-id>/tabs.json` and
-reopens them when the browser starts again, so each session has its own tabs
-while every session shares the one signed-in profile. Only one session can hold
-the browser at a time; quit it with Cmd+Q to hand it to another session. Set
-`PW_SESSION_RESTORE=0` in the server environment to record tabs without
-reopening them. Codex sessions use the shared profile without tab tracking.
+The server starts through `playwright-chromium-browser/browser.sh serve`, which
+attaches Playwright MCP to one shared Chromium on `127.0.0.1:19222` (not 9222,
+where your own Chrome may listen) instead of launching a browser per session.
+Every session works in the same window, and the browser keeps running after
+sessions end until you quit it. Agents never close tabs or the browser: the
+Claude Code settings deny `browser_close`, and a `PreToolUse` hook refuses
+closing tabs and opens the browser on the first browser action. Other tools
+open it with `browser.sh start` when a browser tool cannot connect.
 
 If the browser binary is missing on a new machine, install it once:
 
@@ -71,9 +71,9 @@ If the browser binary is missing on a new machine, install it once:
 npx -y @playwright/mcp@latest install-browser chrome-for-testing
 ```
 
-This downloads the browser (about 100 MB); repeat it if Playwright reports the
-browser missing after an update. Rerun setup if the repo's MCP configuration
-changes, since each tool stores a copy of those options.
+This downloads the browser (about 100 MB); `browser.sh` uses the newest Chrome
+for Testing build Playwright has installed. Rerun setup if the repo's MCP
+configuration changes, since each tool stores a copy of those options.
 
 ## Global instructions and settings
 
