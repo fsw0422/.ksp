@@ -54,8 +54,9 @@ start() {
 	fi
 	mkdir -p "${profile}"
 	# The mock keychain and basic password store match Playwright's own launch, so the
-	# profile's saved sign-ins stay readable. The last three keep tabs that are not in
-	# front running at full speed.
+	# profile's saved sign-ins stay readable. Without a startup window there is no
+	# leftover blank tab; the first tab an agent opens brings up the window. The last
+	# three keep tabs that are not in front running at full speed.
 	open -na "${app}" --args \
 		--user-data-dir="${profile}" \
 		--remote-debugging-port="${port}" \
@@ -63,6 +64,7 @@ start() {
 		--password-store=basic \
 		--no-first-run \
 		--no-default-browser-check \
+		--no-startup-window \
 		--disable-background-timer-throttling \
 		--disable-backgrounding-occluded-windows \
 		--disable-renderer-backgrounding
