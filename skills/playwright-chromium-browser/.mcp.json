@@ -3,13 +3,8 @@
     "browser": {
       "command": "bash",
       "args": [
-        "${HOME}/.ksp/skills/playwright-chromium-browser/launch.sh",
-        "--browser",
-        "chromium",
-        "--user-data-dir",
-        "${HOME}/.playwright-chromium-browser/profile",
-        "--output-dir",
-        "${HOME}/.playwright-chromium-browser/output"
+        "${HOME}/.ksp/skills/playwright-chromium-browser/browser.sh",
+        "serve"
       ]
     }
   }
