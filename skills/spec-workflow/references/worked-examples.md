@@ -214,8 +214,10 @@ The work record holds the current state only, so the agent can read it quickly a
 
 ## Recovery data
 
-Recovery data exists so nothing is lost if a step fails. It should hold only what can't be rebuilt, and it should go away once the change is safely in the integration branch.
+Recovery data exists so nothing is lost if a step fails. It lives in Git, as refs and checkpoint commits, and it goes away once the change is safely in the integration branch.
 
-**Example: what to save.** Before a risky rebase, the agent saves the old branch tips as refs under `refs/recovery/`, which cost almost nothing. It doesn't copy `node_modules`, because `pnpm install` recreates it, so it records that command instead. If a copy would be 400 MB, the agent stops and checks what it's copying.
+**Example: what to save.** Before a risky rebase, the agent saves the old branch tips as refs under `refs/recovery/`, which cost almost nothing. A squash that failed halfway through resolving conflicts is committed, markers and all, and kept as a ref too, so resetting the worktree loses nothing. The agent never copies `node_modules` or build folders, because an install or a build recreates them.
 
-**Example: when it can go.** The storage fix's content is in `initial`, the backend tests passed there, and its worktrees are removed. The agent deletes the fix's recovery refs and notes that in its history line. Folders saved before the work record existed are different: the agent lists them and asks before deleting any.
+**Example: something Git can't hold.** A bug only shows up with the test database on the phone, and the next step resets that database. The agent doesn't copy it on its own. It asks, "Should I export the test database before resetting it? It's about 40 MB," and waits for an answer.
+
+**Example: when it can go.** The storage fix's content is in `initial`, the backend tests passed there, and its worktrees are removed. The agent deletes the fix's recovery refs and notes that in its history line. Folders that an older run saved outside Git are different: the agent lists them and asks before deleting any.

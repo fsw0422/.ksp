@@ -32,6 +32,6 @@ Updated: <YYYY-MM-DD HH:MM>
 - **Review:** <not started | chunk <n> of <m>, accepted 1–<n> | approved for `<destination>` at `<shas>`>
 - **Needs rebase:** <no | onto `<sha>`, after `<sibling>` merged>
 - **Done so far:** <merged repositories, removed worktrees, rebased siblings>
-- **Recovery:** <checkpoints, refs, and saved files>; delete when <condition>
+- **Recovery:** <checkpoint commits and refs under `refs/recovery/`>; delete when <condition>
 - **Blocked by:** <nothing | the decision or failure, and who must act>
 - **Next action:** <the step, and how we will know it is done>

@@ -429,7 +429,7 @@ More examples: [Picking the next task](references/worked-examples.md#picking-the
 
 ## Keep one work record
 
-Keep the current state of all work in `WORK_RECORD.md` at the workspace root, outside every repository. Start it from [the work record template](assets/work-record.md). Each entry holds the change's names and paths; its parent and why; what it depends on; its mode; what the user has authorized; the accepted spec commit and whether spec and code agree; per-repository commits, including checkpoints and merge progress; the chunk map; cleanup and review state; recovery data; blockers; and the next action.
+Keep the current state of all work in `WORK_RECORD.md` at the workspace root, outside every repository. Start it from [the work record template](assets/work-record.md). Each entry holds the change's names and paths; its parent and why; what it depends on; its mode; what the user has authorized; the accepted spec commit and whether spec and code agree; per-repository commits, including checkpoints and merge progress; the chunk map; cleanup and review state; recovery refs; blockers; and the next action.
 
 **Why:** the next-task choice starts by reading this file, so it must stay short and current. A long log makes the agent guess which entry is current.
 
@@ -437,13 +437,13 @@ Keep the current state of all work in `WORK_RECORD.md` at the workspace root, ou
 flowchart LR
     Active[Active change] -->|One entry, rewritten in place| Record[WORK_RECORD.md]
     Record -->|Change finished| History[Summary in WORK_HISTORY.md]
-    Active -->|Large evidence| Recovery[Folder in workflow-recovery]
-    Recovery -->|Retention rules| Deleted[Deleted when no longer needed]
+    Active -->|Recovery points| Refs[Git refs and checkpoint commits]
+    Refs -->|Change safely merged| Deleted[Deleted]
 ```
 
 - Give each active change one entry. When its state changes, rewrite the entry instead of adding a new one.
-- When a change is finished, move a short summary to `WORK_HISTORY.md` and delete its entry: its name, destination, each repository's squash SHA, the date, and what happened to its recovery data. Read the history only when you need an old detail.
-- Larger evidence, such as frozen review inputs or long check output, can go in a folder under `workflow-recovery/` that the entry links to. It follows the [recovery data rules](references/git-operations.md#keep-recovery-data-small).
+- When a change is finished, move a short summary to `WORK_HISTORY.md` and delete its entry: its name, destination, each repository's squash SHA, the date, and when its recovery refs were deleted. Read the history only when you need an old detail.
+- Keep recovery points in Git, as refs under `refs/recovery/` and checkpoint commits, and list them in the entry. Don't copy files into a separate folder. [Keep recovery data in Git](references/git-operations.md#keep-recovery-data-in-git) says what to save and when it can go.
 
 If the workspace has only an older log, such as `COMMIT_REVIEW_QUEUE.md`, leave it unchanged as history. The first time you need the record, build `WORK_RECORD.md` from Git and the log's most recent entries, which may not be in date order. Tell the user you did this.
 
