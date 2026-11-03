@@ -1,0 +1,221 @@
+# Worked examples
+
+This file explains Spec Workflow's rules in more detail, with several examples for each one. [SKILL.md](../SKILL.md) states the rules; read the matching section here when a rule's meaning, or how it applies to an unusual case, isn't clear.
+
+The examples use a made-up language-class app. Its spec repository is `specs`, its code lives in `backend` and `frontend`, and its integration branch is `initial`. A **Class** is one speaking lesson, a **Pause** stops a Class for a while, and the app saves each Class's audio.
+
+## Choosing the mode
+
+The mode answers one question: does anything released depend on the old behavior? If something does, a change has to keep the old behavior working while it moves to the new one; that's live mode. If nothing does, the change can simply replace the old behavior; that's `--not-live`. Guessing wrong in the `--not-live` direction can break real users, so the mode always comes from the user, and the default is live.
+
+```mermaid
+flowchart TD
+    Flag{Does the request say --not-live?} -->|Yes| NotLive[Use --not-live]
+    Flag -->|No| Default{Does a standing user or project instruction set a default?}
+    Default -->|Yes| UseDefault[Use that default]
+    Default -->|No| Live[Use live]
+```
+
+**Example: the project sets a default.** The workspace `AGENTS.md` says "use Spec Workflow with `--not-live` by default". The user asks, "add a retention period to Class", without a flag. The mode is `--not-live`, and the work record says where it came from: `Mode: --not-live, from the project default`. The spec gets the new retention rule directly, the code adds the field, and no migration is written for old Classes.
+
+**Example: no default.** In another project with no default, the user asks to rename the API field `duration` to `lengthSeconds`. The mode is live, so released clients that still send or read `duration` must keep working. The change adds `lengthSeconds`, keeps `duration` as a deprecated alias, and the spec records when the alias will be removed.
+
+**Example: a child keeps its family's mode.** While building the `--not-live` audio feature, the agent finds that the storage layer needs a fix and gives it its own branch. The fix stays `--not-live`. If it switched to live, it would start writing migrations for data shapes that the parent feature is replacing anyway.
+
+**Example: old test data.** The audio feature changes how Pause data is saved. The test phone still has Classes saved in the old shape, and they can no longer resume. Under `--not-live` there is no migration, but the agent may not delete those records on its own either. So the change says what happens to them, for example "old paused Classes show as ended", or the agent asks, "Reset the local test database? This deletes 3 test Classes," and waits for a yes.
+
+**Example: going live.** The app ships. The user tags the spec repository `release-1` and changes the `AGENTS.md` default to live. A month later, a change wants to rename a field that `release-1` defines. Live mode applies now: the old name keeps working until a planned removal, because the released app still uses it.
+
+## Deciding whether the spec changes first
+
+A spec decision is any choice about what the product does, what an API promises, or what a shared word means. Code shouldn't make those choices on its own, because whatever the code does first tends to become the rule without anyone deciding it. Everything else, such as how the code is organized inside, is code-only work.
+
+| Request | What happens | Why |
+| --- | --- | --- |
+| "The Pause button stays enabled after the third Pause" | A code-only fix. `PAUSE-002` already says the button must be disabled | The decision exists; the code just doesn't follow it |
+| "Show remaining Pauses on Home" | Spec first: add the rule, with a new ID, to the Pause feature document, review it, then build | It's new behavior the user will see |
+| "Rename `ClassRepo` to `ClassRepository`" | Code-only | It aligns the code with the spec's existing word |
+| "Call a Class a Lesson from now on" | Spec first | Every repository, API, and table uses that word |
+| "Delete `formatLegacyPause()`, nothing uses it" | Code-only, after checking for dynamic uses | Removing unused internals changes nothing users see |
+
+**Example: the spec is unclear.** The spec says "Pauses are limited" but not how many, and the code allows three. The agent doesn't pick a number. It shows the code that enforces three, links the Pause feature document, and asks:
+
+> The spec doesn't say how many Pauses a Class allows. The code allows three (`PauseService.ts`, line 41). Option A: write "three Pauses per Class" into `PAUSE-001`. Option B: choose a different number and change the code. Which do you want?
+
+Code that depends on the answer waits. Unrelated work, such as a cleanup in another branch, can continue.
+
+**Example: where the reason goes.** Keeping recorded Class audio for later replay affects recording, recovery, history, and storage, and it's expensive to undo, so it gets a decision record such as `decisions/04-retained-class-audio.md`. Clearing a request timer once headers arrive affects one function, so its reason goes in the squash commit message:
+
+```text
+initial-request-timeout: Clear the timer when headers arrive
+
+A slow response body was being cut off by the request timer even though
+the server had already answered. The timer now only covers the wait for headers.
+```
+
+## Choosing a parent
+
+A child branch starts from its parent's unfinished work, and it can only reach the integration branch after its parent does. So the question is never "which worktree did I use last?" It's "what does this work need, and where should its result land?"
+
+**Example: the same change.** While building `initial-retained-audio`, the user asks to rename a button label in the same feature. That's a small revision of the same change, so it happens in the existing worktree.
+
+**Example: a child.** The codec used by the new audio code needs a fix, and the fix changes that new code. The fix can't exist without the unfinished audio work, so it becomes a child, built on a checkpoint:
+
+```text
+initial
+└── initial-retained-audio                 paused at a checkpoint
+    └── initial-retained-audio-codec-fix   builds on the checkpoint
+```
+
+**Example: a sibling.** The audio work needs a storage fix, but the fix doesn't touch any audio code. As a child, it would have to wait for the whole audio feature. As a sibling, it can merge into `initial` as soon as it's reviewed, and the audio work then rebases onto it:
+
+```text
+initial
+├── initial-retained-audio   paused, waits for the fix
+└── initial-storage-fix      merges first; audio then rebases onto initial
+```
+
+**Example: a shared prerequisite.** Both the audio work and the history work need a new storage API. Neither should own it, because whichever owned it would hold the other back. It becomes a sibling of both, branched from `initial`, and both rebase onto `initial` after it merges.
+
+**Example: the re-check before review.** The codec fix was created as a child, but by the time it's done, it only changes a shared helper and nothing in the audio code. Before review, the agent asks the question again and moves the branch: it renames it to `initial-codec-fix` in every repository, rebases it onto `initial` using its recorded base, and moves its folders. The fix can now merge without waiting for the audio work.
+
+## Planning chunks
+
+A chunk is one behavior or decision that the user can understand and judge on its own. The chunk map lists the chunks in build order before building starts. That way the user knows the plan, the riskiest part can be shown early, and the review later follows a map the user has already seen.
+
+**Example: a chunk map.** For Class recovery, partway through building:
+
+```text
+✓ Save audio during a Class          REC-010, REC-011   backend
+▶ Restore saved audio on reopen      REC-012            backend, frontend
+○ Offer a retry when loading fails   REC-013            frontend
+```
+
+`✓` is built, `▶` is being built, and `○` is planned. Saving audio is the riskiest chunk, because the saved format is hard to change later.
+
+**Example: offering a preview.** After the first chunk is built and its tests pass, the agent asks, "Saving audio is ready for a quick look before I build restore and retry. Want a preview?" If the user says yes, Guided Code Review shows that one chunk. The user might say, "also store each chunk's length in its file name." The agent adjusts the code and the map, and keeps building. Nothing is approved yet; the final review still covers everything.
+
+**Example: splitting a chunk off.** The team isn't sure about the saved format yet. Instead of building restore and retry on a format that might change, the agent makes "save audio" its own child branch. It's reviewed and merged first, and the rest builds on a settled format.
+
+**Example: the plan changes.** While building, "offer a retry" turns out to need a backend endpoint too. The agent updates the map so the retry chunk lists `backend, frontend`. When the review starts, it says, "The map changed in one place: retry also needed a backend endpoint, because the frontend can't restart a load on its own."
+
+## Handling interruptions
+
+Interruptions are normal. The rule is to keep everything recoverable, and to handle the new request without mixing it into unrelated work.
+
+**Example: a question during review.** The review is at chunk 2 when the user asks, "what's the status of the audio work?" The agent answers from the work record and Git, for example, "The storage fix is merged, and audio is in review at 'Restore audio'. Nothing is blocked." Then it returns to chunk 2 without changing anything.
+
+**Example: an unrelated spec change.** While audio is being built, the user decides that Review exercises should allow two retries instead of one. That has nothing to do with audio, so it doesn't go into the audio branch. It starts its own family from the accepted `initial`, for example `initial-review-retries`.
+
+**Example: a prerequisite.** See [Choosing a parent](#choosing-a-parent). Whether it becomes a child or a sibling depends on whether it needs the current unfinished work.
+
+## The cleanup pass
+
+The cleanup pass runs before the final review, so the review sees the final code. It may only make the code easier to read and change; it never changes what the code does.
+
+**Example: nothing to clean.** The change only edits spec documents. The agent records "no code cleanup applies: docs-only change" in the work record and moves on. It doesn't create an empty commit.
+
+**Example: a helper left behind.** The change replaced every use of `saveTmp()` with the new audio store, so `saveTmp()` is now unused. The agent checks for dynamic uses, such as configuration, reflection, and dependency injection, finds none, removes the helper, and reruns the tests. In the review, the removal appears inside the chunk that stopped using it, so the user sees both together.
+
+**Example: a bug found during cleanup.** While tidying `restoreClass()`, the agent notices that the last saved chunk is never loaded. Fixing that changes behavior, so it isn't cleanup. The agent reports it, fixes it as part of the implementation with a new test in the restore chunk, and then finishes the cleanup pass.
+
+## Review and merge
+
+Approval is for exact commits. That's why the review comes after the cleanup pass, and why any later change to those commits sends the affected part back to review.
+
+**Example: the start of a chunk.** The user first sees where they are:
+
+```mermaid
+flowchart LR
+    C1[✓ Save audio] --> C2[▶ Restore audio] --> C3[○ Retry on failure]
+    classDef current stroke-width:4px
+    class C2 current
+```
+
+Then the worktree and branch, such as "Worktree: `backend-initial-class-recovery`, linked to its folder · Branch: `initial-class-recovery`", and then the chunk itself: what changed, why, how it's used, and how to judge it.
+
+**Example: "looks good" in the middle.** After chunk 2, the user says "looks good". The agent marks chunk 2 as accepted and shows chunk 3. That covers chunk 2 only. The merge needs its own approval at the end, for a named destination, such as "approve for `initial`".
+
+**Example: a merge that fails halfway.** The approved change touches specs, backend, and frontend. The specs squash succeeds and is recorded, then the backend squash succeeds and is recorded, then the frontend squash hits a conflict. The agent saves the conflict state and resolves it. If the resolution changed anything the user approved, it shows that part again. When it resumes, it continues with frontend only, because specs and backend are already done.
+
+**Example: an approval goes stale.** The user approves the backend change, but before the merge, a sibling merges into the same parent and the backend branch is rebased. The rebase changed two lines in the approved diff. The agent reopens only the chunk with those lines and asks again for that part.
+
+## Rebasing after a merge
+
+After a child merges, its siblings rebase onto the updated parent so they build on what's really there. Some branches wait instead, so the user's pause and their review aren't disturbed.
+
+```text
+initial                                   ← the initial-storage-fix squash lands here
+├── initial-storage-fix                   merged, then removed
+├── initial-retained-audio                rebased now
+│   └── initial-retained-audio-codec-fix  rebased right after its parent
+└── initial-profile-settings              paused by the user: marked, rebased later
+```
+
+**Example: a paused sibling.** The user paused `initial-profile-settings` last week. After the storage fix merges, the branch isn't touched. Its work record entry says `Needs rebase: onto 4f2c1a9, after initial-storage-fix merged`. When the user resumes it, the rebase happens first.
+
+**Example: a checkpoint doesn't trigger anything.** The agent saves a checkpoint on `initial-retained-audio` to start the codec fix. The other children of `initial` aren't rebased, because a checkpoint is unfinished work, and they shouldn't pick it up.
+
+**Example: a conflict that needs a decision.** Rebasing the history branch onto the new storage format conflicts: history expects one audio file per Class, but storage now saves several chunks. How history should handle chunks is a product decision. The agent stops that branch, records it as blocked, and explains, "History needs to know whether to replay the chunks in sequence or join them into one file. Which do you want?"
+
+## Picking the next task
+
+The agent decides what's next by reading the work record and checking it against Git, in a fixed order. The answer then comes from the recorded priorities, not from whatever happened most recently.
+
+**Example.** The work record shows:
+
+| Change | State |
+| --- | --- |
+| Class recovery | The user's top priority; waits for the storage fix |
+| Storage fix | Approved; specs merged, backend merge not done yet |
+| Search improvements | Ready to build; lower priority |
+
+Nothing is paused, and no review is waiting. The storage fix has a partial merge, and it blocks Class recovery, so finishing it comes first. Then Class recovery resumes. Search waits.
+
+The next-task summary:
+
+> **What:** Finish merging the storage fix into `initial`. The backend squash is still missing.
+>
+> **Why next:** Class recovery, your top priority, can't continue until the fix is in `initial`. The specs part has already merged.
+>
+> **Example:** Today the backend on `initial` saves one audio file per Class. After the merge it saves chunks, which recovery needs to restore a Class after the app closes.
+>
+> **Next action:** Squash the approved backend commit `a1b2c3d` into `initial`, run the backend tests, and record the result.
+>
+> Change `initial-storage-fix` · folder `backend-initial-storage-fix` · repository backend · branch `initial-storage-fix` · path `/work/app/backend-initial-storage-fix`
+
+## The work record
+
+The work record holds the current state only, so the agent can read it quickly and trust it. When something changes, the entry is rewritten, not added to.
+
+**Example: an entry in review.**
+
+```markdown
+## initial-class-recovery
+- **State:** in review
+- **Goal:** reopening a Class restores its saved audio
+- **Mode:** --not-live, from the project default
+- **Authorized:** build within the accepted spec; the merge isn't approved yet
+- **Parent:** `initial`, because it needs no unfinished work from other branches
+- **Spec:** accepted at `9c1e2f0`
+- **Chunk map:** ✓ Save audio (backend) · ✓ Restore audio (backend, frontend) · ▶ Retry on failure (frontend)
+- **Review:** chunks "Save audio" and "Restore audio" accepted; "Retry on failure" open
+- **Needs rebase:** no
+- **Next action:** finish reviewing "Retry on failure", then ask for approval for `initial`
+```
+
+**Example: after the merge.** The entry is deleted from `WORK_RECORD.md`, and one line goes into `WORK_HISTORY.md`:
+
+```text
+2026-11-03  initial-class-recovery → initial  specs 285cf63, backend 9ff41d0, frontend 64c9f9d  recovery refs deleted 2026-11-05
+```
+
+**Example: an old log.** A workspace only has a long, old `COMMIT_REVIEW_QUEUE.md`. The agent leaves it untouched, builds `WORK_RECORD.md` from Git and the most recent entries in the old log, checking dates because the old log isn't in order, and tells the user it did so.
+
+## Recovery data
+
+Recovery data exists so nothing is lost if a step fails. It should hold only what can't be rebuilt, and it should go away once the change is safely in the integration branch.
+
+**Example: what to save.** Before a risky rebase, the agent saves the old branch tips as refs under `refs/recovery/`, which cost almost nothing. It doesn't copy `node_modules`, because `pnpm install` recreates it, so it records that command instead. If a copy would be 400 MB, the agent stops and checks what it's copying.
+
+**Example: when it can go.** The storage fix's content is in `initial`, the backend tests passed there, and its worktrees are removed. The agent deletes the fix's recovery refs and notes that in its history line. Folders saved before the work record existed are different: the agent lists them and asks before deleting any.

@@ -1,81 +1,144 @@
 ---
 name: spec-workflow
-description: "Guide spec changes and matching code across repositories with worktrees, guided reviews, squash merges, and recursive rebases. Treat work as live by default; --not-live allows direct replacement of superseded specs and matching code before release. Track priorities and prepare the next worktree. Questions and plans stay read-only."
+description: "Guide spec changes and matching code across repositories with worktrees, guided reviews, squash merges, and recursive rebases. Set up a new project's spec repository from a template. Treat work as live by default; --not-live allows direct replacement of superseded specs and matching code before release. Track priorities and prepare the next worktree. Questions and plans stay read-only."
 ---
 
 # Spec Workflow
 
-Keep specs and code in agreement. Save interrupted work and prepare the next worktree for the user.
-
-1. Agree on and commit any needed spec edits.
-2. Build the matching code.
-3. Clean up the proposed changes and check the result.
-4. Review the complete change together.
-5. When approved, squash it into the parent.
-6. Remove completed worktrees and rebase siblings and their children.
-7. Prepare the next task.
-
-This skill chooses what to do next and includes code cleanup. [Git operations](references/git-operations.md) explains the commands and checks. [Guided Code Review](../guided-code-review/SKILL.md) handles the review conversation.
-
-Read each repository or worktree's `CONTRIBUTING.md`, when present, before working there. Repeat this when switching worktrees.
-
-## Choose the compatibility mode
-
-Use `--not-live` directly on Spec Workflow when the task has no released-client compatibility requirement:
-
-```text
-$spec-workflow <change>
-$spec-workflow --not-live <change>
-```
-
-These are prompt options, not shell commands. Without the flag, treat the task as live even if the project is known to be before its first release.
+Keep specs and code in agreement across repositories. A change that needs a product decision gets it in the spec first. Every change is then built in its own worktree, cleaned up, reviewed with the user, and squash-merged into its parent. Interrupted work is saved, and the next task is ready when the user returns.
 
 ```mermaid
 flowchart TD
-    Mode{--not-live supplied?} -->|No| Live[Preserve supported clients and retained data]
-    Mode -->|Yes| Replace[Replace superseded specs and contracts directly]
-    Live --> Spec[Agree on the updated spec]
-    Replace --> Spec
-    Spec --> Code[Make affected code match the accepted spec]
-    Code --> Review[Review the complete change]
+    Ask[User asks for a change] --> Need{Needs a spec decision?}
+    Need -->|Yes| Spec[Agree on the spec and commit it]
+    Need -->|No| Plan[Sketch the chunk map]
+    Spec --> Plan
+    Plan --> Build[Build it chunk by chunk in a child worktree]
+    Build --> Clean[Cleanup pass and checks]
+    Clean --> Review[Guided review with the user]
+    Review --> OK{Approved?}
+    OK -->|Changes requested| Build
+    OK -->|Yes| Merge[Squash into the parent and remove the worktree]
+    Merge --> Rebase[Rebase the remaining siblings]
+    Rebase --> Next[Prepare the next task]
 ```
 
-| Mode | What it means |
-| --- | --- |
-| Default: live | Keep supported API/event formats, data, and client behavior compatible. Keep the contract and decision history needed to explain supported versions. Use transitions, deprecation plans, and upgrade migrations where needed. |
-| `--not-live` | Revise or remove documents and contracts clearly superseded by the accepted change. Update links and retire replaced requirement IDs. Carry that change into models, APIs, storage, callers, and tests. Replace old definitions directly without old-client paths or upgrade migrations unless the user requires them. Keep fresh setup and schema creation reproducible. |
+**Why this order:** a decision written in the spec can be reviewed and reused. Code written first tends to become the decision without anyone choosing it. Reviewing the finished change means the user approves exactly what lands.
 
-Both modes bring accepted spec changes and affected code into agreement. The flag includes that implementation within the accepted task's scope; it does not start an unrelated whole-project audit. Honor a narrower request such as planning, audit-only, or docs-only work.
+Details live in reference files: [Git operations](references/git-operations.md) for commands and checks, [Code cleanup](references/code-cleanup.md), [Spec and code sync](references/spec-code-sync.md), and [Project setup](references/project-setup.md). [Worked examples](references/worked-examples.md) explains every rule in more detail, with several examples each. [Guided Code Review](../guided-code-review/SKILL.md) runs the review conversation.
 
-Record the chosen mode and scope in the work record and keep them when resuming that task. The next task defaults to live again. `--not-live` is permission to replace clearly superseded definitions, not to decide unrelated feature removals or resolve unclear requirements. It does not authorize deleting retained data, resetting a database, or merging without the normal review and approval.
+## Words used here
 
-Read [Spec and code sync](references/spec-code-sync.md) when checking or repairing mismatches, including cleanup caused by a replacement.
+| Word | Meaning | Example |
+| --- | --- | --- |
+| Change | One piece of work with one name, across every repository it touches | `retained-audio` |
+| Change family | That change's branches, one per repository, all with the same full name | `initial-retained-audio` in specs, backend, and frontend |
+| Parent, child, sibling | A child branches from its parent and merges back into it. Siblings share a parent | `initial-retained-audio` is a child of `initial` |
+| Integration branch | A branch that collects reviewed changes, such as `main` or a release branch. Nobody edits it directly; changes arrive as reviewed squashes | `main`, `001-initial` |
+| Checkpoint | A commit that saves unfinished work so another branch can build on it | `initial-retained-audio: Save draft before codec fix` |
+| Base | The parent commit where a branch's own work begins. Rebases use it to replay only that branch's commits | the parent SHA recorded when the branch was created |
+| Chunk | One behavior or decision, built and reviewed as a unit | "Restore saved audio on reopen" |
+| Work record | `WORK_RECORD.md` at the workspace root: the current state of all work | see [Keep one work record](#keep-one-work-record) |
+| Cleanup pass | A tidy-up of the change before review that keeps its behavior | removing a helper the change made unused |
+
+**Why:** several of these used to have two or three names, which made rules easy to misread.
+
+## Before working in a repository
+
+Read the repository's `AGENTS.md`, `CLAUDE.md`, and `CONTRIBUTING.md`, when present, before working there. Read them again when you switch worktrees.
+
+**Why:** each repository has rules this skill doesn't repeat. For example, a backend's `AGENTS.md` may require a full production build check after any dependency change.
+
+Starting a new project, or the spec repository has no `CONTRIBUTING.md`? Read [Project setup](references/project-setup.md) first. It creates the spec repository from a template, plus the workspace files this workflow uses.
+
+## Choose the compatibility mode
+
+The mode decides how a change replaces old behavior.
+
+| Mode | What it does | Why |
+| --- | --- | --- |
+| Live, the default | Keep supported API and event formats, client behavior, and saved data working. Use transitions, deprecations, and upgrade migrations where needed. Keep the contract and decision history that explains supported versions. | Released clients and real users depend on the old behavior. |
+| `--not-live` | Directly replace the specs, contracts, and code that the accepted change clearly supersedes. Update links and retire replaced requirement IDs. Carry the change into models, APIs, storage, callers, and tests. Skip old-client paths and upgrade migrations unless the user asks for them. Keep fresh setup and schema creation reproducible. | Nothing released depends on the old behavior, so compatibility code would only add weight. |
+
+```mermaid
+flowchart TD
+    Mode{--not-live from the request or a project default?} -->|No| Live[Keep old clients and saved data working]
+    Mode -->|Yes| Replace[Replace old specs, contracts, and code directly]
+    Live --> Spec[Agree on the updated spec]
+    Replace --> Spec
+    Spec --> Code[Make the affected code match]
+```
+
+**Where the mode comes from.** The user chooses it: with the flag on the request, or with a standing user or project instruction that sets a default, such as a line in `AGENTS.md` or `CLAUDE.md`. Without either, the task is live, even if nothing has been released. Don't guess the mode from hints such as a branch name.
+
+```text
+$spec-workflow --not-live <change>     in Codex
+/spec-workflow --not-live <change>     in Claude Code
+```
+
+These are options in the prompt, not shell commands.
+
+**Keep it for the whole family.** Record the mode and where it came from in the work record, and keep it when resuming. A child or prerequisite keeps its family's mode. A new, unrelated task starts from the default again.
+
+> Example: a storage fix needed by a `--not-live` feature stays `--not-live`. It shouldn't start adding migrations just because it got its own branch.
+
+**Scope.** Both modes bring the accepted spec and the affected code into agreement, within the accepted task. Neither starts a project-wide audit. Honor a narrower request, such as a plan, an audit-only report, or docs-only work.
+
+**What `--not-live` doesn't allow.** It's permission to replace what the accepted change clearly supersedes, nothing more. It doesn't decide unrelated feature removals or settle unclear requirements. It doesn't allow merging without review and approval. Deleting saved data, resetting a database, or removing deployed resources each needs explicit permission for that specific target. Current rules such as retry safety and data retention still apply. If a supported deployed client would break, pause that part and ask.
+
+**Why:** "not live" means no released client depends on the old shape. It doesn't mean the current rules stop mattering.
+
+**Old test data.** A direct replacement can leave records in old shapes in test environments, such as a test phone or a local database. Each change says what happens to them: either the new code skips or clearly rejects old shapes, or the agent proposes resetting a named test environment and waits for the user's OK.
+
+> Example: saved Pause data changes shape, so old Classes on the test phone can't resume. The change either shows those Classes as ended, or proposes "reset the local test database" and waits for a yes.
+
+**Going live.** At the first release, tag the spec repository, for example `release-1`, and change the project default to live. From then on, live mode keeps what that tag defines working.
+
+**Why:** live mode needs to know which formats shipped. Without a tag, "supported versions" has no fixed meaning.
+
+Read [Spec and code sync](references/spec-code-sync.md) when checking or repairing mismatches, including cleanup that a replacement causes. More examples: [Choosing the mode](references/worked-examples.md#choosing-the-mode).
 
 ## When to return to specs
 
-Decide whether the requested change needs a spec decision before writing code.
+Decide whether the request needs a spec decision before any code.
 
-| Change | What to do |
-| --- | --- |
-| New or unclear behavior, API rule, or shared domain term | Update the spec, glossary, or contract that defines it. Review and commit that decision before writing dependent code. |
-| Build or fix behavior the spec already defines | Use the accepted spec version. No new spec edit is needed. |
-| Local rename, proven dead code, internal restructuring, or an established internal bug | Code-only work is allowed if it needs no new product, contract, or domain decision. |
+| Change | What to do | Why |
+| --- | --- | --- |
+| New or unclear behavior, API rule, or shared domain term | Update the spec, glossary, or contract that defines it. Review and commit that decision before writing code that depends on it. | Otherwise the code becomes the decision without anyone choosing it. |
+| Build or fix behavior the spec already defines | Use the accepted spec version. No spec edit is needed. | The decision already exists. |
+| Local rename, proven dead code, internal restructuring, or a clear internal bug | Code-only work is fine if it needs no new product, contract, or domain decision. | Nothing a user or another system sees changes. |
 
-A local variable rename differs from renaming a shared domain concept. Aligning code with an existing spec term needs no new naming decision. Before calling code dead, check supported callers, configuration, contracts, and unfinished work.
+> Example: renaming a local variable `tmp` to `audioChunk` is code-only. Renaming the domain term Class to Lesson is a spec decision first, because every repository, API, and table uses that word. Aligning code with a term the spec already uses needs no new decision.
 
-If a spec is missing or unclear, show the relevant code, link the document that should define it, and propose a small wording change or clear options. Pause code that depends on that decision, including work in other affected branches. Independent, authorized cleanup may continue unless the user paused everything.
+Before calling code dead, check supported callers, configuration, contracts, and unfinished work.
 
-Do not change a spec just to justify existing code. Keep each requirement in the document that defines it. Preserve requirement IDs during wording changes, and record deferred work only when agreed.
+**If the spec is missing or unclear,** show the relevant code, link the document that should define it, and propose a small wording change or clear options. Pause code that depends on the decision, including in other branches. Independent, authorized work can continue unless the user paused everything.
+
+**Don't change a spec just to justify existing code.** Keep each requirement in the document that owns it. Keep requirement IDs when only the wording changes. Record deferred work only when agreed.
+
+**Why:** the spec is the decision. If code can rewrite it, nobody decided anything.
+
+**Record why, in the right place.** A choice that crosses features or is hard to reverse gets a decision record in the spec repository, in the form its guide describes. A smaller reason goes in the squash commit message. Under `--not-live`, rewrite a replaced decision to the current one, and add a short "Why we changed" note if the old option might come up again.
+
+> Example: "keep recorded Class audio for replay" affects recording, recovery, history, and storage, so it gets a decision record. "Clear the request timer when headers arrive" is local, so its reason goes in the commit message.
+
+**Why:** people and agents read files, not Git history. A decision record can be linked from every feature it affects. A commit message can only be found by someone who already knows which commit to look at.
+
+More examples: [Deciding whether the spec changes first](references/worked-examples.md#deciding-whether-the-spec-changes-first).
 
 ## Write specs for readers
 
-When writing or revising a spec, use familiar words and short sentences. Start with what the user sees or can do. Put distinct rules, conditions, and outcomes in separate bullets or short paragraphs. Use agreed domain terms consistently and explain unfamiliar terms.
+When writing or revising a spec, use easy, concise words, and explain each rule in enough detail that someone new to the project can follow it. Start with what the user sees or can do. Give plenty of concrete examples: a scenario for each rule, sample values, and what the user sees. Put separate rules, conditions, and outcomes in separate bullets or rows. Use agreed domain terms consistently and explain unfamiliar ones.
 
-Use a focused Mermaid diagram to clarify a workflow, sequence, state change, data flow, or relationship. Give actions and decisions simple labels. Keep exact, testable requirements in nearby prose and make sure the diagram agrees with them. Preserve the document's structure and requirement IDs. Before finishing, simplify any sentence that needs a second read.
+Use a focused Mermaid diagram for a workflow, sequence, state change, data flow, or relationship, with simple labels. Keep exact, testable rules in nearby prose or tables, and make sure the diagram agrees with them. Keep the document's structure and requirement IDs. Before finishing, reword anything a reader would need to read twice.
+
+**Why:** people read the spec to decide, and agents read it to build. Words alone leave gaps that examples close: "a Class allows three Pauses" is only clear once an example shows whether an inactivity timeout counts as one of the three. A rule that can be read two ways gets built two ways.
+
+Follow the spec repository's `CONTRIBUTING.md` for its layout, ID format, and test rules.
 
 ## Map domain language into code
 
-Use the names agreed in the spec or glossary throughout models, IDs, services, APIs, database mappings, storage, UI models, and tests. Preserve each concept's meaning, relationships, and rules as well as its name.
+Use the names agreed in the spec or glossary throughout models, IDs, services, APIs, database mappings, storage, UI models, and tests. Keep each concept's meaning, relationships, and rules as well as its name.
 
 Choose familiar, concrete words for new concepts. If two names are equally accurate, use the easier one. Explain necessary specialist terms in the spec or glossary. Keep different concepts distinct. Agree on any change to an existing term in the spec before renaming it in code.
 
@@ -85,19 +148,48 @@ For example, a spec concept named **Class** could map to:
 | --- | --- | --- |
 | Class | `Class`, `ClassId`, `ClassRepository`, `ClassDto`, `classId` | ORM entity `Class`, table or collection `classes` |
 
-Normal casing, plural forms, namespaces, and suffixes can follow project conventions. Do not introduce `Course` or `Session` as unexplained names for the same Class. Keep those names when the spec defines them as different concepts.
+Casing, plural forms, namespaces, and suffixes can follow project conventions. Don't introduce `Course` or `Session` as unexplained names for the same Class. Keep those names when the spec defines them as different concepts.
 
-For concepts touched by the change, add a small mapping to the owning spec or glossary when useful: term → code symbol and path → API or storage name. Include key relationships. Explain differences required by a language, framework, third party, or older supported version.
+**Why:** when the spec says Class and the code says Course, every reader has to translate, and over time the two words drift into two meanings.
 
-Link to the existing definition instead of making another catalog. A noun does not always need its own entity or table. Avoid broad schema renames just to make spelling uniform. Explicitly scope any needed compatibility or migration work.
+For concepts the change touches, add a small mapping when useful: term → code symbol and path → API or storage name, with key relationships. Put it where the spec repository keeps its domain terms, such as a glossary or the `architecture/domain-model.md` file from the [setup template](references/project-setup.md). Explain differences required by a language, framework, third party, or older supported version.
+
+Link to the existing definition instead of making another catalog. A noun doesn't always need its own entity or table. Avoid broad schema renames just to make spelling uniform. Scope any needed compatibility or migration work explicitly.
 
 ## Where should a worktree go?
 
-A **change family** is one change across all relevant repositories. Each repository uses the same full branch name. A **parent** is the branch a child will merge back into; a **sibling** is another child of that parent.
+### Choose the parent
 
-Before creating a worktree, choose its parent from the new change's dependencies and intended merge destination. Compare it with the last active change; recent use, shared files, or a similar topic alone do not make that worktree the right parent. Reuse an existing worktree when continuing the same change. Follow the [parent selection steps](references/git-operations.md#prepare-or-branch), record the reason, and explain the choice in the handoff before creating anything.
+Choose the parent from what the new work depends on and where its result should land. The worktree used last is a candidate, not the default: recent use, shared files, or a similar topic alone don't make a branch the right parent. Before choosing a branch with unfinished work as the parent, check what that work is, so the child doesn't inherit unrelated changes. A sibling usually starts from an integration branch such as `001-initial`, and a new root change starts from `main`. Explain the choice before creating anything, and record it in the work record. If the task and parent are already clear and authorized, no extra approval is needed.
 
-Build the branch name from its ancestors, called its **lineage**:
+```mermaid
+flowchart TD
+    New[New piece of work] --> Same{Same change, or a small revision?}
+    Same -->|Yes| Reuse[Reuse its existing worktree]
+    Same -->|No| Needs{Does it need unfinished work from another branch?}
+    Needs -->|Yes| Child[Child of that branch, based on a checkpoint]
+    Needs -->|No| Sibling[Sibling from the branch where its result belongs]
+```
+
+**Why:** a child inherits all of its parent's unfinished work and can't reach the integration branch before its parent does. Putting unrelated work under a busy branch ties their timelines together.
+
+> Example: `initial-retained-audio` is active.
+>
+> 1. A codec fix that changes the new audio code becomes a child, `initial-retained-audio-codec-fix`.
+> 2. A storage fix the audio work needs, but that doesn't touch the audio code, becomes a sibling, `initial-storage-fix`. The audio work waits, then rebases onto `initial` after the fix merges.
+> 3. Unrelated profile settings become another sibling, `initial-profile-settings`. Work for a different release starts from that release's integration branch.
+
+**Re-check before review.** Before the cleanup pass, ask again: does the change still need its parent's unfinished work, and does its result still belong there? If not, move it to the right parent first, as described in [If the actual parent changes](references/git-operations.md#if-the-actual-parent-changes).
+
+> Example: `initial-retained-audio-codec-fix` ended up only changing a shared helper. It moves to `initial-codec-fix` under `initial`, so it can merge without waiting for the audio work.
+
+**Why:** work drifts while it's built. Checking once more before review is cheaper than untangling it after the merge.
+
+More examples: [Choosing a parent](references/worked-examples.md#choosing-a-parent).
+
+### Name the branch and folder
+
+The root branch uses `<change>`. Each child adds `-<change>` to its parent's full name. Every repository in the family uses the same full name. Worktree folders sit side by side as `<repo>-<full-branch-name>`:
 
 ```mermaid
 flowchart LR
@@ -105,8 +197,6 @@ flowchart LR
     Root --> Sibling[initial-profile-settings]
     Child --> Grandchild[initial-retained-audio-codec-fix]
 ```
-
-The root uses `<change>`. Each child appends `-<change>` to its parent's full name. Keep worktree folders beside one another as `<repo>-<full-branch-name>`:
 
 ```text
 workspace/
@@ -117,17 +207,74 @@ workspace/
   frontend-initial-retained-audio/
 ```
 
-Existing prefixes such as `001-initial` stay in the name. New roots need no category tag or number. A code-only change needs no empty spec branch; record why other repositories are unaffected.
+**Why:** the name shows the lineage at a glance, and the same name in every repository shows which worktrees belong together. Flat folders keep paths short.
 
-On change branches, commit subjects start with the full change branch name, then a short description, for example `001-initial-class-recovery: Save recovery draft`. Do not use the repository or worktree folder name as the subject prefix. When squashing a child into a parent change branch, keep the child's full change name in the squash subject, even though the commit lands on the parent. Commits made directly on the parent use the parent branch name. For a merge into `main`, use a plain descriptive subject without a branch or repository prefix.
+Existing prefixes such as `001-initial` stay in the name. New roots need no number or category. A code-only change needs no empty spec branch; record why the other repositories are unaffected.
 
-Record exact repository paths, branches, parent branches, and parent commit IDs (SHAs). Names help navigation, but never determine merge or rebase targets by splitting a name.
+Names help you find things, but they never decide merge or rebase targets. Record exact repository paths, branches, parents, and parent SHAs in the work record. Priority changes and new parent commits don't change names. If the actual parent changes, rename the family across its repositories before more review or merge.
 
-Priority changes and new parent commits do not change names. If the actual parent changes, rename the family across its repositories before further review or merge. Follow [Git operations](references/git-operations.md#prepare-or-branch), including VS Code workspace updates.
+### Write commit subjects
 
-After creating a worktree, copy its parent's `.env` when present, then add the worktree to the existing root `.code-workspace` file and sort its folder paths. Follow the setup steps in that reference.
+On change branches, a commit subject starts with the full change branch name.
 
-Keep main and branches used to collect reviewed changes clean outside merge operations. Make spec and code edits in short-lived child worktrees.
+| Commit | Subject |
+| --- | --- |
+| Work or checkpoint on a change branch | `001-initial-class-recovery: Save recovery draft` |
+| Squash of a child into its parent change branch | The child's name, even though it lands on the parent: `001-initial-class-recovery: Add recovery rules` on `001-initial` |
+| Commit made directly on a parent change branch, such as a checkpoint | The parent's own name: `001-initial-class-recovery: Save draft before codec fix` |
+| Squash into `main` | A plain subject with no prefix |
+
+Don't use the repository or folder name as the prefix. The squash commit body says what changed and why, in a few lines.
+
+**Why:** after squashing, the prefix is what tells you which change a commit came from.
+
+### Set up and keep branches clean
+
+After creating a worktree, copy the parent's `.env` when present and add the worktree to the root `.code-workspace` file, following [Git operations](references/git-operations.md#prepare-or-branch).
+
+Keep integration branches, including `main`, clean outside merges. Make spec and code edits in short-lived child worktrees.
+
+**Why:** then every commit on an integration branch is a reviewed squash, and a bad change can be reverted in one step.
+
+## Plan the chunks
+
+Before building, sketch a **chunk map**: the pieces of behavior the change adds, in the order you'll build them. For each chunk, name its behavior, its requirement IDs when the spec has them, and the repositories it touches. Mark the riskiest chunk, and build it as early as its dependencies allow. Keep the map in the work record, and share it when building starts. The user can reorder or split it; wait for their OK only if they asked to approve plans first. While building, keep the map current with the same marks Guided Code Review uses: ✓ built, ▶ being built, ○ planned.
+
+**Why:**
+
+- Building in a planned order gives the user a path they can follow, instead of a finished change they see all at once.
+- The review later starts from a map the user has already seen, so its chunks make sense.
+- An early look at the riskiest chunk catches a wrong direction before the rest is built on top of it.
+
+```mermaid
+flowchart TD
+    Accepted[Spec accepted] --> Map[Sketch the chunk map in build order]
+    Map --> Big{Is a chunk big, risky, or able to merge on its own?}
+    Big -->|Yes| Own[Give it its own branch, using the parent rule]
+    Big -->|No| Build[Build the chunks in order]
+    Own --> Build
+    Build --> Preview[After the riskiest chunk, offer a preview]
+    Preview --> Change{Does the user want changes?}
+    Change -->|Yes| Adjust[Adjust the map and the code]
+    Adjust --> Build
+    Change -->|No| Rest[Build the rest, then review from the map]
+```
+
+For example, the chunk map for `initial-class-recovery`:
+
+```text
+○ Save audio during a Class          REC-010, REC-011   backend             riskiest: saved format
+○ Restore saved audio on reopen      REC-012            backend, frontend
+○ Offer a retry when loading fails   REC-013            frontend
+```
+
+After chunk 1 is built and its tests pass: "Saving audio is ready for a quick look before I build restore and retry. Want a preview?"
+
+- **Split what doesn't fit.** A chunk that is big, risky, or useful on its own becomes its own branch, placed by the [parent rule](#choose-the-parent), with its own review and squash. For example, if the saved audio format is still uncertain, chunk 1 becomes a child branch, so restore and retry build on a settled format.
+- **Preview, don't approve.** After the riskiest chunk is built and its checks pass, offer a preview through [Guided Code Review](../guided-code-review/SKILL.md), in this same conversation. A preview is only a look: it approves nothing, and the final review still covers the whole change. Wait for the answer before building on top of that chunk; work that doesn't depend on it can go on. If the user declines, keep building. If the riskiest chunk got its own branch, that branch's own review replaces the preview.
+- **Keep the map current.** When building shows the plan was wrong, because a chunk merges into another, splits, or a new one appears, update the map in the work record. The review starts from the final map and says how it differs from the plan, and why.
+
+More examples: [Planning chunks](references/worked-examples.md#planning-chunks).
 
 ## What if work is interrupted?
 
@@ -136,54 +283,124 @@ flowchart TD
     Event{What changed?} -->|Question| Answer[Answer and keep the current work]
     Event -->|Small revision| Current[Use the current child worktree]
     Event -->|Unrelated spec change disrupts work| Separate[Branch a new family from accepted parent commits]
-    Event -->|Prerequisite discovered| Save[Save a commit of the current work]
-    Save --> Child[Branch a child and pause its parent]
+    Event -->|Prerequisite discovered| Needs{Does it need the current unfinished work?}
+    Needs -->|Yes| Child[Save a checkpoint, branch a child, pause the parent]
+    Needs -->|No| Sibling[Branch from where its result belongs, pause the current work]
     Child --> Resolve[Resolve the deepest prerequisite first]
-    Resolve --> Return[Review and squash each child into its own parent]
+    Sibling --> Resolve
+    Resolve --> Return[Review and squash each branch into its own parent]
+    Return --> Rebase[Rebase paused work onto any updated parent]
 ```
 
-A saved commit, or **checkpoint**, preserves unfinished work so a prerequisite can build on it. Reviewing the child approves only what it changes relative to that parent commit. It does not approve the unfinished work it inherited.
+A checkpoint saves unfinished work so a prerequisite can build on it. **Why:** uncommitted files don't appear in a new worktree, and a commit keeps them safe. Reviewing the child approves only what it changes relative to that checkpoint, not the unfinished work it inherited.
 
-If several branches share a prerequisite, or depend on each other in a cycle, settle where the work belongs before continuing. Do not merge across siblings or skip parents to bypass that decision.
+If several branches share a prerequisite, or depend on each other in a cycle, settle where the work belongs before continuing. Don't merge across siblings or skip parents to get around that decision.
+
+More examples: [Handling interruptions](references/worked-examples.md#handling-interruptions).
 
 ## Clean up code before merging
 
-Read [Code cleanup](references/code-cleanup.md) and run that pass before every merge through this workflow. This includes child-to-parent merges, code-only changes, and the final merge into main or another release destination. Run it before freezing the final guided-review inputs.
+Run the [cleanup pass](references/code-cleanup.md) before every merge in this workflow: child into parent, code-only changes, and the final merge into `main` or another release destination. Run it before the final review starts.
 
-Scope the pass to the proposed diff against the immediate parent, plus affected callers and tests. For a final release, use its complete diff against the destination. Preserve the accepted behavior and domain terms. Avoid unrelated refactors or inherited unfinished work. Under `--not-live`, the accepted replacement remains the target while cleanup removes its already-approved leftovers.
+**Why:** cleanup after approval would change what the user approved. Running it first means the review sees the final code.
 
-A pass may make no edits. For docs-only or verified unaffected repositories, assess the scope and record that no code cleanup applies. Do not manufacture edits or empty commits. Record each repository's parent/head/spec SHAs, scope, outcome, and checks in the existing work record.
+Scope the pass to the change's diff against its immediate parent, plus affected callers and tests. For a final release, use the whole diff against the destination. Keep the accepted behavior and domain terms, and leave unrelated code and inherited unfinished work alone.
 
-Make cleanup edits in the short-lived worktree that owns the change. If the release source collects reviewed changes, create or reuse a cleanup child of that source branch. Review and squash it into that parent, clean up the child, and update siblings through the normal workflow. Then reassess the release at its new source commit before the final review.
+A pass may make no edits. For docs-only or verified unaffected repositories, assess the scope and record that no code cleanup applies. Don't invent edits or empty commits.
 
-If cleanup makes edits, check them, capture the updated candidate, and include them in guided review. Changes after approval invalidate affected approvals. If it finds an unclear requirement or a behavior defect, route that issue through the spec or implementation workflow before continuing.
+> Example: the change made a helper `saveTmp` unused. The pass removes it and reruns the tests. The removal then appears in the review, inside the chunk that stopped using the helper.
 
-At merge time, verify that the cleanup result still covers the candidate. Changed content, bases, spec inputs, or a wider merge scope require a fresh assessment of the affected work. Reuse unchanged check evidence where valid. Expected source-to-squash SHA changes with verified identical approved content do not require duplicate passes. If required checks remain unresolved, hold the affected merge and report the limitation.
+Cleanup edits go in the worktree that owns the change. If the pass finds a behavior bug or an unclear requirement, route it through the spec or implementation steps first. [Code cleanup](references/code-cleanup.md) covers cleanup on an integration branch, what to record, and when a pass must run again. More examples: [The cleanup pass](references/worked-examples.md#the-cleanup-pass).
 
-## When can we merge and clean up?
+## Review and merge
 
-1. For a change involving specs and code, accept the spec on its child branch first. Record that exact spec commit in each code repository's work record.
-2. Before merging, check every required repository. Its change must be current, tested, and covered by approval, or have evidence that it is unaffected. Accepting a spec allows dependent implementation within scope; it does not approve the code or the merge.
-3. Complete the [cleanup pass](#clean-up-code-before-merging) for the proposed scope before the final review.
-4. Load [Guided Code Review](../guided-code-review/SKILL.md) in this conversation. Pass the repositories, cleanup result, exact parent/head/spec commits, and destination. Reuse a review only while its approval still covers those inputs.
-5. Squash each child into its immediate parent as one commit. This also applies to the final release merge. Follow [Git operations](references/git-operations.md) for setup, checkpoints, merges, rebases, and worktree cleanup.
-6. A parent can return to its own parent, or be removed, only after all its children are resolved and cleaned up. This rule applies at every depth.
-7. After a child merges and is cleaned up, rebase every remaining sibling, then its children, onto their updated immediate parents. Check the results before another dependent merge.
+```mermaid
+sequenceDiagram
+    participant W as Spec Workflow
+    participant R as Guided Code Review
+    participant U as User
+    participant G as Git
+    W->>W: Re-check the parent, run the cleanup pass and checks
+    W->>R: Diff, exact commits, cleanup result, destination
+    R->>U: One chunk at a time
+    U->>R: Approve for the destination
+    R->>W: Review record with the decision
+    W->>G: Squash each repository into its parent, one at a time
+    W->>G: Remove the child worktree and branch
+    W->>G: Rebase the remaining siblings
+```
 
-A clean rebase does not prove the code still matches the spec. Check changed requirements, APIs, and callers separately. Adapt code within accepted decisions and test it. If a conflict needs a new decision, leave the affected work blocked and explain the decision needed.
+1. **Spec first.** For a change with specs and code, accept the spec on its child branch first, and record that spec commit for each code repository. Accepting a spec allows building; it doesn't approve the code or the merge. **Why:** the code review then checks code against a fixed spec version.
+2. **Every repository is ready.** Each required repository is current, tested, and approved, or has evidence that it's unaffected. When the spec repository asks tests to cite requirement IDs, each rule the change adds or alters needs a test that names its ID.
+3. **Re-check the parent and run the cleanup pass** for the proposed scope, before the final review.
+4. **Review.** Load [Guided Code Review](../guided-code-review/SKILL.md) in this conversation. Pass the repositories, the exact parent, head, and spec commits, the cleanup result, the chunk map, and the destination. Reuse a review only while its approval still matches those inputs. **Why:** approval covers exact commits. If they change, nobody approved the new ones.
+5. **Squash** each child into its immediate parent as one commit, including the final release merge, following [Git operations](references/git-operations.md). **Why:** the parent's history then shows one reviewed commit per change.
+6. **Children first.** A parent can merge into its own parent, or be removed, only after all its children are resolved and removed, at every depth.
+7. **Rebase the survivors,** as described next.
 
-Repositories merge one at a time. Record each success so a retry does not repeat it. The family is complete only when all required merges or no-change checks, child cleanup, and sibling updates are done.
+### Rebase after a merge
 
-Keep a branch that collects a release until its planned changes are done or the user changes the scope. The final release needs separate approval and verified results on every required destination branch. Keep shared change names and result SHAs in the release record after squash and cleanup. Deployment and publication are separate actions.
+```mermaid
+flowchart TD
+    New[Parent gets a new commit] --> How{Where did it come from?}
+    How -->|A child was squash-merged| Each[Take each remaining child of that parent]
+    How -->|The parent itself was rebased| Each
+    How -->|A checkpoint of unfinished work| Stay[Children stay where they are]
+    Each --> Busy{Paused by the user, or in review?}
+    Busy -->|No| Now[Rebase it now, then its own children]
+    Busy -->|Yes| Later[Mark it as needing a rebase. Do it before more work or its merge]
+```
+
+For example, after `initial-storage-fix` is squash-merged into `initial`:
+
+```text
+initial                                   ← the squash lands here
+├── initial-storage-fix                   merged, then removed
+├── initial-retained-audio                rebased now
+│   └── initial-retained-audio-codec-fix  rebased right after its parent
+└── initial-profile-settings              paused by the user: marked, rebased later
+```
+
+Only repositories where the parent changed are rebased. Record the needed rebase in the work record for any branch that waits.
+
+**Why:**
+
+- Siblings should build on what is really in the parent now, and rebasing soon surfaces conflicts while the context is fresh.
+- A paused branch should stay as the user left it, and a review shouldn't shift in the middle of a chunk.
+- A checkpoint is unfinished work, and siblings shouldn't pick it up.
+
+A clean rebase doesn't prove the code still matches the spec. Check changed requirements, APIs, and callers separately. Adapt code within accepted decisions and test it. If a conflict needs a new decision, leave that work blocked and explain the decision needed.
+
+### Finish the family and the release
+
+Repositories merge one at a time. Record each success so a retry skips it. The family is complete only when every required merge or no-change check, worktree removal, and sibling rebase is done.
+
+Keep an integration branch until its planned changes are done or the user changes the scope. The final release needs its own approval and verified results on every required destination branch. Record each change's name and result SHAs in the work history. Deployment and publication are separate actions.
+
+More examples: [Review and merge](references/worked-examples.md#review-and-merge) and [Rebasing after a merge](references/worked-examples.md#rebasing-after-a-merge).
 
 ## Which task comes next?
 
-After an interruption, review decision, merge, cleanup, rebase, failure, or resumed session, compare the work record with Git. Choose the next action in this order:
+After an interruption, review decision, merge, cleanup, rebase, failure, or resumed session, compare the work record with Git.
 
-1. Honor an explicit pause or a review waiting for the user. Save the review position if it is interrupted or its inputs change.
-2. Finish any repairable partial merge, rebase, or spec/code update before more dependent work. If blocked, consider only unaffected, authorized tasks.
-3. Follow the user's highest priority. Work on its deepest ready prerequisite first.
-4. Resume interrupted work when ready; otherwise choose another ready task. Break ties by what unblocks the release, context already available, then a stable order. Branch names and discovery dates alone do not set priority.
+A question doesn't count. Answer it from the work record and Git, keep the current work and review position, and change nothing. For a status question, say where things stand, for example "review paused at chunk 2 of 5 in `backend-initial-retained-audio`".
+
+```mermaid
+flowchart TD
+    Start[Compare the work record with Git] --> Waiting{Paused by the user, or a review waiting for the user?}
+    Waiting -->|Yes| Hold[Keep the pause and the review position]
+    Waiting -->|No| Partial{A partial merge, rebase, or spec and code update?}
+    Partial -->|Yes| Repair[Finish it before more dependent work]
+    Partial -->|No| Priority[Take the highest user priority]
+    Priority --> Prereq{Does it need another change first?}
+    Prereq -->|Yes| Deepest[Work on its deepest ready prerequisite]
+    Prereq -->|No| Ready[Resume it, or pick another ready task]
+```
+
+1. Honor an explicit pause or a review waiting for the user. Save the review position if it's interrupted or its inputs change.
+2. Finish any repairable partial merge, rebase, or spec and code update before more dependent work. If it's blocked, consider only unaffected, authorized tasks. **Why:** a half-finished merge or rebase blocks everything that depends on it.
+3. Follow the user's highest priority, and work on its deepest ready prerequisite first. **Why:** that unblocks the priority soonest.
+4. Resume interrupted work when it's ready; otherwise choose another ready task. Break ties by what unblocks the release, then by context already loaded, then by a stable order. Branch names and discovery dates alone don't set priority.
 
 Prepare that worktree. **Every next-task summary MUST include:**
 
@@ -204,66 +421,42 @@ Hypothetical handoff:
 >
 > **Next action:** Check where reopening loses the saved recording, fix that step, and run a test that closes and reopens the Class.
 
-Use the actual task's facts in the handoff. Keep the example short, but never omit it. Continue coding only within the user's authorization; otherwise leave the worktree ready. Do not ask what comes next when recorded priorities already answer it.
+Use the actual task's facts in the handoff. Give as many examples as it takes to make the task clear, and never omit them. Continue coding only within the user's authorization; otherwise leave the worktree ready. Don't ask what comes next when recorded priorities already answer it.
 
 Independent work can use many worktrees. Coordinate who writes to each one, and keep one review conversation active with the user.
 
+More examples: [Picking the next task](references/worked-examples.md#picking-the-next-task).
+
 ## Keep one work record
 
-Use the existing workspace ledger, normally `COMMIT_REVIEW_QUEUE.md`. A ledger is the current work record. Keep it outside the specs and implementation commits.
+Keep the current state of all work in `WORK_RECORD.md` at the workspace root, outside every repository. Start it from [the work record template](assets/work-record.md). Each entry holds the change's names and paths; its parent and why; what it depends on; its mode; what the user has authorized; the accepted spec commit and whether spec and code agree; per-repository commits, including checkpoints and merge progress; the chunk map; cleanup and review state; recovery data; blockers; and the next action.
 
-| Record | What to keep |
-| --- | --- |
-| Work map | Shared names, repositories and paths, parents and reasons for choosing them, dependencies, priorities, interrupted work to resume, required and unaffected repositories |
-| Versions and recovery | Parent/base/head/spec SHAs, saved tips and old replay boundaries, checkpoints, original-to-squash commit mappings, completed merge or rebase steps |
-| Progress | Every child, each repository's state, spec/code agreement, cleanup scope/result/input SHAs and checks, family and release completion, exact blockers |
-| Review and next task | [Review record](../guided-code-review/SKILL.md#review-record), current review position, authorized action, next worktree and reason |
+**Why:** the next-task choice starts by reading this file, so it must stay short and current. A long log makes the agent guess which entry is current.
 
-The old replay boundary is the saved parent commit that separates inherited work from a child's own commits. Keep it before any history rewrite; [Git operations](references/git-operations.md) uses it to avoid replaying work twice.
+```mermaid
+flowchart LR
+    Active[Active change] -->|One entry, rewritten in place| Record[WORK_RECORD.md]
+    Record -->|Change finished| History[Summary in WORK_HISTORY.md]
+    Active -->|Large evidence| Recovery[Folder in workflow-recovery]
+    Recovery -->|Retention rules| Deleted[Deleted when no longer needed]
+```
 
-## Choose agents and reasoning effort
+- Give each active change one entry. When its state changes, rewrite the entry instead of adding a new one.
+- When a change is finished, move a short summary to `WORK_HISTORY.md` and delete its entry: its name, destination, each repository's squash SHA, the date, and what happened to its recovery data. Read the history only when you need an old detail.
+- Larger evidence, such as frozen review inputs or long check output, can go in a folder under `workflow-recovery/` that the entry links to. It follows the [recovery data rules](references/git-operations.md#keep-recovery-data-small).
 
-Keep coordination, interactive review, user decisions, and the work record in the main conversation. The user controls its model and thinking level in the picker. The table below supplies defaults for delegated jobs:
+If the workspace has only an older log, such as `COMMIT_REVIEW_QUEUE.md`, leave it unchanged as history. The first time you need the record, build `WORK_RECORD.md` from Git and the log's most recent entries, which may not be in date order. Tell the user you did this.
 
-| Job | Default model | Thinking |
-| --- | --- | --- |
-| Write specs from accepted decisions | `gpt-6.1-sol` | Medium |
-| Resolve domain or requirement decisions | `gpt-6-astra` | High |
-| Implement code | `gpt-6.1-sol` | High |
-| Clean up code before integration | `gpt-6.1-sol` | High |
-| Analyze a diff for guided review | `gpt-6.1-sol` | High |
-| Perform a clean, approved integration | `gpt-6.1-sol` | Medium |
-| Investigate conflicts or recover interrupted operations | `gpt-6.1-sol` | High |
-| Process substantial batches of simple lookups | `gpt-6-luna` | High |
-
-Apply this routing automatically within the authorized task:
-
-1. **Respect explicit choices.** User and project model/effort choices override the defaults. A custom agent can pin these settings; use a role whose settings agree with the selected choice.
-2. **Reuse useful context.** Handle small jobs in the current agent when it already has the needed context. Delegate substantial, separate jobs when a worker helps, or when project instructions require it. Keep one analysis worker through a review when possible; each extra agent adds context and token cost.
-3. **Select settings when starting the worker.** Pass the model ID and reasoning effort explicitly, using `low`, `medium`, `high`, or `xhigh` for the corresponding levels. Give it the relevant repositories, accepted spec commit, worktree scope, decisions, and limits on what it may do. Use a focused handoff rather than a full-history fork so the selected settings can apply. Review-analysis workers inspect and report; the main conversation handles the walkthrough and approval.
-4. **Reclassify when the job changes.** Unexpected conflicts, dirty state, changed commits, or stale approval turn a clean integration into an investigation. Increase effort or use Astra when difficult reasoning remains unresolved. This changes the worker choice, not permission to merge, change requirements, or remove work. Verify the result before continuing.
-
-Use the effort guide to adjust these defaults to the actual difficulty:
-
-| Reasoning effort | Use when |
-| --- | --- |
-| Low | A small, repeatable lookup has an objective answer |
-| Medium | The scope and expected result are clear |
-| High | The work crosses components or needs careful checks of assumptions and edge cases |
-| Extra High | A difficult decision, migration, recovery, or conflict has several plausible solutions and could affect much of the system |
-
-Extra High is for difficult cases where the added reasoning is useful; it is not the permanent default. If a table default is unavailable or the tool cannot apply its settings, explain the limitation and use the current main agent when suitable. If the user or project requires an unavailable agent, model, or effort, preserve the work and report it instead of silently substituting another choice.
-
-Settle the spec before dependent implementation. Run only independent jobs in parallel.
+More examples: [The work record](references/worked-examples.md#the-work-record).
 
 ## Check accumulated differences when asked
 
-Normal work updates code affected by the accepted spec change. A whole-project comparison starts only when the user asks for an audit or a broader spec/code sync. Read [Spec and code sync](references/spec-code-sync.md) for the rules.
-
-Check both directions: code without a spec, and specs without working code. Keep coverage, decisions, and the selected compatibility mode in the work record. `--not-live` changes how accepted replacements are delivered; it does not widen the requested scope.
+Normal work only updates the code affected by the accepted change. A project-wide comparison runs only when the user asks for an audit or a broader sync. It checks both ways: code with no spec, and specs with no working code. Read [Spec and code sync](references/spec-code-sync.md). `--not-live` doesn't widen the scope.
 
 ## Stay within the request
 
-Questions and plans are read-only. Authorized workflow work includes scoped setup, checkpoints, required rebases, code adaptations within accepted decisions, work-record updates, and preparing the next worktree.
+Questions and plans are read-only. Authorized workflow work includes scoped setup, checkpoints, required rebases, code changes within accepted decisions, work record updates, and preparing the next worktree.
 
-Merges, new product decisions, and external actions need the applicable authorization. Reuse authorization already given for the same action and scope. The review handoff is a skill instruction, not a Git hook or background monitor. Editing this skill does not run the workflow on live repositories or create new Codex tasks.
+Merges, new product decisions, and external actions need their own authorization. Reuse authorization already given for the same action and scope.
+
+**Why:** the user should never find a merge or a decision they didn't make.

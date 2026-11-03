@@ -5,76 +5,119 @@ description: "Walk through code, spec, or cross-repository diffs one chunk or li
 
 # Guided Code Review
 
-Explain the change so the user can question it and decide. [Spec Workflow](../spec-workflow/SKILL.md) owns implementation and integration; this skill owns the conversation and its review record. Stay in the current conversation. A standalone local/PR review does not require creating a workflow hierarchy.
+Walk the user through a change so they can question it and decide. [Spec Workflow](../spec-workflow/SKILL.md) builds and merges changes; this skill runs the review conversation and keeps its record. Stay in the current conversation. A standalone review of a local diff or a PR doesn't need Spec Workflow's branch structure.
 
 ## Establish the comparison
 
-Verify the requested diff and its exact base/head/spec inputs. Inspect the whole change internally, including callers, contracts, tests, new/deleted files, and relevant mode changes. Distinguish inherited parent work, previously approved descendants, and new or subsequently modified changes.
+Verify the diff and its exact base, head, and spec commits. Read the whole change before explaining any of it, including callers, contracts, tests, new and deleted files, and file permission changes. Separate inherited parent work, earlier approved changes, and new or changed work.
 
-For coordinated work, identify the shared branch name, repository members and paths, and review scope: **spec acceptance, one member, coordinated integration, or final release**. A spec review can precede code; it does not approve that implementation. Code-only work needs no invented spec counterpart. A preview may discuss incomplete work without declaring it ready to integrate.
+**Why:** the user should judge only what this change adds, and nothing in the diff should surprise you halfway through.
 
-For Spec Workflow's final merge review, verify that its [cleanup pass](../spec-workflow/SKILL.md#clean-up-code-before-merging) covers the exact candidate scope and versions, including a recorded no-code result where appropriate. Include all cleanup edits in the reviewed diff. A standalone review stays read-only; running an editing cleanup pass needs the user's authorization.
+For coordinated work, identify the shared branch name, the repositories and their paths, and the review scope: spec acceptance, one repository, a coordinated merge, or the final release. A spec review can come before the code, but it doesn't approve the implementation. Code-only work needs no invented spec counterpart. A preview, such as a look at the first built chunk of a planned chunk map, can discuss unfinished work without calling it ready to merge.
 
-For a spec/code sync, include its finding, accepted decision, and selected [compatibility mode](../spec-workflow/references/spec-code-sync.md#compatibility-mode). Explain affected APIs, consumers, schema/data expectations, and why old contracts or migrations are retained or removed. `--not-live` permits replacements within the accepted scope; unrelated feature decisions and merge approval still need their usual review.
+For Spec Workflow's final merge review, check that its [cleanup pass](../spec-workflow/SKILL.md#clean-up-code-before-merging) covers the exact scope and commits, including a recorded "no code cleanup" result where it applies. Include all cleanup edits in the reviewed diff. A standalone review stays read-only; running a cleanup pass that edits code needs the user's OK.
 
-Open the matching diff and provide verified source/line links when possible. If the live checkout differs, use the frozen snapshot rather than presenting current lines as the reviewed commit. Do not publish PR comments or create external artifacts merely because this resembles a PR review.
+For a spec and code sync, include the finding, the accepted decision, and the task's [compatibility mode](../spec-workflow/references/spec-code-sync.md#use-the-tasks-mode). Explain the affected APIs, consumers, and data, and why old contracts or migrations are kept or removed. `--not-live` allows replacements within the accepted scope; unrelated feature decisions and merge approval still need their usual review.
+
+Open the matching diff, and give verified source and line links when possible. If the checkout has moved on, explain the recorded commits rather than the current lines. Don't post PR comments or create external artifacts just because this looks like a PR review.
 
 ## One chunk, then a pause
 
-Start with the purpose, exact comparison, and a short chunk map; explain the first chunk immediately. A chunk is one meaningful decision or behavior, possibly connecting a spec, contract, backend caller, frontend use, and tests. Follow the behavior/data path rather than file order, and account for the complete diff and required participants.
+Start with the purpose, the exact comparison, and a short chunk map, then explain the first chunk right away. If Spec Workflow planned a chunk map before building, start from it, and say where the final chunks differ from the plan and why. A chunk is one meaningful decision or behavior. It may connect a spec rule, a contract, a backend caller, a frontend use, and tests. Follow the behavior or data path rather than file order, and cover the complete diff and every required repository.
 
-**Start every new or resumed chunk, including each line-by-line step, with the current worktree folder name and branch.** Repeat them even when unchanged. For local work, link the folder name to its absolute path. If a chunk spans repositories, name each participating worktree and its repository. Identify the worktrees from the recorded review inputs and Git, rather than assuming the chat's working directory is the reviewed worktree. For a remote-only review, state the repository and reviewed branch or commit and say that no local worktree is in use.
+**Why one chunk at a time:** a whole diff at once is too much to question. One chunk lets the user push back before the next one builds on it.
 
-Example heading: `Worktree: backend-initial-class-recovery | Branch: initial-class-recovery | Chunk 2: Restore saved audio`.
+**Start every new or resumed chunk with a progress map, then the current worktree folder name and branch, then the chunk's title.** Don't use a bare counter such as "2/5": it shows the position, but not what's done or what comes next.
 
-For the current chunk, explain:
+- Draw the map as a left-to-right Mermaid strip when there are six chunks or fewer and Mermaid renders. Otherwise, use a text map, one chunk per line with its repositories.
+- Mark each chunk: ✓ accepted, ▶ now, ○ not yet, ↷ skipped, ✎ needs a change.
+- Repeat the worktree and branch even when unchanged. For local work, link the folder name to its absolute path. If a chunk spans repositories, name each worktree and its repository. Take the worktrees from the recorded review inputs and Git, not from the chat's working directory. For a remote-only review, state the repository and the reviewed branch or commit, and say that no local worktree is in use.
+- In line-by-line steps, repeat the worktree and branch line and name the lines being explained, such as `restoreClass.ts`, lines 40–52. The map comes back with the next chunk.
 
-- **What changed:** a small before/after example with source links.
-- **Why:** the requirement, defect, or tradeoff; separate evidence from inferred historical rationale.
-- **How it is used:** real callers, data movement, side effects, and relevant failure paths.
-- **How to judge it:** simpler alternatives, checks actually run, and unresolved questions.
+**Why:** the map shows the whole review at a glance, by name: what's covered, where you are, and what's left. With many worktrees open, the worktree line means the user never has to guess which copy of the code they're reading.
 
-For a domain-related chunk, check the [domain mapping](../spec-workflow/SKILL.md#map-domain-language-into-code). Show how the spec term maps to the actual model, storage, and contract names and how its relationships/invariants are represented. Flag unexplained synonyms or missing links; use a compact table or model diagram when it clarifies the mapping.
+For the current chunk, explain each of these in detail, in easy words, with as many concrete examples as it takes, such as before and after values, a sample request, or a user scenario:
 
-Use a small grounded Mermaid diagram when it helps: call hierarchy for usage, sequence diagram for ordering, data-flow diagram for transformations, or state/flowchart for lifecycle choices. Label actual calls, payloads, and failure paths; mark unverified edges. Do not invent a call graph, defend unnecessary complexity, or force a diagram onto a trivial rename. Check changed diagrams where tooling allows and do not claim unverified rendering.
+- **What changed:** before and after, with source links.
+- **Why:** the requirement, defect, or tradeoff. Separate evidence from guesses about past intent.
+- **How it's used:** real callers, data movement, side effects, and failure paths.
+- **How to judge it:** simpler alternatives, the checks that actually ran, and open questions.
 
-**After one chunk, end the response and wait.** Do not explain the whole diff at once or treat silence as agreement. Adapt the detail to the user and retain the cursor through questions.
+A chunk might start like this (made up):
+
+```mermaid
+flowchart LR
+    C1[✓ Save audio] --> C2[▶ Restore audio] --> C3[○ Retry on failure] --> C4[○ Remove old helper]
+    classDef current stroke-width:4px
+    class C2 current
+```
+
+Where Mermaid doesn't render, the same map as text:
+
+```text
+✓ Save audio            backend
+▶ Restore audio         backend, frontend
+○ Retry on failure      frontend
+○ Remove old helper     backend
+```
+
+> **Worktree:** backend-initial-class-recovery, linked to its folder · **Branch:** initial-class-recovery
+>
+> **Restore saved audio on reopen**
+>
+> **What changed:** `restoreClass()` now loads saved audio. Before, a reopened Class had no recording. Now it gets its saved chunks back in order.
+>
+> **Why:** `REC-012` says saved audio must survive closing the app.
+>
+> **How it's used:** Home calls `resumeClass()`, which calls `restoreClass()`, which calls `AudioStore.load()`. If loading fails, the Class opens without audio and offers a retry.
+>
+> **How to judge it:** a simpler option is loading audio on first play. `restoreClass.test.ts` ran with 3 passing tests. Open question: what happens if one saved chunk is missing?
+
+For a domain-related chunk, check the [domain mapping](../spec-workflow/SKILL.md#map-domain-language-into-code). Show how the spec term maps to the real model, storage, and contract names, and how its relationships and rules are represented. Flag unexplained synonyms or missing links. Use a small table or model diagram when it helps.
+
+Use a small Mermaid diagram when it helps: a call hierarchy for usage, a sequence diagram for ordering, a data-flow diagram for transformations, or a state diagram or flowchart for lifecycle choices. Label real calls, payloads, and failure paths, and mark anything unverified. Don't invent a call graph, defend unnecessary complexity, or force a diagram onto a trivial rename. Check changed diagrams where tooling allows, and don't claim a diagram renders if you haven't checked.
+
+> For the chunk above, a sequence diagram would show Home, `resumeClass()`, `restoreClass()`, and `AudioStore`, with the failed load drawn as its own arrow back to Home.
+
+**After one chunk, end the response and wait.** Don't explain the whole diff at once, and don't treat silence as agreement. Adapt the detail to the user, and keep your place through their questions.
 
 ```mermaid
 flowchart TD
-    Explain[Explain the current chunk or line] --> User{User direction?}
+    Explain[Explain the current chunk or line] --> User{What does the user say?}
     User -->|Go deeper| Detail[Trace usage or individual lines]
     Detail --> Explain
-    User -->|Next| More{More to review?}
+    User -->|Next or looks good| More{More to review?}
     More -->|Yes| Explain
-    More -->|No| Decision[Record the complete-change decision]
-    User -->|Change requested| Edit[Apply authorized edit and refresh review]
+    More -->|No| Decision[Recap and record the decision on the whole change]
+    User -->|Change requested| Edit[Make the authorized edit and refresh the review]
     Edit --> Explain
 ```
 
-| Direction | Effect |
+| What the user says | What happens |
 | --- | --- |
-| Next / continue | Advance one line in line mode or one chunk in chunk mode; never imply merge approval |
+| Next / continue | Move on by one line in line mode, or one chunk in chunk mode. This never implies merge approval |
 | Why / show callers / what if it fails | Stay on this chunk and explain the requested path |
-| Line by line | Explain each changed line or tightly coupled group, waiting between steps |
-| Looks good / approve this chunk | Acknowledge only the scope currently discussed |
-| Change this | Suspend review, perform only the requested edit through the active workflow (or directly for a standalone request), and refresh affected review |
-| Skip / pause | Record skipped scope or save the cursor; neither is approval |
-| Approve this change for the named destination | Record that exact decision; recognize an explicit waiver if the user intentionally skips remaining review |
+| Line by line | Explain each changed line or tightly linked group, waiting between steps |
+| Looks good / approve this chunk | Record this chunk as accepted and present the next one. It covers only this chunk, not the merge |
+| Change this | Pause the review, make only the requested edit through the active workflow, or directly for a standalone review, and refresh the affected chunks |
+| Skip / pause | Record the skipped part, or save the position. Neither is approval |
+| Approve this change for the named destination | Record that exact decision. Recognize an explicit waiver if the user deliberately skips the rest |
 
-A question about an alternative is not an edit request. New behavior or shared terminology missing from specs follows the [spec guardrail](../spec-workflow/SKILL.md#when-to-return-to-specs); preserve existing code and pause dependent integration. Do not silently fix code during explanation or rewrite specs to justify it.
+A question about an alternative isn't an edit request. New behavior or shared terms missing from the specs follow the [spec guardrail](../spec-workflow/SKILL.md#when-to-return-to-specs): keep the existing code, and pause dependent merges. Don't silently fix code while explaining it, or rewrite specs to justify it.
 
 ## Review record
 
-Use the workflow's existing ledger, or conversation state for a standalone read-only review:
+Use the workflow's work record (`WORK_RECORD.md`), or the conversation itself for a standalone read-only review:
 
 | Record | Content |
 | --- | --- |
-| Identity and scope | Shared change name, participants/unaffected evidence, worktree folder names, branches and paths, purpose, destinations; spec/code finding, accepted decision, and live or not-live scope |
-| Versions | Per-repository parent/base, child/head, accepted spec SHAs, relevant checks and currentness; cleanup result for workflow merge reviews |
-| Progress | Stable chunk IDs, paths/hunks, discussed/accepted/skipped/needs-change status, current line/chunk, questions and edits |
-| Decision | Spec accepted, changes requested, paused/rejected/deferred, walkthrough complete, or exact integration approved; include explicit waivers |
+| Identity and scope | Shared change name; repositories, and evidence for unaffected ones; worktree folder names, branches, and paths; purpose; destinations; the mode, live or `--not-live`; for a sync, the finding and the accepted decision |
+| Commits | Per repository: base, head, and accepted spec SHAs; relevant checks and whether they're still current; the cleanup result for workflow merge reviews |
+| Progress | Stable chunk IDs, paths and hunks, each chunk's status (discussed, accepted, skipped, or needs change), the current chunk or line, questions, and edits |
+| Decision | Spec accepted, changes requested, paused, rejected, deferred, walkthrough complete, or exact merge approved, plus any explicit waiver |
 
-After edits, rebases, or unexpected peer/spec changes, regenerate affected chunks and stale the previous merge decision. Preserve useful discussion of unchanged code, but obtain a decision covering the current versions. Expected source-to-squash transitions within an approved batch are handled by [Git operations](../spec-workflow/references/git-operations.md#squash-into-the-immediate-parent); do not re-ask for the same valid approval.
+After edits, rebases, or unexpected changes in other repositories or the spec, regenerate the affected chunks and mark the earlier merge decision stale. Keep useful discussion of unchanged code, but get a decision that covers the current commits. A squash gives commits new IDs; within an approved batch, when [Git operations](../spec-workflow/references/git-operations.md#squash-into-the-immediate-parent) verifies the content is unchanged, don't ask again for the same approval.
 
-When coverage is complete or explicitly waived, briefly recap scope, open issues, checks, and limitations. **Walkthrough complete is not merge approved.** Recognize clear approval of the concrete whole-change proposal without asking twice. Return the record to Spec Workflow; it checks integration eligibility and performs only the authorized action. A member approval does not approve its peers, ancestors, or final release. Preserve the user's review cursor until they explicitly move on.
+**Why:** an approval belongs to the exact code the user saw.
+
+When coverage is complete or explicitly waived, recap the scope, open issues, checks, and limits. **Finishing the walkthrough isn't merge approval.** Recognize clear approval of the concrete whole-change proposal without asking twice. Return the record to Spec Workflow, which checks merge readiness and does only the authorized action. Approving one repository doesn't approve the others, the parent branches, or the final release. Keep the user's review position until they move on, for example with "next" or "looks good".
