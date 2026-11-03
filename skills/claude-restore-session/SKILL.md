@@ -1,5 +1,5 @@
 ---
-name: restore-session
+name: claude-restore-session
 description: Bring back a Claude Code conversation that is missing from the `claude agents` dashboard (its row was deleted, or `/resume` inside another row swapped it away), starting from a vague description such as "the desktop one in ~/projects". Finds matching past conversations, lets the user pick one, then restores it as a background row with its old session id. Use when the user asks to restore, unhide, recover, reopen, or bring back a session, conversation, chat, or agent row. Claude Code only.
 ---
 

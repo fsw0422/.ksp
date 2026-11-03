@@ -42,7 +42,7 @@ The old `skills@fsw0422` and `playwright-chromium-browser@fsw0422` Claude plugin
 are disabled to prevent duplicate skills and servers. The shared `.ksp` settings
 also keep them disabled and no longer declare the fsw0422 marketplace. If you
 installed these plugins in Codex, disable those copies as well. Restart the tools after
-changing skill sources. `restore-session` restores Claude Code conversations,
+changing skill sources. `claude-restore-session` restores Claude Code conversations,
 even when invoked from Codex.
 
 ### Browsers

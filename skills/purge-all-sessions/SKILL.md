@@ -44,8 +44,8 @@ folders remain.
 
 ## Purged means not restorable
 
-Hidden Claude sessions are exactly what `/restore-session` brings back. Once
-purged, their transcripts are gone and `/restore-session` cannot find them.
+Hidden Claude sessions are exactly what `/claude-restore-session` brings back. Once
+purged, their transcripts are gone and `/claude-restore-session` cannot find them.
 Always say this in the confirm step. Offer `--older-than <days>` when the user
 wants recently hidden sessions to stay restorable for a while.
 
@@ -71,7 +71,7 @@ wants recently hidden sessions to stay restorable for a while.
    and the hidden sessions to purge (the plan prints the id, last activity,
    folder, and first prompt for each). Name any job folder that will be
    deleted (only with `--also-purge`). For Claude, say the purged sessions can
-   no longer be restored with `/restore-session`. Ask once, and wait for yes.
+   no longer be restored with `/claude-restore-session`. Ask once, and wait for yes.
    In Codex only, if the Codex app is running, tell the user to quit it first,
    or its database cleanup can fail with "locked".
 4. **Apply:** `python3 -I purge.py apply --manifest <path printed by plan>`.

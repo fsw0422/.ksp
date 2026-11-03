@@ -296,7 +296,7 @@ def cmd_plan(a):
             first = ' '.join(i['first'].split())[:70]
             print(f"  purge {u[:8]}  {age:>8}  {i['project'] or '-'}  \"{first}\"")
         if purge_c:
-            print('  Purged sessions can no longer be brought back with /restore-session.')
+            print('  Purged sessions can no longer be brought back with /claude-restore-session.')
     else:
         print(f'Codex: purge {len(purge_x)} archived threads')
     print(f'Playwright: {len(rm_p)} items')
