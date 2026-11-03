@@ -2,7 +2,7 @@
 """Purge dead sessions for exactly one host platform and their tied data.
 
   purge.py jobs                          list ~/.claude/jobs rows (job id, session id, name, state, last change)
-  purge.py plan  --platform claude --live ID [--live ID..] [--manifest F]
+  purge.py plan  --platform claude [--older-than DAYS] [--also-purge ID..] [--live ID..] [--manifest F]
   purge.py plan  --platform codex [--manifest F]
   purge.py apply --manifest F
 
@@ -92,7 +92,7 @@ def desktop_ids(candidates):
     return hits
 
 
-def plan_claude(live_args, min_age):
+def plan_claude(live_args, also_purge, older_than, min_age):
     cand = set()
     for pat in ('projects/*/*', 'file-history/*', 'session-env/*', 'tasks/*', 'debug/*'):
         for p in glob.glob(f'{CLAUDE}/{pat}'):
@@ -112,10 +112,17 @@ def plan_claude(live_args, min_age):
         live.add(u)
         why.setdefault(u, reason)
 
-    for a in live_args:
-        for u in cand:
-            if u.startswith(a):
-                protect(u, 'on dashboard (--live)')
+    def matches(u, prefixes):
+        return any(u.startswith(a) for a in prefixes)
+
+    # Every dashboard row has a ~/.claude/jobs/<job>/ folder, so those are kept
+    # by default. --also-purge removes a dashboard row on purpose.
+    for jid, s, name, *_ in job_rows():
+        if s and not matches(s, also_purge):
+            protect(s, f'on dashboard: {name or jid}')
+    for u in cand:
+        if matches(u, live_args):
+            protect(u, 'kept by --live')
     cur = os.environ.get('CLAUDE_JOB_DIR')
     if cur:
         for jid, s, *_ in job_rows():
@@ -136,12 +143,34 @@ def plan_claude(live_args, min_age):
         if u and now - os.path.getmtime(p) < min_age * 60:
             protect(u, f'active in last {min_age} min')
 
+    def files_of(u):
+        out = []
+        for pat in (f'projects/*/{u}*', f'file-history/{u}', f'session-env/{u}',
+                    f'tasks/{u}', f'debug/{u}*'):
+            out += glob.glob(f'{CLAUDE}/{pat}')
+        return out
+
+    # Last activity per session: newest mtime of its files, or its newest
+    # history.jsonl line when no files are left.
+    hist = {}
+    for _, d in read_jsonl(CLAUDE + '/history.jsonl'):
+        if d and d.get('sessionId'):
+            h = hist.setdefault(d['sessionId'], {'first': d.get('display', ''),
+                                                 'project': d.get('project', ''), 'ts': 0})
+            h['ts'] = max(h['ts'], (d.get('timestamp') or 0) / 1000)
+    last = {}
+    for u in cand - live:
+        ts = [os.path.getmtime(p) for p in files_of(u) if os.path.lexists(p)]
+        last[u] = max(ts + [hist.get(u, {}).get('ts', 0)])
+    if older_than:
+        for u in cand - live:
+            if now - last[u] < older_than * 86400:
+                protect(u, f'newer than {older_than:g} days (still restorable)')
+
     purge = cand - live
     rm = []
     for u in sorted(purge):
-        for pat in (f'projects/*/{u}*', f'file-history/{u}', f'session-env/{u}',
-                    f'tasks/{u}', f'debug/{u}*'):
-            rm += glob.glob(f'{CLAUDE}/{pat}')
+        rm += files_of(u)
     for jid, s, *_ in job_rows():
         if s in purge:
             rm.append(f'{CLAUDE}/jobs/{jid}')
@@ -153,7 +182,8 @@ def plan_claude(live_args, min_age):
         if d.get('sessionId') in purge and not pid_alive(d.get('pid', 0)):
             rm.append(sp)
     filt = [{'path': CLAUDE + '/history.jsonl', 'key': 'sessionId', 'ids': sorted(purge)}]
-    return purge, live, why, rm, filt
+    info = {u: {'last': last.get(u, 0), **hist.get(u, {'first': '', 'project': ''})} for u in purge}
+    return purge, live, why, rm, filt, info
 
 
 # ---------- Codex ----------
@@ -242,10 +272,10 @@ def safe_file(p, platform):
 
 def cmd_plan(a):
     if a.platform == 'claude':
-        purge_c, live_c, why, rm_c, filt_c = plan_claude(a.live, a.min_age)
+        purge_c, live_c, why, rm_c, filt_c, info = plan_claude(a.live, a.also_purge, a.older_than, a.min_age)
         purge_x, rm_x, filt_x, sql = set(), [], [], []
     else:
-        purge_c, live_c, why, rm_c, filt_c = set(), set(), {}, [], []
+        purge_c, live_c, why, rm_c, filt_c, info = set(), set(), {}, [], [], {}
         purge_x, rm_x, filt_x, sql = plan_codex()
     rm_p = [] if a.no_playwright else plan_playwright(a.playwright_profile, a.min_age)
     rm = sorted({safe(p, a.platform) for p in rm_c + rm_x + rm_p})
@@ -259,6 +289,14 @@ def cmd_plan(a):
         print(f'Claude: purge {len(purge_c)} sessions, keep {len(live_c)} live')
         for u in sorted(live_c):
             print(f'  keep {u}  ({why[u]})')
+        now = time.time()
+        for u in sorted(purge_c, key=lambda u: -info[u]['last']):
+            i = info[u]
+            age = f"{(now - i['last']) / 86400:.0f}d ago" if i['last'] else 'unknown'
+            first = ' '.join(i['first'].split())[:70]
+            print(f"  purge {u[:8]}  {age:>8}  {i['project'] or '-'}  \"{first}\"")
+        if purge_c:
+            print('  Purged sessions can no longer be brought back with /restore-session.')
     else:
         print(f'Codex: purge {len(purge_x)} archived threads')
     print(f'Playwright: {len(rm_p)} items')
@@ -326,7 +364,9 @@ def main():
     sub.add_parser('jobs').set_defaults(f=cmd_jobs)
     p = sub.add_parser('plan')
     p.add_argument('--platform', choices=('claude', 'codex'), required=True)
-    p.add_argument('--live', action='append', default=[], help='session id or prefix on the dashboard')
+    p.add_argument('--live', action='append', default=[], help='Claude: extra session id or prefix to keep (dashboard rows are kept automatically)')
+    p.add_argument('--also-purge', action='append', default=[], help='Claude: dashboard session id or prefix to purge on purpose')
+    p.add_argument('--older-than', type=float, default=0, help='Claude: only purge hidden sessions idle for more than N days')
     p.add_argument('--manifest')
     p.add_argument('--min-age', type=int, default=10, help='protect transcripts touched in the last N minutes')
     p.add_argument('--no-playwright', action='store_true')
@@ -336,10 +376,8 @@ def main():
     q.add_argument('--manifest', required=True)
     q.set_defaults(f=cmd_apply)
     a = ap.parse_args()
-    if a.cmd == 'plan' and a.platform == 'claude' and not a.live:
-        raise SystemExit('Claude plan needs at least one --live id (the dashboard rows). Refusing to guess.')
-    if a.cmd == 'plan' and a.platform == 'codex' and a.live:
-        raise SystemExit('--live is only valid for Claude plans')
+    if a.cmd == 'plan' and a.platform == 'codex' and (a.live or a.also_purge or a.older_than):
+        raise SystemExit('--live, --also-purge and --older-than are only valid for Claude plans')
     a.f(a)
 
 
