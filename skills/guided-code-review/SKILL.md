@@ -15,7 +15,9 @@ Verify the diff and its exact base, head, and spec commits. Read the whole chang
 
 For coordinated work, identify the shared branch name, the repositories and their paths, and the review scope: spec acceptance, one repository, a coordinated merge, or the final release. A spec review can come before the code, but it doesn't approve the implementation. Code-only work needs no invented spec counterpart. A preview, such as a look at the first built chunk of a planned chunk map, can discuss unfinished work without calling it ready to merge.
 
-For Spec Workflow's final merge review, check that its [cleanup pass](../spec-workflow/SKILL.md#clean-up-code-before-merging) covers the exact scope and commits, including a recorded "no code cleanup" result where it applies. Include all cleanup edits in the reviewed diff. A standalone review stays read-only; running a cleanup pass that edits code needs the user's OK.
+For Spec Workflow's final merge review, check that its [cleanup pass](../spec-workflow/SKILL.md#clean-up-code-before-merging) covers the exact scope and commits, including a recorded "no code cleanup" result where it applies. Check the same for its [bug review](../spec-workflow/references/bug-review.md), including the reason when it was skipped. Include all cleanup edits and bug fixes in the reviewed diff. A standalone review stays read-only; running a cleanup pass that edits code needs the user's OK.
+
+For a standalone review of code, run `/code-review` on the same diff before the first chunk, unless the user says not to. Don't pass `--fix` or `--comment`: it edits nothing, and its findings go into the chunks they belong to.
 
 For a spec and code sync, include the finding, the accepted decision, and the task's [compatibility mode](../spec-workflow/references/spec-code-sync.md#use-the-tasks-mode). Explain the affected APIs, consumers, and data, and why old contracts or migrations are kept or removed. `--not-live` allows replacements within the accepted scope; unrelated feature decisions and merge approval still need their usual review.
 
@@ -41,7 +43,7 @@ For the current chunk, explain each of these in detail, in easy words, with as m
 - **What changed:** before and after, with source links.
 - **Why:** the requirement, defect, or tradeoff. Separate evidence from guesses about past intent.
 - **How it's used:** real callers, data movement, side effects, and failure paths.
-- **How to judge it:** simpler alternatives, the checks that actually ran, and open questions.
+- **How to judge it:** simpler alternatives, the checks that actually ran, the bug review's findings for this chunk, and open questions. Say what the bug review confirmed and how it was fixed. Give each plausible issue with a suggested change, for the user to accept or reject.
 
 A chunk might start like this (made up):
 
@@ -71,7 +73,7 @@ Where Mermaid doesn't render, the same map as text:
 >
 > **How it's used:** Home calls `resumeClass()`, which calls `restoreClass()`, which calls `AudioStore.load()`. If loading fails, the Class opens without audio and offers a retry.
 >
-> **How to judge it:** a simpler option is loading audio on first play. `restoreClass.test.ts` ran with 3 passing tests. Open question: what happens if one saved chunk is missing?
+> **How to judge it:** a simpler option is loading audio on first play. `restoreClass.test.ts` ran with 3 passing tests. The bug review found one plausible issue: if one saved chunk is missing, the restore stops early. Suggested change: skip that chunk and offer a retry. Accept it, or keep the current behavior?
 
 For a domain-related chunk, check the [domain mapping](../spec-workflow/SKILL.md#map-domain-language-into-code). Show how the spec term maps to the real model, storage, and contract names, and how its relationships and rules are represented. Flag unexplained synonyms or missing links. Use a small table or model diagram when it helps.
 
@@ -99,7 +101,7 @@ flowchart TD
 | Why / show callers / what if it fails | Stay on this chunk and explain the requested path |
 | Line by line | Explain each changed line or tightly linked group, waiting between steps |
 | Looks good / approve this chunk | Record this chunk as accepted and present the next one. It covers only this chunk, not the merge |
-| Change this | Pause the review, make only the requested edit through the active workflow, or directly for a standalone review, and refresh the affected chunks |
+| Change this, or accept a suggested change | Pause the review, make only the requested edit through the active workflow, or directly for a standalone review, and refresh the affected chunks |
 | Skip / pause | Record the skipped part, or save the position. Neither is approval |
 | Approve this change for the named destination | Record that exact decision. Recognize an explicit waiver if the user deliberately skips the rest |
 
@@ -112,8 +114,8 @@ Use the workflow's work record (`WORK_RECORD.md`), or the conversation itself fo
 | Record | Content |
 | --- | --- |
 | Identity and scope | Shared change name; repositories, and evidence for unaffected ones; worktree folder names, branches, and paths; purpose; destinations; the mode, live or `--not-live`; for a sync, the finding and the accepted decision |
-| Commits | Per repository: base, head, and accepted spec SHAs; relevant checks and whether they're still current; the cleanup result for workflow merge reviews |
-| Progress | Stable chunk IDs, paths and hunks, each chunk's status (discussed, accepted, skipped, or needs change), the current chunk or line, questions, and edits |
+| Commits | Per repository: base, head, and accepted spec SHAs; relevant checks and whether they're still current; the cleanup and bug review results for workflow merge reviews |
+| Progress | Stable chunk IDs, paths and hunks, each chunk's status (discussed, accepted, skipped, or needs change), the current chunk or line, questions, edits, and the user's decision on each bug review finding |
 | Decision | Spec accepted, changes requested, paused, rejected, deferred, walkthrough complete, or exact merge approved, plus any explicit waiver |
 
 After edits, rebases, or unexpected changes in other repositories or the spec, regenerate the affected chunks and mark the earlier merge decision stale. Keep useful discussion of unchanged code, but get a decision that covers the current commits. A squash gives commits new IDs; within an approved batch, when [Git operations](../spec-workflow/references/git-operations.md#squash-into-the-immediate-parent) verifies the content is unchanged, don't ask again for the same approval.

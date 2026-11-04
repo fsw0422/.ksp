@@ -4,7 +4,7 @@ Use these rules for Spec Workflow's [pre-merge cleanup pass](../SKILL.md#clean-u
 
 ## Preserve behavior
 
-- Read the repository's `AGENTS.md`, `CLAUDE.md`, and `CONTRIBUTING.md` when present. Inspect the working tree and keep unrelated user changes.
+- Read the repository's README, and follow any agent instruction file it already has. Inspect the working tree and keep unrelated user changes.
 - Keep public APIs, saved data, side effects, errors, and user-visible behavior the same. An accepted spec replacement defines the new target; cleanup doesn't make new product or domain decisions. Under `--not-live`, cleanup can remove leftovers of a replacement that was already accepted.
 - Establish a baseline with relevant existing tests. When important behavior isn't covered, first add characterization tests: tests that pin down what the code does today.
 - Keep changes small and reviewable. Stay within the proposed change and the code it affects.

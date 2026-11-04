@@ -1,14 +1,14 @@
 # Project setup
 
-Use this when the user asks to start a project, or when a spec repository has no guide (`CONTRIBUTING.md`). If the spec repository has a guide, follow that guide instead.
+Use this when the user asks to start a project, or when a spec repository doesn't have the template's layout yet.
 
 ```mermaid
 flowchart TD
     Start[Start work] --> Repo{Does a spec repository exist?}
     Repo -->|No| Create[Create it from the template]
-    Repo -->|Yes| Guide{Does it have a CONTRIBUTING.md?}
-    Guide -->|Yes| Follow[Follow that guide]
-    Guide -->|No| Propose[Propose the template guide as a normal spec change]
+    Repo -->|Yes| Layout{Does it have the template layout?}
+    Layout -->|Yes| Work[Work in it as it is]
+    Layout -->|No| Propose[Propose the layout as a normal spec change]
 ```
 
 ## Workspace layout
@@ -27,12 +27,11 @@ Every repository has one main checkout. Each change adds a worktree beside it fo
   <project>-backend-checkout-tax-fix/    child `checkout-tax-fix`, backend only
 ```
 
-The spec repository starts with this layout. Its `CONTRIBUTING.md` says which file owns which fact:
+The spec repository starts with this layout. The README lists the project's actual files, and each feature document's header names its ID prefix. The general writing rules are in [Writing specs](writing-specs.md), so the repository has no `AGENTS.md` or `CONTRIBUTING.md`:
 
 ```text
 <project>-specs/
-  README.md                product brief: customer, promise, boundaries
-  CONTRIBUTING.md          what each folder owns, plus ID and test rules
+  README.md                product brief, and where things are
   features/                one document per feature, each with its own ID prefix
   contracts/               API and event shapes (OpenAPI, JSON Schema)
   architecture/
@@ -45,7 +44,7 @@ The spec repository starts with this layout. Its `CONTRIBUTING.md` says which fi
 
 1. Confirm the project name, the workspace folder, and which code repositories exist or are planned. The user creates code repositories; this setup creates only the spec repository.
 2. Create `<workspace>/<project>-specs/` with `git init -b main`. Copy everything in [the spec repository template](../assets/spec-repo/) into it, including the `.gitkeep` files that keep empty folders in Git.
-3. Fill in the placeholders. Write the README from what the user has said, and leave a placeholder in place rather than inventing facts. Put today's date in `architecture/domain-model.md`.
+3. Fill in the placeholders. Write the README from what the user has said, and leave a placeholder in place rather than inventing facts. Put today's date in `architecture/domain-model.md`. In the README's "Where things are" table, list the contract files.
 4. Commit on `main` with a plain subject, such as `Set up the specification`.
 5. In the workspace root, create `WORK_RECORD.md` from [the work record template](../assets/work-record.md), and a `WORK_HISTORY.md` with only a title, unless they exist.
 6. If the workspace root has no `.code-workspace` file, create `<project>.code-workspace` with one `folders` entry per main checkout, sorted by path. Add later worktrees as described in [Update VS Code](git-operations.md#update-vs-code).
@@ -56,7 +55,7 @@ The first change then starts like any root change: agree on its spec, then creat
 
 ## Add the layout to an existing spec repository
 
-If a spec repository has documents but no guide, don't move or rewrite them on your own. Propose the template's `CONTRIBUTING.md` and any missing folders as a normal spec change, and list the documents that would move. Apply it only after the user agrees, through the usual review. **Why:** moving a document breaks every link to it, and deciding where facts live is a spec decision.
+If a spec repository has documents in a different layout, don't move or rewrite them on your own. Propose the template's missing folders and the README's "Where things are" table as a normal spec change, and list the documents that would move. Apply it only after the user agrees, through the usual review. **Why:** moving a document breaks every link to it, and deciding where facts live is a spec decision.
 
 ## New documents
 

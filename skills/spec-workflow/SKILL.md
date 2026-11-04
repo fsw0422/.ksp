@@ -14,7 +14,7 @@ flowchart TD
     Need -->|No| Plan[Sketch the chunk map]
     Spec --> Plan
     Plan --> Build[Build it chunk by chunk in a child worktree]
-    Build --> Clean[Cleanup pass and checks]
+    Build --> Clean[Cleanup pass, bug review, and checks]
     Clean --> Review[Guided review with the user]
     Review --> OK{Approved?}
     OK -->|Changes requested| Build
@@ -25,7 +25,7 @@ flowchart TD
 
 **Why this order:** a decision written in the spec can be reviewed and reused. Code written first tends to become the decision without anyone choosing it. Reviewing the finished change means the user approves exactly what lands.
 
-Details live in reference files: [Git operations](references/git-operations.md) for commands and checks, [Code cleanup](references/code-cleanup.md), [Spec and code sync](references/spec-code-sync.md), and [Project setup](references/project-setup.md). [Worked examples](references/worked-examples.md) explains every rule in more detail, with several examples each. [Guided Code Review](../guided-code-review/SKILL.md) runs the review conversation.
+Details live in reference files: [Git operations](references/git-operations.md) for commands and checks, [Writing specs](references/writing-specs.md), [Code cleanup](references/code-cleanup.md), [Bug review](references/bug-review.md), [Spec and code sync](references/spec-code-sync.md), and [Project setup](references/project-setup.md). [Worked examples](references/worked-examples.md) explains every rule in more detail, with several examples each. [Guided Code Review](../guided-code-review/SKILL.md) runs the review conversation.
 
 ## Words used here
 
@@ -40,16 +40,18 @@ Details live in reference files: [Git operations](references/git-operations.md) 
 | Chunk | One behavior or decision, built and reviewed as a unit | "Restore saved audio on reopen" |
 | Work record | `WORK_RECORD.md` at the workspace root: the current state of all work | see [Keep one work record](#keep-one-work-record) |
 | Cleanup pass | A tidy-up of the change before review that keeps its behavior | removing a helper the change made unused |
+| Bug review | A fresh read of the change's code that looks only for bugs, run once before the guided review | `/code-review` on the backend change |
+| Test merge | A trial merge of two branches that changes no branch or file. It shows a conflict before the real merge | this change against a paused sibling |
 
 **Why:** several of these used to have two or three names, which made rules easy to misread.
 
 ## Before working in a repository
 
-Read the repository's `AGENTS.md`, `CLAUDE.md`, and `CONTRIBUTING.md`, when present, before working there. Read them again when you switch worktrees.
+Read the repository's README before working there, and again when you switch worktrees. Follow any agent instruction file the repository already has, such as `AGENTS.md` or `CLAUDE.md`, but don't add one.
 
-**Why:** each repository has rules this skill doesn't repeat. For example, a backend's `AGENTS.md` may require a full production build check after any dependency change.
+**Why:** a repository's own rules belong in its normal documents, where people find them too. For example, a backend's README may require a production-only build check after any dependency change. Rules for every project already live in the user's global instructions and in this skill, so a guide file in each repository would only repeat them, and then drift from them.
 
-Starting a new project, or the spec repository has no `CONTRIBUTING.md`? Read [Project setup](references/project-setup.md) first. It creates the spec repository from a template, plus the workspace files this workflow uses.
+Starting a new project, or working in a spec repository that doesn't have the template's layout yet? Read [Project setup](references/project-setup.md) first. It creates the spec repository from a template, plus the workspace files this workflow uses.
 
 ## Choose the compatibility mode
 
@@ -69,7 +71,7 @@ flowchart TD
     Spec --> Code[Make the affected code match]
 ```
 
-**Where the mode comes from.** The user chooses it: with the flag on the request, or with a standing user or project instruction that sets a default, such as a line in `AGENTS.md` or `CLAUDE.md`. Without either, the task is live, even if nothing has been released. Don't guess the mode from hints such as a branch name.
+**Where the mode comes from.** The user chooses it: with the flag on the request, or with a standing user or project instruction that sets a default, such as a line in the user's global instructions or in the workspace `AGENTS.md`. Without either, the task is live, even if nothing has been released. Don't guess the mode from hints such as a branch name.
 
 ```text
 $spec-workflow --not-live <change>     in Codex
@@ -118,7 +120,7 @@ Before calling code dead, check supported callers, configuration, contracts, and
 
 **Why:** the spec is the decision. If code can rewrite it, nobody decided anything.
 
-**Record why, in the right place.** A choice that crosses features or is hard to reverse gets a decision record in the spec repository, in the form its guide describes. A smaller reason goes in the squash commit message. Under `--not-live`, rewrite a replaced decision to the current one, and add a short "Why we changed" note if the old option might come up again.
+**Record why, in the right place.** A choice that crosses features or is hard to reverse gets a decision record in the spec repository, in the form [Writing specs](references/writing-specs.md#decisions) describes. A smaller reason goes in the squash commit message. Under `--not-live`, rewrite a replaced decision to the current one, and add a short "Why we changed" note if the old option might come up again.
 
 > Example: "keep recorded Class audio for replay" affects recording, recovery, history, and storage, so it gets a decision record. "Clear the request timer when headers arrive" is local, so its reason goes in the commit message.
 
@@ -128,13 +130,11 @@ More examples: [Deciding whether the spec changes first](references/worked-examp
 
 ## Write specs for readers
 
-When writing or revising a spec, use easy, concise words, and explain each rule in enough detail that someone new to the project can follow it. Start with what the user sees or can do. Give plenty of concrete examples: a scenario for each rule, sample values, and what the user sees. Put separate rules, conditions, and outcomes in separate bullets or rows. Use agreed domain terms consistently and explain unfamiliar ones.
+Before writing or revising a spec, read [Writing specs](references/writing-specs.md). In short: easy, concise words with enough detail and plenty of examples; a diagram where it explains the idea; one owner for every fact; and one testable rule per requirement ID, each with an example.
 
-Use a focused Mermaid diagram for a workflow, sequence, state change, data flow, or relationship, with simple labels. Keep exact, testable rules in nearby prose or tables, and make sure the diagram agrees with them. Keep the document's structure and requirement IDs. Before finishing, reword anything a reader would need to read twice.
+What only one project knows stays in its own documents: the spec repository's README lists its files, and each feature document's header names its requirement ID prefix. [Project setup](references/project-setup.md) creates both from the template.
 
-**Why:** people read the spec to decide, and agents read it to build. Words alone leave gaps that examples close: "a Class allows three Pauses" is only clear once an example shows whether an inactivity timeout counts as one of the three. A rule that can be read two ways gets built two ways.
-
-Follow the spec repository's `CONTRIBUTING.md` for its layout, ID format, and test rules.
+**Why:** the general rules are the same in every project, so they live once, in this skill. A project's own facts change along with its files, so they live in its repository and change in the same commit.
 
 ## Map domain language into code
 
@@ -312,6 +312,14 @@ A pass may make no edits. For docs-only or verified unaffected repositories, ass
 
 Cleanup edits go in the worktree that owns the change. If the pass finds a behavior bug or an unclear requirement, route it through the spec or implementation steps first. [Code cleanup](references/code-cleanup.md) covers cleanup on an integration branch, what to record, and when a pass must run again. More examples: [The cleanup pass](references/worked-examples.md#the-cleanup-pass).
 
+## Find bugs before review
+
+After the cleanup pass, run a [bug review](references/bug-review.md) of each repository's code change, such as `/code-review` in Claude Code. Fix confirmed bugs with a test before the review starts. Attach each plausible issue to the chunk it belongs to, with a suggested change, for the user to decide. Skip docs-only repositories and record why.
+
+**Why:** the agent that built the change also explains it, so it tends to defend its own choices. A bug review reads the code fresh, and nothing else here hunts for bugs: the cleanup pass may not change behavior, and tests only catch what they test. One run on the whole change, before the review, also catches bugs that cross chunks, and the code doesn't change while the user reviews it.
+
+More examples: [Bug review](references/worked-examples.md#bug-review).
+
 ## Review and merge
 
 ```mermaid
@@ -320,8 +328,8 @@ sequenceDiagram
     participant R as Guided Code Review
     participant U as User
     participant G as Git
-    W->>W: Re-check the parent, run the cleanup pass and checks
-    W->>R: Diff, exact commits, cleanup result, destination
+    W->>W: Re-check the parent, run the cleanup pass, bug review, checks, and test merges
+    W->>R: Diff, exact commits, cleanup, bug review, and test merge results, destination
     R->>U: One chunk at a time
     U->>R: Approve for the destination
     R->>W: Review record with the decision
@@ -333,10 +341,38 @@ sequenceDiagram
 1. **Spec first.** For a change with specs and code, accept the spec on its child branch first, and record that spec commit for each code repository. Accepting a spec allows building; it doesn't approve the code or the merge. **Why:** the code review then checks code against a fixed spec version.
 2. **Every repository is ready.** Each required repository is current, tested, and approved, or has evidence that it's unaffected. When the spec repository asks tests to cite requirement IDs, each rule the change adds or alters needs a test that names its ID.
 3. **Re-check the parent and run the cleanup pass** for the proposed scope, before the final review.
-4. **Review.** Load [Guided Code Review](../guided-code-review/SKILL.md) in this conversation. Pass the repositories, the exact parent, head, and spec commits, the cleanup result, the chunk map, and the destination. Reuse a review only while its approval still matches those inputs. **Why:** approval covers exact commits. If they change, nobody approved the new ones.
-5. **Squash** each child into its immediate parent as one commit, including the final release merge, following [Git operations](references/git-operations.md). **Why:** the parent's history then shows one reviewed commit per change.
-6. **Children first.** A parent can merge into its own parent, or be removed, only after all its children are resolved and removed, at every depth.
-7. **Rebase the survivors,** as described next.
+4. **Run the bug review,** as described in [Find bugs before review](#find-bugs-before-review).
+5. **Test-merge with the other open branches,** as described in [Check for conflicts before review](#check-for-conflicts-before-review).
+6. **Review.** Load [Guided Code Review](../guided-code-review/SKILL.md) in this conversation. Pass the repositories, the exact parent, head, and spec commits, the cleanup, bug review, and test merge results, the chunk map, and the destination. Reuse a review only while its approval still matches those inputs. **Why:** approval covers exact commits. If they change, nobody approved the new ones.
+7. **Squash** each child into its immediate parent as one commit, including the final release merge, following [Git operations](references/git-operations.md). **Why:** the parent's history then shows one reviewed commit per change.
+8. **Children first.** A parent can merge into its own parent, or be removed, only after all its children are resolved and removed, at every depth.
+9. **Rebase the survivors,** as described in [Rebase after a merge](#rebase-after-a-merge).
+
+### Check for conflicts before review
+
+Before the review, test-merge the change with every open branch that will be rebased after it merges: its siblings and their children, in each repository the change touches. Include paused branches and branches in review. Take the list from the work record and Git, not from branch names alone. A test merge changes no branch, index, or working tree; [Git operations](references/git-operations.md#test-merge-with-open-branches) has the command.
+
+```mermaid
+flowchart TD
+    Ready[Change ready for review] --> Test[Test-merge with each open branch]
+    Test --> Clean{Any conflict?}
+    Clean -->|No| Report[Report the result in the review]
+    Clean -->|Yes| Avoid{Can this change avoid it without getting worse?}
+    Avoid -->|Yes| Adjust[Move or reword this change so it no longer touches the same lines]
+    Adjust --> Test
+    Avoid -->|No| Same{Do both branches decide the same thing differently?}
+    Same -->|Yes| Ask[Ask the user which one wins, before either merges]
+    Same -->|No| Record[Record which branch will need a manual rebase, and where]
+    Record --> Report
+```
+
+**Why:** a conflict found now costs a small edit while this change is still open. Found later, it lands on whoever rebases the other branch, often a paused branch whose context is gone.
+
+Adjust only when the result reads and works as well as before, such as a new README section or list entry that can sit elsewhere. Don't make this change worse to spare another branch. Conflicts that a branch also has with the parent alone aren't caused by this change: record them for that branch's rebase, and leave this change as it is.
+
+> Example: this change adds a "Production build check" section to the backend README, right before "Class issue decisions". The paused `initial-production-config` adds a "Production release" section in the same spot, so the test merge reports a conflict in `README.md`. Moving the new section to the end of the README keeps it as easy to find, and the next test merge is clean.
+
+More examples: [Test merges before review](references/worked-examples.md#test-merges-before-review).
 
 ### Rebase after a merge
 

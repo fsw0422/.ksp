@@ -24,7 +24,7 @@ flowchart TD
 
 **Example: old test data.** The audio feature changes how Pause data is saved. The test phone still has Classes saved in the old shape, and they can no longer resume. Under `--not-live` there is no migration, but the agent may not delete those records on its own either. So the change says what happens to them, for example "old paused Classes show as ended", or the agent asks, "Reset the local test database? This deletes 3 test Classes," and waits for a yes.
 
-**Example: going live.** The app ships. The user tags the spec repository `release-1` and changes the `AGENTS.md` default to live. A month later, a change wants to rename a field that `release-1` defines. Live mode applies now: the old name keeps working until a planned removal, because the released app still uses it.
+**Example: going live.** The app ships. The user tags the spec repository `release-1` and changes the default in the workspace `AGENTS.md` to live. A month later, a change wants to rename a field that `release-1` defines. Live mode applies now: the old name keeps working until a planned removal, because the released app still uses it.
 
 ## Deciding whether the spec changes first
 
@@ -118,6 +118,41 @@ The cleanup pass runs before the final review, so the review sees the final code
 **Example: a helper left behind.** The change replaced every use of `saveTmp()` with the new audio store, so `saveTmp()` is now unused. The agent checks for dynamic uses, such as configuration, reflection, and dependency injection, finds none, removes the helper, and reruns the tests. In the review, the removal appears inside the chunk that stopped using it, so the user sees both together.
 
 **Example: a bug found during cleanup.** While tidying `restoreClass()`, the agent notices that the last saved chunk is never loaded. Fixing that changes behavior, so it isn't cleanup. The agent reports it, fixes it as part of the implementation with a new test in the restore chunk, and then finishes the cleanup pass.
+
+## Bug review
+
+The bug review runs once on the whole change, after the cleanup pass and before the guided review. It's the one step that hunts for bugs, because the cleanup pass may not change behavior.
+
+**Example: a confirmed bug.** The bug review confirms that `resumeClass()` releases the device lock before the save finishes, so a second phone can open the same Class. The agent fixes it, adds a test that resumes from two devices, reruns the affected tests, and checks the fix's lines in the cleanup pass. In the guided review, the resume chunk shows the fix: "Bug review: confirmed and fixed in `4f2c1a9`."
+
+**Example: a plausible issue.** The bug review says `retryUpload()` might send the same chunk twice when the first reply arrives after the 10-second limit, and marks it plausible. The agent doesn't touch the code. In the retry chunk, under "How to judge it", the user reads: "Possible double upload when the server is slow. Suggested change: send the chunk ID, so the server ignores a duplicate." The user says "do it", so the agent makes the edit and refreshes that chunk. Had the user said "leave it", the record would note that they kept the current code.
+
+**Example: a docs-only change.** `initial-repo-guides` only removes guide files and adds README sections. There's no code to check, so the agent records "Bug review: skipped, docs only". The spec checks still run.
+
+**Example: a finding outside the change.** The bug review also flags old code in `AudioStore` that this change didn't touch. The agent doesn't fix it here. It records the finding under findings outside scope and tells the user, who can make it a change of its own.
+
+## Test merges before review
+
+A test merge shows, before the review, what this merge will do to the branches that are still open. Each example starts after the cleanup pass, with the change committed.
+
+**Example: a section that can move.** This change adds a "Production build check" section to the backend README, right before "Class issue decisions". The paused `initial-production-config` adds a "Production release" section in the same spot. The test merge exits with 1 and names the file:
+
+```text
+$ git merge-tree --write-tree --name-only <change-head> initial-production-config
+e47a903c70102d49021eb00fbc54d8e6568c68fa
+README.md
+
+Auto-merging README.md
+CONFLICT (content): Merge conflict in README.md
+```
+
+Where the new section sits doesn't matter much, so the agent moves it to the end of the README and tests again. Now Git prints only the tree ID and exits with 0. The review reports "test merge with 6 open branches: clean", and the paused branch will rebase later without a conflict.
+
+**Example: both edits are needed.** This change, `initial-storage-fix`, adds a size check at the start of `saveChunk()`. The sibling `initial-retained-audio` rewrites the same first lines to keep a copy for replay. Moving either edit would make the code worse, and the two don't contradict each other. So the agent keeps this change as it is, and records in the sibling's entry: `Needs rebase: onto <sha>, after initial-storage-fix merged; expect a conflict in saveChunk.ts`. The review says so too. When the sibling rebases, the agent combines both edits by hand and reruns its tests.
+
+**Example: two answers to one question.** This change sets `PAUSE-001` to three Pauses per Class. The sibling `initial-short-classes`, which is in review, changes the same requirement row to two. The test merge conflicts on that row. That isn't a merge problem but a product decision, so the agent asks the user which rule wins before either branch merges.
+
+**Example: not this change's conflict.** The paused `initial-profile-settings` conflicts with this change, but it also conflicts with `initial` alone, because of a commit that merged last week. Changing this branch wouldn't help. The agent adds the conflict to that branch's `Needs rebase` line and leaves this change as it is.
 
 ## Review and merge
 

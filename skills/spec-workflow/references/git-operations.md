@@ -67,7 +67,7 @@ Record which repositories were updated so a partial rename can resume safely. Re
 
 ## Freeze the review inputs
 
-Complete the [cleanup pass](../SKILL.md#clean-up-code-before-merging) first. Record its scope, result, checks, and input versions. Any edits it made belong in the snapshot below.
+Complete the [cleanup pass](../SKILL.md#clean-up-code-before-merging) and the [bug review](bug-review.md) first. Record their scope, results, checks, and input versions. Any edits they led to belong in the snapshot below.
 
 Save the complete child change in a commit, within the user's authorization. Record the exact base and the head to review:
 
@@ -75,7 +75,7 @@ Save the complete child change in a commit, within the user's authorization. Rec
 git diff <base> <head>
 ```
 
-Check `git status` so intended uncommitted or untracked files aren't left out. Pass Guided Code Review the repositories, the base, head, and spec SHAs, the scope, the checks, the chunk map, and the destination. A checkpoint doesn't approve a merge. If the work is already committed, don't create an empty commit to mark it approved.
+Check `git status` so intended uncommitted or untracked files aren't left out. Then run the [test merges](#test-merge-with-open-branches) on the committed head. Pass Guided Code Review the repositories, the base, head, and spec SHAs, the scope, the checks including the test merge results, the chunk map, and the destination. A checkpoint doesn't approve a merge. If the work is already committed, don't create an empty commit to mark it approved.
 
 **Why:** the review must cover exact commits. Anything uncommitted, or changed afterwards, isn't what the user reviewed.
 
@@ -83,10 +83,49 @@ Before merging, verify that:
 
 - the [review record](../../guided-code-review/SKILL.md#review-record) covers the current inputs and destination
 - the cleanup result covers the same inputs and merge scope, or records why no code cleanup applies
+- the bug review covers the current code, or records why it was skipped
 - the parent is clean, and every child below the merging branch is resolved and removed
 - every required repository is current, checked, and approved, or verified unaffected
+- the test merges cover the current heads of this change and of every branch it was tested against, or were run again
 
 Unexpected changes to the parent, child, or spec need a fresh cleanup assessment of the affected work, and they cancel affected approvals. Update and check the work, then review the changed version. Never put a newer tip under an old approval.
+
+## Test-merge with open branches
+
+Run this on the committed head of the change, in each repository it touches. [Check for conflicts before review](../SKILL.md#check-for-conflicts-before-review) says which branches to test and what to do with a conflict. For each branch:
+
+```text
+git merge-tree --write-tree --name-only <change-head> <other-branch>
+```
+
+Git does the merge in memory. It writes only Git objects and changes no branch, index, or working tree, so it's safe to run against a paused branch. It needs Git 2.38 or later.
+
+- **Exit code 0:** they merge cleanly, and Git prints only the merged tree ID.
+- **Exit code 1:** they conflict. Git prints the tree ID, the conflicting files, and a message for each conflict:
+
+  ```text
+  e47a903c70102d49021eb00fbc54d8e6568c68fa
+  README.md
+
+  Auto-merging README.md
+  CONFLICT (content): Merge conflict in README.md
+  ```
+
+- **Any other exit code:** the command failed, for example on a misspelled branch. Fix it and run it again.
+
+When a branch conflicts, test it against the parent alone too:
+
+```text
+git merge-tree --write-tree --name-only <parent> <other-branch>
+```
+
+If that also conflicts, the conflict isn't caused by this change.
+
+**Why:** a branch that's behind its parent can already conflict with commits merged earlier. Changing this branch wouldn't fix that.
+
+Record the result for each repository in the work record, such as "test merge with 6 open branches: clean", or the branch, the files, and what was done: adjusted, left for that branch's rebase, or a decision asked of the user. For a conflict left for a rebase, add the files to that branch's `Needs rebase` line, so whoever rebases it knows what to expect.
+
+At merge time, run the test merges again if this change, its parent, or a tested branch has moved since. If a new conflict means adjusting the change after approval, the affected chunks go back to review.
 
 ## Squash into the immediate parent
 
