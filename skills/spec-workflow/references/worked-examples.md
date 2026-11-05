@@ -93,7 +93,7 @@ A chunk is one behavior or decision that the user can understand and judge on it
 
 `✓` is built, `▶` is being built, and `○` is planned. Saving audio is the riskiest chunk, because the saved format is hard to change later.
 
-**Example: offering a preview.** After the first chunk is built and its tests pass, the agent asks, "Saving audio is ready for a quick look before I build restore and retry. Want a preview?" If the user says yes, Guided Code Review shows that one chunk. The user might say, "also store each chunk's length in its file name." The agent adjusts the code and the map, and keeps building. Nothing is approved yet; the final review still covers everything.
+**Example: offering a preview.** After the first chunk is built and its tests pass, the agent asks, "Saving audio is ready for a quick look before I build restore and retry. Want a preview?" If the user says yes, the guided review shows that one chunk. The user might say, "also store each chunk's length in its file name." The agent adjusts the code and the map, and keeps building. Nothing is approved yet; the final review still covers everything.
 
 **Example: splitting a chunk off.** The team isn't sure about the saved format yet. Instead of building restore and retry on a format that might change, the agent makes "save audio" its own child branch. It's reviewed and merged first, and the rest builds on a settled format.
 
@@ -125,7 +125,11 @@ The bug review runs once on the whole change, after the cleanup pass and before 
 
 **Example: a confirmed bug.** The bug review confirms that `resumeClass()` releases the device lock before the save finishes, so a second phone can open the same Class. The agent fixes it, adds a test that resumes from two devices, reruns the affected tests, and checks the fix's lines in the cleanup pass. In the guided review, the resume chunk shows the fix: "Bug review: confirmed and fixed in `4f2c1a9`."
 
-**Example: a plausible issue.** The bug review says `retryUpload()` might send the same chunk twice when the first reply arrives after the 10-second limit, and marks it plausible. The agent doesn't touch the code. In the retry chunk, under "How to judge it", the user reads: "Possible double upload when the server is slow. Suggested change: send the chunk ID, so the server ignores a duplicate." The user says "do it", so the agent makes the edit and refreshes that chunk. Had the user said "leave it", the record would note that they kept the current code.
+**Example: the same code breaks twice.** The bug review confirms that two quick saves can overwrite each other in `saveChunk()`. The agent adds a lock and a test, then re-reviews only `saveChunk.ts`, once. The re-review finds a new case: a save retried after a timeout can still land after a newer one. That's the same code breaking again, so the agent doesn't add a second patch. It asks: "Locks keep missing write orders here. Should I give each chunk a revision number, so the store rejects stale writes? Or keep the lock, and you judge the retry case in the save chunk?" Without this stop, each patch can expose one more rare order, and the fix and review loop goes on round after round.
+
+**Example: a saved level of `max`.** The user once typed `/code-review max` for another project, and the tool remembers that level. Spec Workflow always passes `medium`, so this change's review doesn't quietly run at `max`. If the user says "use high for this one", the agent passes `high` for this change only.
+
+**Example: a plausible issue.** The bug review says `retryUpload()` might send the same chunk twice when the first reply arrives after the 10-second limit, and marks it plausible. The agent doesn't touch the code. In the retry chunk, under "How to judge it", the user reads: "Possible double upload when the server is slow. Suggested change: send the chunk ID, so the server ignores a duplicate." The user says "do it", so the agent makes the edit, re-reviews `retryUpload.ts` once, and refreshes that chunk. Had the user said "leave it", the record would note that they kept the current code.
 
 **Example: a docs-only change.** `initial-repo-guides` only removes guide files and adds README sections. There's no code to check, so the agent records "Bug review: skipped, docs only". The spec checks still run.
 

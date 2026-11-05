@@ -25,7 +25,7 @@ flowchart TD
 
 **Why this order:** a decision written in the spec can be reviewed and reused. Code written first tends to become the decision without anyone choosing it. Reviewing the finished change means the user approves exactly what lands.
 
-Details live in reference files: [Git operations](references/git-operations.md) for commands and checks, [Writing specs](references/writing-specs.md), [Code cleanup](references/code-cleanup.md), [Bug review](references/bug-review.md), [Spec and code sync](references/spec-code-sync.md), and [Project setup](references/project-setup.md). [Worked examples](references/worked-examples.md) explains every rule in more detail, with several examples each. [Guided Code Review](../guided-code-review/SKILL.md) runs the review conversation.
+Details live in reference files: [Git operations](references/git-operations.md) for commands and checks, [Writing specs](references/writing-specs.md), [Code cleanup](references/code-cleanup.md), [Bug review](references/bug-review.md), [Guided review](references/guided-review.md), [Spec and code sync](references/spec-code-sync.md), and [Project setup](references/project-setup.md). [Worked examples](references/worked-examples.md) explains every rule in more detail, with several examples each.
 
 ## Words used here
 
@@ -40,7 +40,8 @@ Details live in reference files: [Git operations](references/git-operations.md) 
 | Chunk | One behavior or decision, built and reviewed as a unit | "Restore saved audio on reopen" |
 | Work record | `WORK_RECORD.md` at the workspace root: the current state of all work | see [Keep one work record](#keep-one-work-record) |
 | Cleanup pass | A tidy-up of the change before review that keeps its behavior | removing a helper the change made unused |
-| Bug review | A fresh read of the change's code that looks only for bugs, run once before the guided review | `/code-review` on the backend change |
+| Bug review | A fresh read of the change's code that looks only for bugs, run once before the guided review | `/code-review medium` on the backend change |
+| Guided review | A walk through the change with the user, one chunk at a time, before they decide | the review before `initial-retained-audio` merges |
 | Test merge | A trial merge of two branches that changes no branch or file. It shows a conflict before the real merge | this change against a paused sibling |
 
 **Why:** several of these used to have two or three names, which made rules easy to misread.
@@ -238,7 +239,7 @@ Keep integration branches, including `main`, clean outside merges. Make spec and
 
 ## Plan the chunks
 
-Before building, sketch a **chunk map**: the pieces of behavior the change adds, in the order you'll build them. For each chunk, name its behavior, its requirement IDs when the spec has them, and the repositories it touches. Mark the riskiest chunk, and build it as early as its dependencies allow. Keep the map in the work record, and share it when building starts. The user can reorder or split it; wait for their OK only if they asked to approve plans first. While building, keep the map current with the same marks Guided Code Review uses: ✓ built, ▶ being built, ○ planned.
+Before building, sketch a **chunk map**: the pieces of behavior the change adds, in the order you'll build them. For each chunk, name its behavior, its requirement IDs when the spec has them, and the repositories it touches. Mark the riskiest chunk, and build it as early as its dependencies allow. Keep the map in the work record, and share it when building starts. The user can reorder or split it; wait for their OK only if they asked to approve plans first. While building, keep the map current with the same marks the [guided review](references/guided-review.md#one-chunk-then-a-pause) uses: ✓ built, ▶ being built, ○ planned.
 
 **Why:**
 
@@ -271,7 +272,7 @@ For example, the chunk map for `initial-class-recovery`:
 After chunk 1 is built and its tests pass: "Saving audio is ready for a quick look before I build restore and retry. Want a preview?"
 
 - **Split what doesn't fit.** A chunk that is big, risky, or useful on its own becomes its own branch, placed by the [parent rule](#choose-the-parent), with its own review and squash. For example, if the saved audio format is still uncertain, chunk 1 becomes a child branch, so restore and retry build on a settled format.
-- **Preview, don't approve.** After the riskiest chunk is built and its checks pass, offer a preview through [Guided Code Review](../guided-code-review/SKILL.md), in this same conversation. A preview is only a look: it approves nothing, and the final review still covers the whole change. Wait for the answer before building on top of that chunk; work that doesn't depend on it can go on. If the user declines, keep building. If the riskiest chunk got its own branch, that branch's own review replaces the preview.
+- **Preview, don't approve.** After the riskiest chunk is built and its checks pass, offer a preview: a [guided review](references/guided-review.md) of that chunk, in this same conversation. A preview is only a look: it approves nothing, and the final review still covers the whole change. Wait for the answer before building on top of that chunk; work that doesn't depend on it can go on. If the user declines, keep building. If the riskiest chunk got its own branch, that branch's own review replaces the preview.
 - **Keep the map current.** When building shows the plan was wrong, because a chunk merges into another, splits, or a new one appears, update the map in the work record. The review starts from the final map and says how it differs from the plan, and why.
 
 More examples: [Planning chunks](references/worked-examples.md#planning-chunks).
@@ -314,9 +315,9 @@ Cleanup edits go in the worktree that owns the change. If the pass finds a behav
 
 ## Find bugs before review
 
-After the cleanup pass, run a [bug review](references/bug-review.md) of each repository's code change, such as `/code-review` in Claude Code. Fix confirmed bugs with a test before the review starts. Attach each plausible issue to the chunk it belongs to, with a suggested change, for the user to decide. Skip docs-only repositories and record why.
+After the cleanup pass, run one [bug review](references/bug-review.md) of each repository's code change, such as `/code-review medium` in Claude Code. Fix confirmed bugs with a test before the review starts, then re-review only the fixed files, once. If the same code breaks again, stop and ask the user instead of patching it again. Attach each plausible issue to the chunk it belongs to, with a suggested change, for the user to decide. Skip docs-only repositories and record why.
 
-**Why:** the agent that built the change also explains it, so it tends to defend its own choices. A bug review reads the code fresh, and nothing else here hunts for bugs: the cleanup pass may not change behavior, and tests only catch what they test. One run on the whole change, before the review, also catches bugs that cross chunks, and the code doesn't change while the user reviews it.
+**Why:** the agent that built the change also explains it, so it tends to defend its own choices. A bug review reads the code fresh, and nothing else here hunts for bugs: the cleanup pass may not change behavior, and tests only catch what they test. One run on the whole change, before the review, also catches bugs that cross chunks, and the code doesn't change while the user reviews it. The limit on reruns stops fixing and reviewing from looping: when the same code keeps breaking, its design needs another look, not another patch.
 
 More examples: [Bug review](references/worked-examples.md#bug-review).
 
@@ -325,7 +326,7 @@ More examples: [Bug review](references/worked-examples.md#bug-review).
 ```mermaid
 sequenceDiagram
     participant W as Spec Workflow
-    participant R as Guided Code Review
+    participant R as Guided review
     participant U as User
     participant G as Git
     W->>W: Re-check the parent, run the cleanup pass, bug review, checks, and test merges
@@ -343,7 +344,7 @@ sequenceDiagram
 3. **Re-check the parent and run the cleanup pass** for the proposed scope, before the final review.
 4. **Run the bug review,** as described in [Find bugs before review](#find-bugs-before-review).
 5. **Test-merge with the other open branches,** as described in [Check for conflicts before review](#check-for-conflicts-before-review).
-6. **Review.** Load [Guided Code Review](../guided-code-review/SKILL.md) in this conversation. Pass the repositories, the exact parent, head, and spec commits, the cleanup, bug review, and test merge results, the chunk map, and the destination. Reuse a review only while its approval still matches those inputs. **Why:** approval covers exact commits. If they change, nobody approved the new ones.
+6. **Review.** Run the [guided review](references/guided-review.md) in this conversation, from the repositories, the exact parent, head, and spec commits, the cleanup, bug review, and test merge results, the chunk map, and the destination. Reuse a review only while its approval still matches those inputs. **Why:** approval covers exact commits. If they change, nobody approved the new ones.
 7. **Squash** each child into its immediate parent as one commit, including the final release merge, following [Git operations](references/git-operations.md). **Why:** the parent's history then shows one reviewed commit per change.
 8. **Children first.** A parent can merge into its own parent, or be removed, only after all its children are resolved and removed, at every depth.
 9. **Rebase the survivors,** as described in [Rebase after a merge](#rebase-after-a-merge).
