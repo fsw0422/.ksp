@@ -3,6 +3,7 @@
 #   serve  Start Playwright MCP attached to the shared browser; .mcp.json runs this.
 #   start  Open the shared browser unless it is already running.
 #   hook   Claude Code PreToolUse hook: refuse tab closing, then make sure the browser runs.
+#   path   Print the browser program, for tools that start their own throwaway copy.
 # The browser is opened through launchd, so it keeps running after sessions end
 # until the user quits it. Every session sees the same window and tabs.
 set -euo pipefail
@@ -12,6 +13,7 @@ profile="${root}/profile"
 # Not 9222: the user's own Chrome may listen there, and attaching to it would drive their real browser.
 port="${PW_BROWSER_PORT:-19222}"
 endpoint="http://127.0.0.1:${port}"
+missing="Chrome for Testing is not installed. Run: npx -y @playwright/mcp@latest install-browser chrome-for-testing"
 
 browser_up() {
 	curl -sf --max-time 1 "${endpoint}/json/version" >/dev/null
@@ -45,7 +47,7 @@ start() {
 	local app busy="Another browser is using ${profile} without the shared port ${port}. Quit it with Cmd+Q, then retry."
 	browser_up && return 0
 	if ! app=$(newest_app); then
-		echo "Chrome for Testing is not installed. Run: npx -y @playwright/mcp@latest install-browser chrome-for-testing" >&2
+		echo "${missing}" >&2
 		return 1
 	fi
 	if profile_busy; then
@@ -87,6 +89,18 @@ start() {
 	return 1
 }
 
+# Prints the program inside the newest Chrome for Testing app. The mermaid-image
+# skill starts its own windowless copy with an empty profile, so it never touches
+# the shared browser, its tabs, or its sign-ins.
+program_path() {
+	local app
+	if ! app=$(newest_app); then
+		echo "${missing}" >&2
+		return 1
+	fi
+	printf '%s\n' "${app}/Contents/MacOS/Google Chrome for Testing"
+}
+
 deny() {
 	jq -n --arg reason "$1" '{hookSpecificOutput: {hookEventName: "PreToolUse", permissionDecision: "deny", permissionDecisionReason: $reason}}'
 	exit 0
@@ -108,8 +122,9 @@ case "${1:-}" in
 	serve) exec npx -y @playwright/mcp@latest --cdp-endpoint "${endpoint}" --output-dir "${root}/output" ;;
 	start) start ;;
 	hook) hook ;;
+	path) program_path ;;
 	*)
-		echo "Usage: bash browser.sh serve|start|hook" >&2
+		echo "Usage: bash browser.sh serve|start|hook|path" >&2
 		exit 1
 		;;
 esac

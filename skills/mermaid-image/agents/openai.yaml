@@ -1,0 +1,4 @@
+interface:
+  display_name: "Mermaid Image"
+  short_description: "Turn Mermaid diagrams into PNG images offline"
+  default_prompt: "Use $mermaid-image to turn this diagram into an image."

@@ -75,6 +75,14 @@ This downloads the browser (about 100 MB); `browser.sh` uses the newest Chrome
 for Testing build Playwright has installed. Rerun setup if the repo's MCP
 configuration changes, since each tool stores a copy of those options.
 
+### Diagram images
+
+`mermaid-image` turns Mermaid text into PNG images, so diagrams in chat show on
+the desktop and the phone. It works offline: it bundles Mermaid 12.2.0 in
+`mermaid-image/assets/` and draws in a windowless, throwaway copy of the browser
+MCP's Chrome for Testing, which `browser.sh path` finds. It needs no extra
+install, and it never touches the shared browser window.
+
 ## Global instructions and settings
 
 The shared user-level instructions live here in `AGENTS.md`.

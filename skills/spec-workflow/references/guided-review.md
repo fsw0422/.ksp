@@ -24,7 +24,7 @@ Start with the purpose, the exact comparison, the checks including the test merg
 
 **Start every new or resumed chunk with a progress map, then the current worktree folder name and branch, then the chunk's title.** Don't use a bare counter such as "2/5": it shows the position, but not what's done or what comes next.
 
-- Draw the map as a left-to-right Mermaid strip when there are six chunks or fewer and Mermaid renders. Otherwise, use a text map, one chunk per line with its repositories.
+- Send the map as an image made with the [mermaid-image](../../mermaid-image/SKILL.md) skill: left to right for 4 chunks or fewer, top-down for more. Give the current chunk a thicker border. Where images can't be sent, use a text map, one chunk per line with its repositories.
 - Mark each chunk: ✓ accepted, ▶ now, ○ not yet, ↷ skipped, ✎ needs a change.
 - Repeat the worktree and branch even when unchanged, and link the folder name to its absolute path. If a chunk spans repositories, name each worktree and its repository. Take the worktrees from the work record and Git, not from the chat's working directory.
 - In line-by-line steps, repeat the worktree and branch line and name the lines being explained, such as `restoreClass.ts`, lines 40–52. The map comes back with the next chunk.
@@ -38,7 +38,7 @@ For the current chunk, explain each of these in detail, in easy words, with as m
 - **How it's used:** real callers, data movement, side effects, and failure paths.
 - **How to judge it:** simpler alternatives, the checks that actually ran, the bug review's findings for this chunk, and open questions. Say what the bug review confirmed and how it was fixed. Give each plausible issue with a suggested change, for the user to accept or reject.
 
-A chunk might start like this (made up):
+A chunk might start with this map, rendered and sent as an image (made up):
 
 ```mermaid
 flowchart LR
@@ -47,7 +47,7 @@ flowchart LR
     class C2 current
 ```
 
-Where Mermaid doesn't render, the same map as text:
+Where images can't be sent, the same map as text:
 
 ```text
 ✓ Save audio            backend
@@ -70,7 +70,7 @@ Where Mermaid doesn't render, the same map as text:
 
 For a domain-related chunk, check the [domain mapping](../SKILL.md#map-domain-language-into-code). Show how the spec term maps to the real model, storage, and contract names, and how its relationships and rules are represented. Flag unexplained synonyms or missing links. Use a small table or model diagram when it helps.
 
-Use a small Mermaid diagram when it helps: a call hierarchy for usage, a sequence diagram for ordering, a data-flow diagram for transformations, or a state diagram or flowchart for lifecycle choices. Label real calls, payloads, and failure paths, and mark anything unverified. Don't invent a call graph, defend unnecessary complexity, or force a diagram onto a trivial rename. Check changed diagrams where tooling allows, and don't claim a diagram renders if you haven't checked.
+Use a small Mermaid diagram when it helps, sent as an image like the map: a call hierarchy for usage, a sequence diagram for ordering, a data-flow diagram for transformations, or a state diagram or flowchart for lifecycle choices. Label real calls, payloads, and failure paths, and mark anything unverified. Don't invent a call graph, defend unnecessary complexity, or force a diagram onto a trivial rename. Check diagrams the change adds or edits in files with the [mermaid-image](../../mermaid-image/SKILL.md) script, and don't claim a diagram renders if you haven't checked.
 
 > For the chunk above, a sequence diagram would show Home, `resumeClass()`, `restoreClass()`, and `AudioStore`, with the failed load drawn as its own arrow back to Home.
 

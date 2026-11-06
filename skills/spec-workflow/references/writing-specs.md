@@ -146,6 +146,6 @@ Check that:
 - relative links resolve, and no absolute paths to someone's computer were added
 - requirement IDs are unique and defined only in feature documents
 - each new or changed rule has an example, and a test cites its ID once the code exists
-- Mermaid blocks render, and contracts parse
+- Mermaid blocks render, which the [mermaid-image](../../mermaid-image/SKILL.md) script checks, and contracts parse
 - the change updates the owning document instead of repeating it elsewhere
 - the repository's own checks pass, such as its CI jobs
