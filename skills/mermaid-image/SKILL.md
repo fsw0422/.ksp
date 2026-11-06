@@ -1,11 +1,11 @@
 ---
 name: mermaid-image
-description: Turn a Mermaid diagram into a PNG image, offline, and send it to the chat, so it shows on both the desktop and the phone and can be zoomed. Use for every diagram in a chat reply, such as a flowchart, a sequence diagram, a state diagram, or a review's progress map, instead of a Mermaid code block. Also checks Mermaid syntax. Not for diagrams inside repository files such as specs, which keep their Mermaid text.
+description: Draw and check Mermaid diagrams. Turns each diagram in a chat reply into a PNG image, offline, and sends it, so it shows on both the desktop and the phone and can be zoomed. Also checks the syntax of diagrams written into files such as specs, which keep their Mermaid text. Use for every Mermaid diagram, such as a flowchart, a sequence diagram, a state diagram, or a review's progress map.
 ---
 
 # Mermaid Image
 
-Turn Mermaid text into a PNG image, then send the image to the chat.
+Draw Mermaid diagrams that read well everywhere. In a chat reply, turn each diagram into a PNG image and send it. In a file such as a spec, keep the Mermaid text, because GitHub draws it, and check it with the same script.
 
 **Why:** a Mermaid code block shows as plain code on the phone. On the desktop it shrinks to fit the chat, with no way to zoom. A sent image shows on both, and both can zoom it. Sending uploads a copy into the conversation, so the image keeps showing after the local file is gone.
 
@@ -37,17 +37,25 @@ The script prints the image's path and size, such as `/…/restore.png: 392x534 
 - Keep labels short. Mermaid wraps a long label onto more lines.
 - Show one idea per diagram. Split a big flow into two diagrams instead of drawing one huge one.
 
+## Check the syntax
+
+Every render checks the syntax: the script stops on an error and points at the line. Check a diagram that goes in a file the same way, and don't send its image.
+
+Common traps:
+
+- **A semicolon in a sequence diagram:** a raw `;` in message or note text ends the statement, so `A->>B: load; then play` fails. Reword it, or write `#59;`, which shows as a semicolon.
+- **`CLASS` in an ER diagram:** it's a Mermaid keyword. Give that entity another ID, with its name as a label in its own block: `CLS["Class"] { ... }`.
+
 ## If it fails
 
 | The script says | What to do |
 | --- | --- |
-| `Mermaid found a syntax error` | Fix the line it points to, and render again |
+| `Mermaid found a syntax error` | Fix the line it points to, as [Check the syntax](#check-the-syntax) describes, and render again |
 | `Chrome for Testing is not installed` | Send a Mermaid code block this time, and give the user the install command it printed |
+| `The image came out blank` | Send a Mermaid code block, and tell the user the script needs a fix |
 | Anything else | Send a Mermaid code block, and say the image failed |
 
 Where images can't be sent at all, such as in Codex or a terminal, use a Mermaid code block where Mermaid renders, and ASCII where it doesn't.
-
-To check a diagram that goes in a file, such as a spec, render it the same way, and don't send the image.
 
 ## How it works
 

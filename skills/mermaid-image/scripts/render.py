@@ -20,6 +20,9 @@ MERMAID_JS = Path(__file__).resolve().parent.parent / 'assets' / 'mermaid.min.js
 BROWSER_SH = Path(__file__).resolve().parents[2] / 'playwright-chromium-browser' / 'browser.sh'
 PAD = 16   # white margin around the diagram, in CSS pixels
 SCALE = 2  # image pixels per CSS pixel, so text stays sharp when zoomed
+# Chrome for Testing lays a page out at least 500 pixels wide and leaves a window under
+# about 150 pixels tall blank, so screenshot at least this big, then crop around the diagram.
+MIN_WINDOW = 500
 
 DRAW_PAGE = """<!doctype html><html><head><meta charset="utf-8">
 <script src="{mermaid_js}"></script></head><body>
@@ -35,8 +38,8 @@ mermaid.render('diagram', document.getElementById('source').textContent)
 
 SHOT_PAGE = """<!doctype html><html><head><meta charset="utf-8"><style>
 html, body {{ margin: 0; background: #fff; }}
-body {{ padding: {pad}px; }}
-svg {{ display: block; }}
+body {{ display: flex; align-items: center; justify-content: center; min-height: 100vh; }}
+svg {{ display: block; margin: {pad}px; }}
 </style></head><body>{svg}</body></html>"""
 
 
@@ -80,16 +83,38 @@ def svg_size(svg):
 
 
 def save_png(browser, work, svg, png):
-    """Screenshot the SVG on a white page sized to fit it."""
-    width, height = svg_size(svg)
+    """Screenshot the SVG, centered on a white page, then crop the image around it."""
+    width, height = (n + 2 * PAD for n in svg_size(svg))
     page = Path(work, 'shot.html')
     page.write_text(SHOT_PAGE.format(pad=PAD, svg=svg))
-    size = f'{width + 2 * PAD}x{height + 2 * PAD}'
-    run_browser(browser, work, f'--force-device-scale-factor={SCALE}',
-                f'--window-size={size.replace("x", ",")}', f'--screenshot={png}', page.as_uri())
+    window = f'{max(width, MIN_WINDOW)},{max(height, MIN_WINDOW)}'
+    run_browser(browser, work, f'--force-device-scale-factor={SCALE}', f'--window-size={window}',
+                f'--screenshot={png}', page.as_uri())
     if not png.exists():
         sys.exit('The browser did not save the image.')
-    return size
+    sips('--cropToHeightWidth', height * SCALE, width * SCALE, png, '--out', png)  # crops the center
+    if is_blank(png, work):
+        png.unlink()
+        sys.exit('The image came out blank.')
+    return f'{width}x{height}'
+
+
+def sips(*args):
+    """Run macOS's built-in image tool."""
+    subprocess.run(['sips', *map(str, args)], capture_output=True, check=True)
+
+
+def is_blank(png, work):
+    """True when no pixel is dark. A drawn diagram always has dark text or lines."""
+    bmp = Path(work, 'check.bmp')
+    sips('-s', 'format', 'bmp', png, '--out', bmp)
+    data = bmp.read_bytes()
+    start = int.from_bytes(data[10:14], 'little')
+    width = int.from_bytes(data[18:22], 'little', signed=True)
+    height = abs(int.from_bytes(data[22:26], 'little', signed=True))
+    pixel_bytes = width * int.from_bytes(data[28:30], 'little') // 8
+    row = (pixel_bytes + 3) // 4 * 4  # BMP pads each row to a multiple of 4 bytes
+    return all(min(data[i:i + pixel_bytes]) > 200 for i in range(start, start + row * height, row))
 
 
 def main():
