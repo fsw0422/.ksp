@@ -60,10 +60,15 @@ The server starts through `playwright-chromium-browser/browser.sh serve`, which
 attaches Playwright MCP to one shared Chromium on `127.0.0.1:19222` (not 9222,
 where your own Chrome may listen) instead of launching a browser per session.
 Every session works in the same window, and the browser keeps running after
-sessions end until you quit it. Agents never close tabs or the browser: the
+sessions end until you quit it with Cmd+Q, or with `browser.sh stop` if it
+does not respond. Agents never close tabs or the browser on their own: the
 Claude Code settings deny `browser_close`, and a `PreToolUse` hook refuses
 closing tabs and opens the browser on the first browser action. Other tools
 open it with `browser.sh start` when a browser tool cannot connect.
+
+The browser opens with one blank tab and closes it by itself once another
+page opens. It does not use `--no-startup-window`: a Chromium started without
+a window ignores Cmd+Q and the Dock icon.
 
 If the browser binary is missing on a new machine, install it once:
 

@@ -38,7 +38,7 @@ Say which browser you use and why before the first action.
 - Open a new tab for every browser task, and keep working in the tabs you opened.
 - Never navigate or reuse a tab you did not open, including the currently focused tab, unless the user explicitly asks you to read or act on it.
 - When the user asks about the focused tab, read it without navigating it away.
-- Never close a tab or the browser, even after a task completes. The user closes them.
+- Never close a tab or the browser, even after a task completes. The user closes them. The only exception is quitting the browser when the user explicitly asks, as [references/playwright.md](references/playwright.md) describes.
 - Only the primary agent controls the browser. Subagents never use any browser tool; give them web search and web fetch instead.
 
 ## Allowed actions

@@ -8,11 +8,12 @@ Use this browser only in sessions without a built-in browser, as SKILL.md descri
 
 ## One shared browser
 
-Every session attaches to the same long-running Chromium on `127.0.0.1:19222` instead of starting its own. It opens on the first browser action and keeps running after sessions end, until the user quits it.
+Every session attaches to the same long-running Chromium on `127.0.0.1:19222` instead of starting its own. It opens on the first browser action with one blank tab, which closes by itself once another page opens, and keeps running after sessions end, until the user quits it with Cmd+Q.
 
 - The tab list also shows tabs that the user and other sessions opened. Work only in the tabs you opened, and leave the others alone.
 - Start every task with the tabs tool's `new` action and the page address. A navigate as your first action reuses whichever tab is current, which can belong to the user or another session.
 - Never close tabs or the browser; the user closes them. In Claude Code, `browser_close` is denied and the tabs tool refuses `action: close`.
+- Only when the user explicitly asks you to quit the browser, for example because Cmd+Q does not respond, run `bash ~/.ksp/skills/playwright-chromium-browser/browser.sh stop`. It quits cleanly and keeps sign-ins.
 - In Claude Code, a hook opens the browser before each browser action when it is not running. Elsewhere, if a browser tool fails with `ECONNREFUSED 127.0.0.1:19222`, run `bash ~/.ksp/skills/playwright-chromium-browser/browser.sh start`, then retry.
 - If opening reports that Chrome for Testing is not installed, which happens once on a new computer, run `npx -y @playwright/mcp@latest install-browser chrome-for-testing`, tell the user it is a one-time download of about 100 MB, and retry the action.
 - If opening reports that another browser is using the profile, tell the user to quit that browser with Cmd+Q, then retry. Never work around it with `--isolated`, another profile, or another browser.
