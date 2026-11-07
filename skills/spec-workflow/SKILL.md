@@ -190,7 +190,7 @@ More examples: [Choosing a parent](references/worked-examples.md#choosing-a-pare
 
 ### Name the branch and folder
 
-The root branch uses `<change>`. Each child adds `-<change>` to its parent's full name. Every repository in the family uses the same full name. Worktree folders sit side by side as `<repo>-<full-branch-name>`:
+The root branch uses `<change>`. Each child adds `-<change>` to its parent's full name. Every repository in the family uses the same full name. Worktree folders follow the global worktree rule, `<repo>-<branch>` beside the main checkout, so all of a family's folders end in its full name:
 
 ```mermaid
 flowchart LR
@@ -208,7 +208,7 @@ workspace/
   frontend-initial-retained-audio/
 ```
 
-**Why:** the name shows the lineage at a glance, and the same name in every repository shows which worktrees belong together. Flat folders keep paths short.
+**Why:** the name shows the lineage at a glance, and the same name in every repository shows which worktrees belong together.
 
 Existing prefixes such as `001-initial` stay in the name. New roots need no number or category. A code-only change needs no empty spec branch; record why the other repositories are unaffected.
 
@@ -231,7 +231,7 @@ Don't use the repository or folder name as the prefix. The squash commit body sa
 
 ### Set up and keep branches clean
 
-After creating a worktree, copy the parent's `.env` when present and add the worktree to the root `.code-workspace` file, following [Git operations](references/git-operations.md#prepare-or-branch).
+After creating a worktree, copy the parent's `.env` and add the worktree to the `.code-workspace` file, as [Set up the new worktree](references/git-operations.md#set-up-the-new-worktree) describes.
 
 Keep integration branches, including `main`, clean outside merges. Make spec and code edits in short-lived child worktrees.
 

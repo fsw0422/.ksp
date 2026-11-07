@@ -47,7 +47,7 @@ The spec repository starts with this layout. The README lists the project's actu
 3. Fill in the placeholders. Write the README from what the user has said, and leave a placeholder in place rather than inventing facts. Put today's date in `architecture/domain-model.md`. In the README's "Where things are" table, list the contract files.
 4. Commit on `main` with a plain subject, such as `Set up the specification`.
 5. In the workspace root, create `WORK_RECORD.md` from [the work record template](../assets/work-record.md), and a `WORK_HISTORY.md` with only a title, unless they exist.
-6. If the workspace root has no `.code-workspace` file, create `<project>.code-workspace` with one `folders` entry per main checkout, sorted by path. Add later worktrees as described in [Update VS Code](git-operations.md#update-vs-code).
+6. If the workspace root has no `.code-workspace` file, create `<project>.code-workspace` with one `folders` entry per main checkout, sorted by path. Later worktrees are added to it as [Set up the new worktree](git-operations.md#set-up-the-new-worktree) describes.
 
 Don't add remotes, push, or create hosted repositories unless the user asks. **Why:** publishing is the user's call, and a local repository can be published at any time later.
 

@@ -31,25 +31,9 @@ If `main` or an integration branch has uncommitted development edits, keep them 
 
 Git checkpoints don't save external databases, devices, or ignored files. If one of those is needed and can't be recreated, ask the user how to keep it; see [Keep recovery data in Git](#keep-recovery-data-in-git).
 
-### Copy the parent's local environment
+### Set up the new worktree
 
-After creating a worktree from a parent branch, use that repository's recorded parent worktree path. If its root `.env` exists and the new worktree has no `.env`, copy the file into the new worktree root and keep its permissions. Skip a missing source, and leave an existing destination unchanged, including on retries.
-
-Keep the copied file out of Git using the repository's ignore rules or a local Git exclusion. Never print its contents, stage it, or include it in any commit. Record only whether the copy was made or skipped. Other environment files are outside this automatic copy rule.
-
-**Why:** the new worktree needs the same local settings to run, but secrets must never reach Git or the chat.
-
-### Update VS Code
-
-After creating a worktree, look for an existing `.code-workspace` file in the shared workspace root.
-
-1. Use the active file if there are several. Ask which file to use only if the active one can't be found. If no file exists, skip this step; only [project setup](project-setup.md) creates one.
-2. Add the worktree to `folders` with a path relative to that file. Compare resolved paths first to avoid duplicates.
-3. Sort the folder entries that have a string `path` in ascending lexical order by that value, comparing the paths as plain strings. Keep display names and comments attached to their entries. Keep other keys, formatting, and the relative order of entries without `path`. The file may contain JSON comments.
-4. Validate the file and check that the new entry resolves to the created worktree.
-5. When a worktree is removed, remove its entry the same way and validate the file again.
-
-**Why:** the workspace file is how the user sees every worktree in one window. A stale entry points at a folder that no longer exists.
+Copy the `.env` and update the `.code-workspace` file as the "Git worktrees" section of the global instructions describes. Take the `.env` from the parent's recorded worktree path, and record only whether it was copied or skipped. Only [project setup](project-setup.md) creates a `.code-workspace` file.
 
 ### If the actual parent changes
 
@@ -170,7 +154,7 @@ If a squash fails, keep what you need in Git before resolving or resetting anyth
 ## Remove the child, then rebase the survivors
 
 1. Check the squash result in the parent.
-2. Remove the completed child's worktree and branch.
+2. Remove the completed child's worktree, its `.code-workspace` entry, and its branch.
 3. Rebase the remaining siblings and their children.
 4. Check the results and reopen affected reviews.
 5. Choose the next task.
