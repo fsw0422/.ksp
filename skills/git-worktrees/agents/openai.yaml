@@ -1,0 +1,4 @@
+interface:
+  display_name: "Git Worktrees"
+  short_description: "Create and remove worktrees beside the main checkout"
+  default_prompt: "Use $git-worktrees to create a worktree for this branch."

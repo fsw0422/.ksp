@@ -190,7 +190,7 @@ More examples: [Choosing a parent](references/worked-examples.md#choosing-a-pare
 
 ### Name the branch and folder
 
-The root branch uses `<change>`. Each child adds `-<change>` to its parent's full name. Every repository in the family uses the same full name. Worktree folders follow the global worktree rule, `<repo>-<branch>` beside the main checkout, so all of a family's folders end in its full name:
+The root branch uses `<change>`. Each child adds `-<change>` to its parent's full name. Every repository in the family uses the same full name. The [git-worktrees](../git-worktrees/SKILL.md) skill puts each worktree folder beside the main checkout as `<repo>-<branch>`, so all of a family's folders end in its full name:
 
 ```mermaid
 flowchart LR
@@ -231,7 +231,7 @@ Don't use the repository or folder name as the prefix. The squash commit body sa
 
 ### Set up and keep branches clean
 
-After creating a worktree, copy the parent's `.env` and add the worktree to the `.code-workspace` file, as [Set up the new worktree](references/git-operations.md#set-up-the-new-worktree) describes.
+Create and remove worktrees with the [git-worktrees](../git-worktrees/SKILL.md) skill. It copies the parent's `.env` and keeps the `.code-workspace` file in step, as [Set up the new worktree](references/git-operations.md#set-up-the-new-worktree) describes.
 
 Keep integration branches, including `main`, clean outside merges. Make spec and code edits in short-lived child worktrees.
 

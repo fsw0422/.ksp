@@ -33,7 +33,7 @@ Git checkpoints don't save external databases, devices, or ignored files. If one
 
 ### Set up the new worktree
 
-Copy the `.env` and update the `.code-workspace` file as the "Git worktrees" section of the global instructions describes. Take the `.env` from the parent's recorded worktree path, and record only whether it was copied or skipped. Only [project setup](project-setup.md) creates a `.code-workspace` file.
+Create the worktree with the [git-worktrees](../../git-worktrees/SKILL.md) script. Pass the start chosen above, a checkpoint commit or the parent branch, as `--from`, and the parent's recorded worktree path as `--env-from`, so the `.env` comes from the parent. Record only whether the `.env` was copied or skipped, as the script reports it. Only [project setup](project-setup.md) creates a `.code-workspace` file.
 
 ### If the actual parent changes
 
@@ -163,7 +163,7 @@ Remove a child only when its approved changes are verified in the parent, all it
 
 A paused, blocked, or merged-but-not-removed child still keeps its parent from merging or being removed. Canceling work, or moving it elsewhere, needs an authorized decision about who owns it and how to recover it. Never remove `main` as part of child removal.
 
-Use `git worktree remove`, respecting dirty state and locks. A squash usually leaves the original child tip outside the parent's history. So after proving its content is in the parent and keeping a recovery ref, a precisely targeted `git branch -D <completed-child>` may be needed. Don't use branch deletion in place of those checks. Recovery-only refs aren't active child tasks.
+Remove the worktree with the [git-worktrees](../../git-worktrees/SKILL.md) script. It uses `git worktree remove`, which respects dirty state and locks; never force it. A squash usually leaves the original child tip outside the parent's history. So after proving its content is in the parent and keeping a recovery ref, a precisely targeted `git branch -D <completed-child>` may be needed. Don't use branch deletion in place of those checks. Recovery-only refs aren't active child tasks.
 
 ### Rebase recursively, from parent to child
 
