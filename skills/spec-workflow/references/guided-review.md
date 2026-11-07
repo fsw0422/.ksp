@@ -14,7 +14,7 @@ For a merge review, check that the [cleanup pass](code-cleanup.md), the [bug rev
 
 For a [spec and code sync](spec-code-sync.md), include the finding, the accepted decision, and the change's [mode](spec-code-sync.md#use-the-tasks-mode). Explain the affected APIs, consumers, and data, and why old contracts or migrations are kept or removed. `--not-live` allows replacements within the accepted scope; unrelated feature decisions and merge approval still need their usual review.
 
-Open the matching diff, and give verified source and line links when possible. If the checkout has moved on, explain the recorded commits rather than the current lines.
+Take every code snippet and line number from the recorded commits, such as `git diff <base>..<head> -- <file>`, not from the current files. If the checkout has moved on, explain the recorded commits rather than the current lines.
 
 ## One chunk, then a pause
 
@@ -27,16 +27,26 @@ Start with the purpose, the exact comparison, the checks including the test merg
 - Send the map as an image made with the [mermaid-image](../../mermaid-image/SKILL.md) skill: left to right for 4 chunks or fewer, top-down for more. Give the current chunk a thicker border. Where images can't be sent, use a text map, one chunk per line with its repositories.
 - Mark each chunk: ✓ accepted, ▶ now, ○ not yet, ↷ skipped, ✎ needs a change.
 - Repeat the worktree and branch even when unchanged, and link the folder name to its absolute path. If a chunk spans repositories, name each worktree and its repository. Take the worktrees from the work record and Git, not from the chat's working directory.
-- In line-by-line steps, repeat the worktree and branch line and name the lines being explained, such as `restoreClass.ts`, lines 40–52. The map comes back with the next chunk.
+- In line-by-line steps, repeat the worktree and branch line and name the lines being explained, such as `restoreClass.ts`, lines 46–58. The map comes back with the next chunk.
 
 **Why:** the map shows the whole review at a glance, by name: what's covered, where you are, and what's left. With many worktrees open, the worktree line means the user never has to guess which copy of the code they're reading.
 
 For the current chunk, explain each of these in detail, in easy words, with as many concrete examples as it takes, such as before and after values, a sample request, or a user scenario:
 
-- **What changed:** before and after, with source links.
+- **What changed:** before and after in words, then the code itself, as described below.
 - **Why:** the requirement, defect, or tradeoff. Separate evidence from guesses about past intent.
 - **How it's used:** real callers, data movement, side effects, and failure paths.
 - **How to judge it:** simpler alternatives, the checks that actually ran, the bug review's findings for this chunk, and open questions. Say what the bug review confirmed and how it was fixed. Give each plausible issue with a suggested change, for the user to accept or reject.
+
+**Show the code itself, not only a link.** Under What changed, show the lines that carry the chunk's decision as a `diff` block, plus the test lines that check it. That's usually 5 to 20 lines.
+
+- Above the block, name the file, its lines, and the commit. A link to the file can follow as an extra.
+- Under the block, explain the important lines in short notes, each naming the code it explains.
+- Cut unrelated lines, and mark the cut with `…`. For an edit repeated in many places, such as a rename, show one example and list the other files.
+- Name the chunk's other changed lines in a sentence. Their diffs come in line by line, if the user asks for it.
+- For a spec or other prose, quote the new wording, and the old wording when it matters, instead of a diff. Code blocks don't wrap, so a diff of long lines scrolls sideways, worst on a phone.
+
+**Why:** a link opens the whole file as it is today, not the change, and its line numbers drift after edits and rebases. It often can't open at all: the desktop app opens only files inside the session's folders, and a phone may not open it. The user approves the code, so they need to see the code, not only a description of it.
 
 A chunk might start with this map, rendered and sent as an image (made up):
 
@@ -62,11 +72,33 @@ Where images can't be sent, the same map as text:
 >
 > **What changed:** `restoreClass()` now loads saved audio. Before, a reopened Class had no recording. Now it gets its saved chunks back in order.
 >
+> `restoreClass.ts`, lines 40–44, at `a1b2c3d`:
+>
+> ```diff
+>  export async function restoreClass(id: ClassId): Promise<Class> {
+>    const saved = await ClassStore.load(id);
+> -  return { ...saved, audio: [] };
+> +  const audio = await AudioStore.load(id);
+> +  return { ...saved, audio: audio.sort(byChunkIndex) };
+>  }
+> ```
+>
+> - `AudioStore.load(id)` reads the chunks saved while recording.
+> - `sort(byChunkIndex)` puts them back in recording order, because the store can return them in any order.
+>
+> `restoreClass.test.ts`, line 18, the test that checks the order:
+>
+> ```diff
+> +  expect(indexes(restored.audio)).toEqual([0, 1, 2]);
+> ```
+>
 > **Why:** `REC-012` says saved audio must survive closing the app.
 >
 > **How it's used:** Home calls `resumeClass()`, which calls `restoreClass()`, which calls `AudioStore.load()`. If loading fails, the Class opens without audio and offers a retry.
 >
 > **How to judge it:** a simpler option is loading audio on first play. `restoreClass.test.ts` ran with 3 passing tests. The bug review found one plausible issue: if one saved chunk is missing, the restore stops early. Suggested change: skip that chunk and offer a retry. Accept it, or keep the current behavior?
+>
+> Reply `next` or `line by line`, or ask anything.
 
 For a domain-related chunk, check the [domain mapping](../SKILL.md#map-domain-language-into-code). Show how the spec term maps to the real model, storage, and contract names, and how its relationships and rules are represented. Flag unexplained synonyms or missing links. Use a small table or model diagram when it helps.
 
@@ -74,7 +106,7 @@ Use a small Mermaid diagram when it helps, sent as an image like the map: a call
 
 > For the chunk above, a sequence diagram would show Home, `resumeClass()`, `restoreClass()`, and `AudioStore`, with the failed load drawn as its own arrow back to Home.
 
-**After one chunk, end the response and wait.** Don't explain the whole diff at once, and don't treat silence as agreement. Adapt the detail to the user, and keep your place through their questions.
+**After one chunk, end the response and wait.** Close with one line of choices, such as "Reply `next` or `line by line`, or ask anything", because the user can't ask for a mode they don't know about. Don't explain the whole diff at once, and don't treat silence as agreement. Adapt the detail to the user, and keep your place through their questions.
 
 ```mermaid
 flowchart TD
@@ -92,7 +124,7 @@ flowchart TD
 | --- | --- |
 | Next / continue | Move on by one line in line mode, or one chunk in chunk mode. This never implies merge approval |
 | Why / show callers / what if it fails | Stay on this chunk and explain the requested path |
-| Line by line | Explain each changed line or tightly linked group, waiting between steps |
+| Line by line | Go through the chunk's other changed lines in small groups of about 10 lines or one function. Show each group as a diff with notes, and wait between steps |
 | Looks good / approve this chunk | Record this chunk as accepted and present the next one. It covers only this chunk, not the merge |
 | Change this, or accept a suggested change | Pause the review. Make only the requested edit in the change's worktree, check it as [Limit the reruns](bug-review.md#limit-the-reruns) describes, and refresh the affected chunks |
 | Skip / pause | Record the skipped part, or save the position. Neither is approval |

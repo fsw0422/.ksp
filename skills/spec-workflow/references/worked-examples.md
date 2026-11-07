@@ -171,7 +171,11 @@ flowchart LR
     class C2 current
 ```
 
-Then the worktree and branch, such as "Worktree: `backend-initial-class-recovery`, linked to its folder · Branch: `initial-class-recovery`", and then the chunk itself: what changed, why, how it's used, and how to judge it.
+Then the worktree and branch, such as "Worktree: `backend-initial-class-recovery`, linked to its folder · Branch: `initial-class-recovery`", and then the chunk itself: what changed, with its key lines as a diff, why, how it's used, and how to judge it. It ends with one line of choices: `next`, `line by line`, or any question.
+
+**Example: which code goes in the chat.** The chunk "Restore audio" changes `restoreClass.ts`, its test, and a logging helper, and renames `audioList` to `audioChunks` in 8 other files. The chat shows the lines in `restoreClass.ts` that load and sort the audio, with two notes, and the test line that checks the order. It shows the rename once and lists the other 7 files. The logging helper gets one sentence. When the user replies "line by line", the agent shows the helper's lines as a diff with notes, and waits.
+
+**Example: a spec chunk.** A chunk raises the Pause limit in the spec from 3 to 5. A diff of the spec's long lines would scroll sideways, so the chat quotes the wording instead: before, "A Class allows 3 Pauses"; after, "A Class allows 5 Pauses".
 
 **Example: "looks good" in the middle.** After chunk 2, the user says "looks good". The agent marks chunk 2 as accepted and shows chunk 3. That covers chunk 2 only. The merge needs its own approval at the end, for a named destination, such as "approve for `initial`".
 
