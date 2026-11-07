@@ -21,13 +21,3 @@
 ## Success measures
 
 <How we will know the product works for its customer.>
-
-## Where things are
-
-| File or folder | Owns |
-| --- | --- |
-| `features/` | One document per feature, with its behavior rules and requirement IDs |
-| `contracts/` | Message shapes: <list each contract file and what it owns> |
-| `architecture/` | System boundaries and deployment. `architecture/domain-model.md` owns domain terms and their names in code |
-| `decisions/` | The reasons for choices that cross features or are hard to reverse |
-| `research/` | Dated evidence only |

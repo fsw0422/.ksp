@@ -133,7 +133,7 @@ More examples: [Deciding whether the spec changes first](references/worked-examp
 
 Before writing or revising a spec, read [Writing specs](references/writing-specs.md). In short: easy, concise words with enough detail and plenty of examples; a diagram where it explains the idea; one owner for every fact; and one testable rule per requirement ID, each with an example.
 
-What only one project knows stays in its own documents: the spec repository's README lists its files, and each feature document's header names its requirement ID prefix. [Project setup](references/project-setup.md) creates both from the template.
+What only one project knows stays in its own documents, such as the requirement ID prefix in each feature document's header. [Project setup](references/project-setup.md) creates a new spec repository from the template.
 
 **Why:** the general rules are the same in every project, so they live once, in this skill. A project's own facts change along with its files, so they live in its repository and change in the same commit.
 

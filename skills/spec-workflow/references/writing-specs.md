@@ -1,6 +1,6 @@
 # Writing specs
 
-Use these rules whenever you write or revise a spec document, in any project. What only one project knows lives in its own documents: the README lists the files, and each feature document's header names its requirement ID prefix.
+Use these rules whenever you write or revise a spec document, in any project. What only one project knows lives in its own documents, such as the requirement ID prefix in each feature document's header.
 
 **Why:** these rules are the same in every project, so they live in one place. A project's own facts change along with its files, so they live in its repository and change in the same commit.
 
@@ -49,8 +49,6 @@ Every fact has one owning document. Other documents link to the owner instead of
 | Domain terms and their names in code | One place, such as `architecture/domain-model.md` or a glossary |
 | The reasons for a big choice | A decision record |
 | Dated evidence | Research documents, which never state requirements |
-
-The spec repository's README lists its actual files.
 
 **Why:** two copies of one rule drift apart, and then every reader has to guess which one is current.
 
