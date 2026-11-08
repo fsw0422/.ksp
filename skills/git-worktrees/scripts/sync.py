@@ -2,15 +2,16 @@
 
 A branch is left exactly as it was when a rebase isn't safe: its work is already in the parent,
 it has no worktree, its worktree has uncommitted files or a rebase in progress, its copy on the
-remote has commits it lacks, or its rebase conflicts. Sync never pushes.
+remote has commits it lacks, or its rebase conflicts. Afterwards, each rebased branch is pushed
+over its copy on the remote, with a lease. A branch without a copy is never published.
 """
 import re
 import time
 from pathlib import Path
 
 from checkouts import GitError, branch_exists, checkouts, git, git_try, main_checkout
-from lineage import base_of, commit_of, parent_links, set_base, walk
-from remote_copy import foreign_commits, remote_copy, short_name, update_hint
+from lineage import already_in, base_of, commit_of, parent_links, set_base, walk
+from remote_copy import fetch, foreign_commits, remote_copy, short_name, update
 
 REBASING = ('rebase-merge', 'rebase-apply')
 MERGING = ('MERGE_HEAD', 'CHERRY_PICK_HEAD', 'REVERT_HEAD')
@@ -18,20 +19,24 @@ RANGE_DIFF_MARK = re.compile(r'^\s*(?:\d+|-):\s+\S+\s+([=!<>])\s', re.M)
 
 
 def sync(repo):
-    """Print the branch tree and what happened to each branch. Return True if none was left behind."""
+    """Print the branch tree and what happened to each branch. Return True if nothing needs a look."""
     links = parent_links(repo)
     if not links:
         print('No branch has a recorded parent yet. Record one with `worktree.py parent <worktree> <parent>`.')
         return True
     print(main_checkout(repo))
+    copies = {branch: copy for branch in sorted(links) if (copy := remote_copy(repo, branch))}
+    failed_fetches = fetch(repo, {copy.remote for copy in copies.values()})
+    for line in failed_fetches:
+        print(line)
     folders = {branch: path for path, branch in checkouts(repo) if branch and path.is_dir()}
     stamp = time.strftime('%Y-%m-%d-%H%M%S')
-    walked, left, moved = set(), 0, []
+    walked, left, moved = [], 0, []
     for branch, parent, depth in walk(links):
-        walked.add(branch)
         if parent is None:
             print(f'{branch} {git_try(repo, "rev-parse", "--short", "--verify", "--quiet", branch) or "(no such branch)"}')
             continue
+        walked.append(branch)
         try:
             state, message = follow(repo, branch, parent, folders.get(branch), stamp)
         except GitError as error:
@@ -40,9 +45,13 @@ def sync(repo):
         left += state == 'left'
         if state == 'moved':
             moved.append(branch)
-    looped = sorted(set(links) - walked)
-    _print_footer(repo, stamp, moved, looped)
-    return not left and not looped
+    looped = sorted(set(links) - set(walked))
+    if looped:
+        print(f'Not synced, because their recorded parents form a loop: {", ".join(looped)}')
+    if moved:
+        print(f'Old tips and bases: refs/recovery/sync/{stamp}/')
+    pushed = _push_copies(repo, [(branch, copies[branch]) for branch in walked if branch in copies], moved)
+    return not left and not looped and not failed_fetches and pushed
 
 
 def follow(repo, branch, parent, folder, stamp):
@@ -72,7 +81,7 @@ def follow(repo, branch, parent, folder, stamp):
 
 def _unsafe(repo, branch, parent, folder, base, tip):
     """Say why the branch can't be rebased now, or return None."""
-    if base != tip and _already_in(repo, parent, branch):
+    if base != tip and already_in(repo, parent, branch):
         return f'already in {parent}, so it only waits for removal'
     if folder is None:
         return 'behind, but not checked out in any worktree'
@@ -85,12 +94,6 @@ def _unsafe(repo, branch, parent, folder, base, tip):
     if foreign:
         return f'behind, but {short_name(copy)} has {_commits(foreign)} it lacks; pull them in first'
     return None
-
-
-def _already_in(repo, parent, branch):
-    """True if merging the branch into its parent would change nothing, such as after a squash merge."""
-    merged = git_try(repo, 'merge-tree', '--write-tree', parent, branch)
-    return merged is not None and merged.splitlines()[0] == git(repo, 'rev-parse', f'{parent}^{{tree}}')
 
 
 def _in_progress(folder, names):
@@ -126,22 +129,15 @@ def _summary(repo, old_base, old_tip, new_base, new_tip):
     return ', '.join(words if changed or dropped else [*words, 'unchanged'])
 
 
-def _update_hint(repo, branch):
-    copy = remote_copy(repo, branch)
-    return update_hint(repo, branch, copy) if copy else None
-
-
-def _print_footer(repo, stamp, moved, looped):
-    if looped:
-        print(f'Not synced, because their recorded parents form a loop: {", ".join(looped)}')
-    if not moved:
-        return
-    print(f'Old tips and bases: refs/recovery/sync/{stamp}/')
-    hints = [hint for hint in (_update_hint(repo, branch) for branch in moved) if hint]
-    if hints:
-        print('Copies on the remote, which sync never pushes:')
-        for hint in hints:
-            print(f'  {hint}')
+def _push_copies(repo, copies, moved):
+    """Push each rebased branch over its copy on the remote. Return False if a push failed."""
+    results = [result for result in (update(repo, branch, copy, branch in moved) for branch, copy in copies)
+               if result]
+    if results:
+        print('Copies on the remote:')
+        for _, line in results:
+            print(f'  {line}')
+    return all(ok for ok, _ in results)
 
 
 def _commits(count):

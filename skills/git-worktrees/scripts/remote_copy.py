@@ -1,23 +1,45 @@
-"""A branch's copy on its remote: whether a rebase could lose any of it, and how to update it."""
-from checkouts import git, git_succeeds
+"""A branch's copy on its remote: fetch it, check it holds nothing new, and update or delete it.
+
+Only a remote branch with the same name counts as a copy. A branch that tracks origin/main follows
+that branch; it isn't a copy of it. Every push carries a lease pinned to the commit the checks saw,
+so it can never overwrite a commit nobody here has seen.
+"""
+from collections import namedtuple
+
+from checkouts import GitError, git, git_try
+from lineage import is_ancestor
+
+Copy = namedtuple('Copy', 'remote ref')  # such as ('origin', 'refs/remotes/origin/fix')
 
 
 def remote_copy(repo, branch):
-    """Return the branch's copy on its remote, such as refs/remotes/origin/fix, or None.
-
-    Only a remote branch with the same name counts. A branch that tracks origin/main follows
-    that branch; it isn't a copy of it.
-    """
-    fields = git(repo, 'for-each-ref', '--format=%(upstream) %(upstream:remoteref)', f'refs/heads/{branch}')
-    copy, _, name = fields.partition(' ')
-    if copy.startswith('refs/remotes/') and name == f'refs/heads/{branch}' \
-            and git_succeeds(repo, 'rev-parse', '--verify', '--quiet', copy):
-        return copy
+    """Return the branch's copy on its remote, or None."""
+    fields = git(repo, 'for-each-ref', '--format=%(upstream) %(upstream:remotename) %(upstream:remoteref)',
+                 f'refs/heads/{branch}').split(' ')
+    ref, remote, name = (fields + ['', '', ''])[:3]
+    if ref.startswith('refs/remotes/') and remote not in ('', '.') and name == f'refs/heads/{branch}':
+        return Copy(remote, ref)
     return None
 
 
 def short_name(copy):
-    return copy[len('refs/remotes/'):]
+    return copy.ref[len('refs/remotes/'):]
+
+
+def tip_of(repo, copy):
+    """Return the commit the copy had at the last fetch, or None if the remote doesn't have it."""
+    return git_try(repo, 'rev-parse', '--verify', '--quiet', copy.ref)
+
+
+def fetch(repo, remotes):
+    """Fetch each remote, dropping copies it no longer has. Return a line for each fetch that failed."""
+    failed = []
+    for remote in sorted(remotes):
+        try:
+            git(repo, 'fetch', '--quiet', '--prune', remote)
+        except GitError as error:
+            failed.append(f"Couldn't fetch {remote}, so its copies are as of the last fetch: {reason(error)}")
+    return failed
 
 
 def foreign_commits(repo, branch, copy):
@@ -26,17 +48,56 @@ def foreign_commits(repo, branch, copy):
     A rebase keeps each commit's author, date and subject, so a commit on the copy with the same
     three as a local one is an older version of it. Comparing diffs wouldn't work: rebases change them.
     """
-    ours = set(_identities(repo, f'{copy}..{branch}'))
-    return sum(identity not in ours for identity in _identities(repo, f'{branch}..{copy}'))
+    if not tip_of(repo, copy):
+        return 0
+    ours = set(_identities(repo, f'{copy.ref}..{branch}'))
+    return sum(identity not in ours for identity in _identities(repo, f'{branch}..{copy.ref}'))
 
 
-def update_hint(repo, branch, copy):
-    """Say how to bring the copy up to date with the branch, or None if it is. Sync never pushes."""
-    if git(repo, 'rev-parse', copy) == git(repo, 'rev-parse', branch):
+def update(repo, branch, copy, rebased):
+    """Push a rebased branch over its copy. Return (pushed, what happened), or None if there's nothing to do.
+
+    A branch rebased just now is always pushed. Another branch is pushed only when its copy holds
+    nothing but older versions of its commits, left by an earlier rebase. A copy that's only behind
+    has new local commits that nothing rewrote, so pushing them is left to the user.
+    """
+    seen, tip = tip_of(repo, copy), git(repo, 'rev-parse', branch)
+    if not seen or seen == tip:
         return None
-    if git_succeeds(repo, 'merge-base', '--is-ancestor', copy, branch):
-        return f'{short_name(copy)}: a push updates it'
-    return f'{short_name(copy)}: a force-push updates it; it only has older versions of your commits'
+    foreign = foreign_commits(repo, branch, copy)
+    if foreign:
+        return False, (f'{short_name(copy)}: not pushed, because it has {foreign} '
+                       f"commit{'s' if foreign > 1 else ''} that {branch} doesn't; pull them in first")
+    if not rebased and is_ancestor(repo, seen, tip):
+        return None
+    try:
+        git(repo, 'push', '--quiet', f'--force-with-lease=refs/heads/{branch}:{seen}',
+            copy.remote, f'refs/heads/{branch}:refs/heads/{branch}')
+    except GitError as error:
+        return False, f'{short_name(copy)}: not updated, because the push failed: {reason(error)}'
+    return True, f'{short_name(copy)}: pushed {seen[:7]} → {tip[:7]}'
+
+
+def delete(repo, branch, copy):
+    """Delete the copy from its remote, unless it has commits the branch lacks. Return what happened."""
+    seen = tip_of(repo, copy)
+    if not seen:
+        return f'{short_name(copy)}: already gone from {copy.remote}'
+    if foreign_commits(repo, branch, copy):
+        return f"{short_name(copy)}: kept, because it has commits that {branch} doesn't"
+    try:
+        git(repo, 'push', '--quiet', f'--force-with-lease=refs/heads/{branch}:{seen}',
+            copy.remote, f':refs/heads/{branch}')
+    except GitError as error:
+        return (f'{short_name(copy)}: not deleted, because the push failed: {reason(error)}. '
+                f'To delete it later: git push {copy.remote} --delete {branch}')
+    return f'{short_name(copy)}: deleted from {copy.remote}'
+
+
+def reason(error):
+    """Pick the line of a git error that says what went wrong."""
+    lines = [line.strip() for line in str(error).splitlines() if line.strip()]
+    return next((line for line in lines if line.startswith(('!', 'fatal:'))), lines[-1] if lines else 'unknown error')
 
 
 def _identities(repo, revisions):

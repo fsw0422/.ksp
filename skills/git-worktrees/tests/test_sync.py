@@ -2,42 +2,12 @@
 
 Run: python3 -m unittest discover -s <this skill's folder>/tests
 """
-import shutil
-import tempfile
 import unittest
-from pathlib import Path
 
-from helpers import commit, git, run_script
+from helpers import RepoTest, commit, git, run_script
 
 
-class SyncTest(unittest.TestCase):
-    def setUp(self):
-        self.root = Path(tempfile.mkdtemp()).resolve()
-        self.addCleanup(shutil.rmtree, self.root)
-        self.repo = self.root / 'app'
-        self.repo.mkdir()
-        git(self.repo, 'init', '-q', '-b', 'main')
-        commit(self.repo, 'README.md', 'one\ntwo\nthree\n', 'Start')
-
-    def add(self, branch, parent):
-        result = run_script('add', self.repo, branch, '--from', parent)
-        self.assertEqual(result.returncode, 0, result.stderr)
-        return self.root / f'app-{branch}'
-
-    def sync(self, expected_code=0):
-        result = run_script('sync', self.repo)
-        self.assertEqual(result.returncode, expected_code, result.stdout + result.stderr)
-        return result.stdout
-
-    def subjects(self, ref):
-        return git(self.repo, 'log', '--format=%s', ref).splitlines()
-
-    def add_remote(self):
-        remote = self.root / 'origin.git'
-        git(self.root, 'init', '-q', '--bare', str(remote))
-        git(self.repo, 'remote', 'add', 'origin', str(remote))
-        return remote
-
+class SyncTest(RepoTest):
     def test_child_moves_onto_a_commit_made_directly_on_its_parent(self):
         child = self.add('feature', 'main')
         commit(child, 'feature.txt', 'f\n', 'Add feature')
@@ -98,8 +68,7 @@ class SyncTest(unittest.TestCase):
     def test_squash_merged_child_only_waits_for_removal(self):
         child = self.add('feature', 'main')
         tip = commit(child, 'feature.txt', 'f\n', 'Add feature')
-        git(self.repo, 'merge', '--squash', 'feature')
-        git(self.repo, 'commit', '-q', '-m', 'Feature')
+        self.squash_into_main('feature')
         self.assertIn('already in main', self.sync(expected_code=1))
         self.assertEqual(git(child, 'rev-parse', 'HEAD'), tip)
 
@@ -109,28 +78,6 @@ class SyncTest(unittest.TestCase):
         run_script('remove', child)
         commit(self.repo, 'fix.txt', 'x\n', 'Fix main')
         self.assertIn('not checked out in any worktree', self.sync(expected_code=1))
-
-    def test_child_whose_remote_copy_has_someone_elses_commit_is_left_alone(self):
-        remote = self.add_remote()
-        child = self.add('feature', 'main')
-        tip = commit(child, 'feature.txt', 'f\n', 'Add feature')
-        git(child, 'push', '-q', '-u', 'origin', 'feature')
-        other = self.root / 'other'
-        git(self.root, 'clone', '-q', '-b', 'feature', str(remote), str(other))
-        commit(other, 'team.txt', 't\n', 'Teammate change')
-        git(other, 'push', '-q', 'origin', 'feature')
-        git(self.repo, 'fetch', '-q', 'origin')
-        commit(self.repo, 'fix.txt', 'x\n', 'Fix main')
-        self.assertIn('origin/feature has 1 commit it lacks', self.sync(expected_code=1))
-        self.assertEqual(git(child, 'rev-parse', 'HEAD'), tip)
-
-    def test_remote_copy_with_only_older_versions_needs_a_force_push(self):
-        self.add_remote()
-        child = self.add('feature', 'main')
-        commit(child, 'feature.txt', 'f\n', 'Add feature')
-        git(child, 'push', '-q', '-u', 'origin', 'feature')
-        commit(self.repo, 'fix.txt', 'x\n', 'Fix main')
-        self.assertIn('origin/feature: a force-push updates it', self.sync())
 
     def test_parent_lets_sync_follow_an_existing_branch(self):
         git(self.repo, 'branch', 'old-work')

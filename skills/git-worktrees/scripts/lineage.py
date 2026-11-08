@@ -18,6 +18,12 @@ def is_ancestor(repo, older, newer):
     return git_succeeds(repo, 'merge-base', '--is-ancestor', older, newer)
 
 
+def already_in(repo, parent, branch):
+    """True if the parent already has all of the branch's work, such as after a squash merge."""
+    merged = git_try(repo, 'merge-tree', '--write-tree', parent, branch)
+    return merged is not None and merged.splitlines()[0] == git(repo, 'rev-parse', f'{parent}^{{tree}}')
+
+
 def record_parent(repo, branch, parent):
     """Make sync keep the branch on the parent's head. Return the branch's base.
 

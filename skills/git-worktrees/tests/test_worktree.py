@@ -8,7 +8,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from helpers import commit, git, run_script
+from helpers import commit, git, git_maybe, run_script
 
 
 class WorktreeScriptTest(unittest.TestCase):
@@ -72,13 +72,29 @@ class WorktreeScriptTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn('main is 1 commit behind origin/main', result.stdout)
 
-    def test_remove_drops_the_worktree_and_its_entry_but_keeps_the_branch(self):
+    def test_remove_drops_the_worktree_and_its_entry_but_keeps_unmerged_work(self):
         run_script('add', self.repo, 'fix/login', '--from', 'main')
+        commit(self.root / 'app-fix-login', 'login.txt', 'fixed\n', 'Fix login')
         result = run_script('remove', self.root / 'app-fix-login')
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertFalse((self.root / 'app-fix-login').exists())
         self.assertEqual(self.workspace_paths(), ['app', 'zeta'])
+        self.assertIn("Kept branch fix/login: it has work that isn't in main", result.stdout)
         git(self.repo, 'show-ref', '--verify', '--quiet', 'refs/heads/fix/login')
+
+    def test_remove_deletes_a_branch_with_nothing_new(self):
+        run_script('add', self.repo, 'spare', '--from', 'main')
+        result = run_script('remove', self.root / 'app-spare')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('Deleted branch spare: main has all its work', result.stdout)
+        self.assertIsNone(git_maybe(self.repo, 'rev-parse', '--verify', '--quiet', 'refs/heads/spare'))
+
+    def test_remove_keeps_a_branch_without_a_recorded_parent(self):
+        git(self.repo, 'branch', 'old-work')
+        run_script('add', self.repo, 'old-work')
+        result = run_script('remove', self.root / 'app-old-work')
+        self.assertIn('Kept branch old-work: it has no recorded parent', result.stdout)
+        git(self.repo, 'show-ref', '--verify', '--quiet', 'refs/heads/old-work')
 
     def test_existing_branch_without_env(self):
         git(self.repo, 'branch', 'old-work')

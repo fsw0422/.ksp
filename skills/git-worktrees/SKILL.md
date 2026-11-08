@@ -1,11 +1,11 @@
 ---
 name: git-worktrees
-description: "Create, sync and remove git worktrees with one script. It puts each worktree beside the repository's main checkout as `<repo folder>-<branch>`, copies the `.env`, keeps VS Code's `.code-workspace` file in step, and keeps every branch on its parent's head. Use it whenever you create or remove a git worktree, and whenever a branch that has children gets new commits (a merge, a commit, a pull, or a rebase), in any repository and from any skill, such as Spec Workflow, instead of Claude Code's own worktree features (`EnterWorktree` with a name, a subagent's `isolation: worktree`, `use_worktree`, or `claude --worktree`)."
+description: "Create, sync and remove git worktrees with one script. It puts each worktree beside the repository's main checkout as `<repo folder>-<branch>`, copies the `.env`, keeps VS Code's `.code-workspace` file in step, keeps every branch on its parent's head with its copy on the remote current, and deletes a merged branch here and on the remote. Use it whenever you create or remove a git worktree, and whenever a branch that has children gets new commits (a merge, a commit, a pull, or a rebase), in any repository and from any skill, such as Spec Workflow, instead of Claude Code's own worktree features (`EnterWorktree` with a name, a subagent's `isolation: worktree`, `use_worktree`, or `claude --worktree`)."
 ---
 
 # Git Worktrees
 
-Create, sync and remove git worktrees with this skill's script. Each worktree goes beside the repository's main checkout, never inside a repository. Each branch follows its parent, the branch it was created from: when the parent gets new commits, the branch is rebased onto them.
+Create, sync and remove git worktrees with this skill's script. Each worktree goes beside the repository's main checkout, never inside a repository. Each branch follows its parent, the branch it was created from: when the parent gets new commits, the branch is rebased onto them, and its copy on the remote follows. Once its work is merged, removing its worktree deletes the branch here and on the remote.
 
 **Why:** the folder name shows the repository and branch at a glance, paths stay short, and no checkout sits inside another one. Claude Code's automatic cleanup never removes these folders. The copied `.env` lets the worktree run, and the workspace file shows every worktree in one VS Code window. A branch that follows its parent always builds on what's really there, so conflicts show up early, while they're small.
 
@@ -88,16 +88,18 @@ A branch is safe to rebase when all of these hold:
 
 - **It has its own worktree.** Sync rebases a branch only inside its own worktree, so no other checkout changes.
 - **Its worktree is clean:** no uncommitted or untracked files, and no rebase or merge in progress. Someone may be halfway through an edit there.
-- **Its copy on the remote has nothing new.** If someone else pushed commits to the branch, a rebase followed by a force-push would erase them. Older versions of the branch's own commits, left by earlier rebases, don't count: they have the same author, date and subject as the local ones.
+- **Its copy on the remote has nothing new.** Sync fetches first, so it sees the latest pushes. If someone else pushed commits to the branch, a rebase followed by a force-push would erase them. Older versions of the branch's own commits, left by earlier rebases, don't count: they have the same author, date and subject as the local ones.
 
 When a rebase conflicts, sync undoes it, so the branch is exactly as it was, and prints the files and the command to rebase by hand. The other branches still move. For example, if `001-initial-review-memory` conflicts with `001-initial`, sync reports its files, leaves it alone, and still rebases its siblings.
 
-**Sync never pushes.** After rebasing, it lists each branch whose copy on the remote is now out of date, and whether a push or a force-push updates it:
+**Copies on the remote.** After rebasing, sync pushes each rebased branch over its copy on the remote, so the remote stays current. Every push uses `--force-with-lease`, pinned to the commit sync checked, so it can't overwrite a commit nobody here has seen. A branch rebased earlier, whose copy still holds only older versions of its commits, is pushed the same way.
 
 ```text
-Copies on the remote, which sync never pushes:
-  origin/001-initial-production-config: a force-push updates it; it only has older versions of your commits
+Copies on the remote:
+  origin/001-initial-review-memory: pushed 72894cf → 0b0df1b
 ```
+
+Sync never publishes a branch that has no copy on the remote yet. It also never pushes a copy that's only behind: those new local commits weren't rewritten, so you push them when you choose. A failed push leaves the local rebase in place and says why.
 
 **Recovery.** Sync saves each rebased branch's old tip and base as `refs/recovery/sync/<time>/tip/<branch>` and `refs/recovery/sync/<time>/base/<branch>`. To undo a rebase, run `git reset --keep <old tip>` in the branch's worktree, then `git config branch.<branch>.worktreeBase <old base>`. Delete the refs once you no longer need them, with `git update-ref -d <ref>`.
 
@@ -121,7 +123,18 @@ Use the same command when a branch moves to a different parent. The next sync re
 python3 <this skill's folder>/scripts/worktree.py remove <worktree>
 ```
 
-It runs `git worktree remove`, which refuses a worktree with uncommitted changes, untracked files, or a lock. Then it removes the folder's entry from the same workspace files. The branch stays, with its recorded parent: delete it yourself once its work is merged or saved.
+It runs `git worktree remove`, which refuses a worktree with uncommitted changes, untracked files, or a lock. Then it removes the folder's entry from the same workspace files.
+
+Then it deals with the branch. When its parent already has all its work, the script deletes the branch here and its copy on the remote, after saving its tip as `refs/recovery/removed/<time>/<branch>`. It fetches first, so a branch merged on the remote, such as through a pull request, counts even before you pull its parent.
+
+```text
+Removed /Users/kev/projects/ichbinkalt/ichbinkalt-backend-001-initial-pause-limit.
+ichbinkalt.code-workspace: removed
+Deleted branch 001-initial-pause-limit: 001-initial has all its work. Its tip is saved as refs/recovery/removed/2026-11-08-171500/001-initial-pause-limit.
+origin/001-initial-pause-limit: deleted from origin
+```
+
+It keeps the branch when it has no recorded parent, when other branches build on it, or when it has work that neither the parent nor the parent's copy on the remote has. It keeps the copy on the remote when that copy has commits the branch doesn't, and says so when the remote already deleted it.
 
 ## Don't use Claude Code's own worktree features
 
@@ -140,13 +153,19 @@ It runs `git worktree remove`, which refuses a worktree with uncommitted changes
 | Sync: `... uncommitted or untracked files` | Run `sync` again once that work is committed. Never commit or stash someone else's edits to make sync run. |
 | Sync: `its rebase conflicts in ...` | Run the printed command in that worktree, resolve the conflicts, and check the result. If a conflict needs a decision, ask the user. |
 | Sync: `... has 1 commit it lacks; pull them in first` | Someone else pushed to this branch. Ask the user before pulling their commits in, then run `sync` again. |
-| Sync: `already in <parent>, so it only waits for removal` | Check that its work is in the parent, then remove the worktree and delete the branch. |
+| Sync: `already in <parent>, so it only waits for removal` | Remove its worktree with `remove`, which deletes the branch too. |
 | Sync: `its parent ... no longer exists` | Record the new parent with `parent`. |
 | Sync: `not checked out in any worktree` | Create a worktree for it with `add`, then run `sync` again. |
+| Sync: `... not pushed, because it has ... commits that ... doesn't` | Someone else pushed to this branch. Ask the user before pulling their commits in, then run `sync` again. |
+| Sync: `... not updated, because the push failed` | The local rebase stays. If the reason says `stale info`, someone pushed in between: run `sync` again, which fetches and checks again. Otherwise fix the cause, such as the network, and run `sync` again. |
+| `Couldn't fetch ...` | The checks used the last fetch, and pushes may fail. Run the command again once the remote is reachable. |
+| Remove: `Kept branch ...: it has work that isn't in ...` | Nothing is lost. If you know it was merged some other way, delete it yourself with `git branch -D <branch>`. |
+| Remove: `... not deleted, because the push failed` | Run the printed command once the remote is reachable. |
 
 ## How it works
 
-- `scripts/worktree.py` runs the commands. `checkouts.py` wraps git, `env_copy.py` copies the `.env`, `workspace.py` edits the workspace files, `lineage.py` keeps each branch's parent and base, `sync.py` rebases the children, and `remote_copy.py` checks each branch's copy on the remote.
+- `scripts/worktree.py` runs the commands. `checkouts.py` wraps git, `env_copy.py` copies the `.env`, `workspace.py` edits the workspace files, `lineage.py` keeps each branch's parent and base, `sync.py` rebases the children, `cleanup.py` deletes merged branches, and `remote_copy.py` fetches, checks, pushes and deletes each branch's copy on the remote.
+- **Leases:** every push names the commit it expects on the remote, as in `--force-with-lease=<branch>:<commit>`. If the remote has anything else by then, the push fails instead of overwriting it.
 - Each branch's parent and base live in git config, as `branch.<name>.worktreeParent` and `branch.<name>.worktreeBase`. They follow a renamed branch and go away with a deleted one.
 - **Why the base matters:** the base is the parent commit where a branch's own commits start. A rebase gives commits new IDs, so after a parent is rebased, its old commits still sit under its children, and a plain `git rebase` would try to replay them a second time. Sync replays only the branch's own commits, with `git rebase --onto <parent's head> <base>`. If a branch was rebased by hand, its fork point is newer than the recorded base, and sync uses the fork point instead.
 - It needs only Python 3 and git. It reads workspace files with Python's built-in `json`, which can't keep comments, so it leaves a file that has comments for a manual edit instead of rewriting it without them.

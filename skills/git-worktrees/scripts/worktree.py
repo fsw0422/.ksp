@@ -13,9 +13,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))  # so `python3 -I` find
 
 from checkouts import (GitError, add_worktree, branch_exists, checkout_of, git, main_checkout,  # noqa: E402
                        remote_branch, remove_worktree, sibling_folder)
+from cleanup import delete_branch, plan  # noqa: E402
 from env_copy import copy_env  # noqa: E402
 from lineage import makes_loop, parent_links, record_parent  # noqa: E402
-from remote_copy import remote_copy, short_name  # noqa: E402
+from remote_copy import remote_copy, short_name, tip_of  # noqa: E402
 from sync import sync  # noqa: E402
 from workspace import WorkspaceError, add_folder, remove_folder, workspace_files  # noqa: E402
 
@@ -45,7 +46,7 @@ def record_start(repo, branch, start):
     record_parent(repo, branch, start)
     line = f'Parent: {start}, so sync keeps {branch} on its head'
     copy = remote_copy(repo, start)
-    behind = int(git(repo, 'rev-list', '--count', f'{start}..{copy}')) if copy else 0
+    behind = int(git(repo, 'rev-list', '--count', f'{start}..{copy.ref}')) if copy and tip_of(repo, copy) else 0
     if behind:
         line += (f'\nNote: {start} is {behind} commit{"s" if behind > 1 else ""} behind {short_name(copy)}, '
                  'as of the last fetch. Pull it, then run sync.')
@@ -76,9 +77,14 @@ def remove(worktree):
     main = main_checkout(folder)
     if folder == main:
         sys.exit(f'{folder} is the main checkout, not a worktree.')
+    branch = git(folder, 'branch', '--show-current')
+    place, notes = plan(main, branch) if branch else (None, [])
     remove_worktree(main, folder)
-    print(f'Removed {folder}. Its branch is kept.')
-    return update_workspaces(main, lambda file: remove_folder(file, folder))
+    print(f'Removed {folder}.')
+    ok = update_workspaces(main, lambda file: remove_folder(file, folder))
+    for line in notes + (delete_branch(main, branch, place) if place else []):
+        print(line)
+    return ok
 
 
 def update_workspaces(main, change):
@@ -109,7 +115,7 @@ def cli():
     parent_parser = commands.add_parser('parent', help="record the branch a worktree's branch builds on")
     parent_parser.add_argument('worktree', type=Path)
     parent_parser.add_argument('parent', help='a local branch')
-    remove_parser = commands.add_parser('remove', help='remove a worktree, keeping its branch')
+    remove_parser = commands.add_parser('remove', help='remove a worktree, and its branch once that is merged')
     remove_parser.add_argument('worktree', type=Path)
     args = parser.parse_args()
     try:

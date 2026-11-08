@@ -154,7 +154,7 @@ If a squash fails, keep what you need in Git before resolving or resetting anyth
 ## Remove the child, then rebase the survivors
 
 1. Check the squash result in the parent.
-2. Remove the completed child's worktree, its `.code-workspace` entry, and its branch.
+2. Remove the completed child with the git-worktrees `remove`, which also deletes its branch here and on the remote.
 3. Run the git-worktrees `sync`, which rebases the remaining siblings and their children.
 4. Check the results and reopen affected reviews.
 5. Choose the next task.
@@ -163,11 +163,11 @@ Remove a child only when its approved changes are verified in the parent, all it
 
 A paused, blocked, or merged-but-not-removed child still keeps its parent from merging or being removed. Canceling work, or moving it elsewhere, needs an authorized decision about who owns it and how to recover it. Never remove `main` as part of child removal.
 
-Remove the worktree with the [git-worktrees](../../git-worktrees/SKILL.md) script. It uses `git worktree remove`, which respects dirty state and locks; never force it. A squash usually leaves the original child tip outside the parent's history. So after proving its content is in the parent and keeping a recovery ref, a precisely targeted `git branch -D <completed-child>` may be needed. Don't use branch deletion in place of those checks. Recovery-only refs aren't active child tasks.
+Remove the worktree with the [git-worktrees](../../git-worktrees/SKILL.md) script. It uses `git worktree remove`, which respects dirty state and locks; never force it. Once the parent has all the branch's work, the script also deletes the branch here and its copy on the remote, after saving its tip under `refs/recovery/removed/`. Its check doesn't replace the ones above: prove the approved content is in the parent first. Recovery-only refs aren't active child tasks.
 
 ### Rebase recursively, from parent to child
 
-[Keep children on their parent's head](../SKILL.md#keep-children-on-their-parents-head) says when to sync. The git-worktrees [`sync`](../../git-worktrees/SKILL.md#keep-children-on-their-parents-head) command does the rebasing: parents first, at every depth, each branch inside its own worktree, replaying only its own commits from its recorded base. It saves each old tip and base under `refs/recovery/sync/<time>/`, compares each branch's own commits before and after, undoes a rebase that conflicts, and never pushes.
+[Keep children on their parent's head](../SKILL.md#keep-children-on-their-parents-head) says when to sync. The git-worktrees [`sync`](../../git-worktrees/SKILL.md#keep-children-on-their-parents-head) command does the rebasing: parents first, at every depth, each branch inside its own worktree, replaying only its own commits from its recorded base. It saves each old tip and base under `refs/recovery/sync/<time>/`, compares each branch's own commits before and after, undoes a rebase that conflicts, and pushes each rebased branch over its copy on the remote, with a lease.
 
 After a sync:
 
@@ -179,7 +179,7 @@ After a sync:
 
 To resolve a conflict, run the command sync printed, in that branch's worktree. If it can't be resolved within accepted decisions, leave the branch as it was, record it as blocked, and hold dependent merges until it's updated and checked.
 
-This local workflow doesn't authorize force-pushing. Sync lists each branch whose copy on the remote is now out of date; tell the user, who decides whether to push it.
+Record the pushes sync reports. Beyond what `sync` and `remove` push, this workflow doesn't authorize pushing or force-pushing.
 
 ## Recovery and verification
 
@@ -195,14 +195,14 @@ Record evidence when a repository is unaffected instead of creating an empty cou
 
 Recovery points live in Git, and their status lives in the work record. Don't copy files into a separate folder.
 
-- Save old tips, old bases, and failed attempts as refs under `refs/recovery/`. They cost almost nothing, and Git keeps them safe. `sync` saves its own under `refs/recovery/sync/`.
+- Save old tips, old bases, and failed attempts as refs under `refs/recovery/`. They cost almost nothing, and Git keeps them safe. `sync` and `remove` save their own under `refs/recovery/sync/` and `refs/recovery/removed/`.
 - Commit uncommitted edits as checkpoints instead of copying them.
 - Record review inputs as commit SHAs in the work record. Nothing else needs to be frozen.
 - If something Git can't hold is needed and can't be recreated, such as a local test database, ask the user how to keep it. Never copy credentials, dependency folders such as `node_modules`, build output, or caches; an install or a build brings those back.
 
 **Why:** Git already stores every version of the code compactly. Copies outside Git only grow: one workspace collected 16 GB of saved folders, mostly dependency and build folders that a reinstall would have recreated.
 
-List each change's recovery refs in its work record entry. Delete the refs this workflow, or a sync it ran, created for a change once all of these hold:
+List each change's recovery refs in its work record entry. Delete the refs this workflow, or a `sync` or `remove` it ran, created for a change once all of these hold:
 
 1. Its content is in the integration branch, or in `main`.
 2. Checks there have passed.
