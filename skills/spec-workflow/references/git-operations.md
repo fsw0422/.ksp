@@ -139,9 +139,19 @@ For a child based on the exact current parent, check that:
 
 Record the parent-before, original-child, and squash-result SHAs, what was checked, and the recovery refs.
 
+### Push the parent
+
+If the parent has a copy on the remote, push it right after the squash, with a plain `git push` in its worktree. The merge approval covers this push. Never force-push a parent. Record the pushed SHA.
+
+**Why:** until the push, the squash exists only on this machine. The git-worktrees `remove` won't delete the child's copy on the remote before then, and children rebased onto the unpushed squash would show it in their own pull requests.
+
+If the push is rejected, the remote parent has commits you don't have yet, such as a teammate's. Run `git pull --rebase` in the parent's worktree, which replays only the unpushed squash on top of them, check the result, and push again. If that rebase conflicts, `git rebase --abort` puts the parent back as it was. Resolve the conflict within accepted decisions, and show the user any part of the approved change that the resolution altered.
+
+If a push to that branch starts a deployment, such as a release pipeline on `main`, ask before pushing: deploying needs its own approval.
+
 ### Merge across repositories
 
-Before starting, freeze every ready repository's inputs and the merge order. Merge the spec first by default. Record each successful result right away.
+Before starting, freeze every ready repository's inputs and the merge order. Merge the spec first by default. Record each successful squash and push right away.
 
 Squashing creates new commit IDs. When the approved content is verified unchanged, those expected new IDs don't cancel the remaining approvals in the batch. Unexpected changes to content or inputs do.
 
@@ -153,7 +163,7 @@ If a squash fails, keep what you need in Git before resolving or resetting anyth
 
 ## Remove the child, then rebase the survivors
 
-1. Check the squash result in the parent.
+1. Check the squash result in the parent, and that its push went through.
 2. Remove the completed child with the git-worktrees `remove`, which also deletes its branch here and on the remote.
 3. Run the git-worktrees `sync`, which rebases the remaining siblings and their children.
 4. Check the results and reopen affected reviews.
@@ -164,6 +174,8 @@ Remove a child only when its approved changes are verified in the parent, all it
 A paused, blocked, or merged-but-not-removed child still keeps its parent from merging or being removed. Canceling work, or moving it elsewhere, needs an authorized decision about who owns it and how to recover it. Never remove `main` as part of child removal.
 
 Remove the worktree with the [git-worktrees](../../git-worktrees/SKILL.md) script. It uses `git worktree remove`, which respects dirty state and locks; never force it. Once the parent has all the branch's work, the script also deletes the branch here and its copy on the remote, after saving its tip under `refs/recovery/removed/`. Its check doesn't replace the ones above: prove the approved content is in the parent first. Recovery-only refs aren't active child tasks.
+
+The script stops before removing anything when deleting the child's copy on the remote would lose work or close an open pull request, and says why. Show the user any pull requests it lists. Its `--close-prs` option deletes the copy anyway, and needs the user's OK.
 
 ### Rebase recursively, from parent to child
 
@@ -179,7 +191,7 @@ After a sync:
 
 To resolve a conflict, run the command sync printed, in that branch's worktree. If it can't be resolved within accepted decisions, leave the branch as it was, record it as blocked, and hold dependent merges until it's updated and checked.
 
-Record the pushes sync reports. Beyond what `sync` and `remove` push, this workflow doesn't authorize pushing or force-pushing.
+Record the pushes sync reports. Beyond the parent's push after a squash, and what `sync` and `remove` push, this workflow doesn't authorize pushing or force-pushing.
 
 ## Recovery and verification
 

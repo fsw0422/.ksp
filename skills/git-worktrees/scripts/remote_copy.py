@@ -79,12 +79,13 @@ def update(repo, branch, copy, rebased):
 
 
 def delete(repo, branch, copy):
-    """Delete the copy from its remote, unless it has commits the branch lacks. Return what happened."""
+    """Delete the copy from its remote. Return what happened.
+
+    Remove checks first that the copy holds nothing new, and the lease makes sure nothing arrived since.
+    """
     seen = tip_of(repo, copy)
     if not seen:
         return f'{short_name(copy)}: already gone from {copy.remote}'
-    if foreign_commits(repo, branch, copy):
-        return f"{short_name(copy)}: kept, because it has commits that {branch} doesn't"
     try:
         git(repo, 'push', '--quiet', f'--force-with-lease=refs/heads/{branch}:{seen}',
             copy.remote, f':refs/heads/{branch}')

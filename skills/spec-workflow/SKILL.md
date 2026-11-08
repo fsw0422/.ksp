@@ -18,7 +18,7 @@ flowchart TD
     Clean --> Review[Guided review with the user]
     Review --> OK{Approved?}
     OK -->|Changes requested| Build
-    OK -->|Yes| Merge[Squash into the parent and remove the worktree]
+    OK -->|Yes| Merge[Squash into the parent, push it, and remove the worktree]
     Merge --> Rebase[Rebase the remaining siblings]
     Rebase --> Next[Prepare the next task]
 ```
@@ -334,7 +334,7 @@ sequenceDiagram
     R->>U: One chunk at a time
     U->>R: Approve for the destination
     R->>W: Review record with the decision
-    W->>G: Squash each repository into its parent, one at a time
+    W->>G: Squash each repository into its parent and push it, one at a time
     W->>G: Remove the child worktree and branch
     W->>G: Rebase the remaining siblings
 ```
@@ -345,7 +345,7 @@ sequenceDiagram
 4. **Run the bug review,** as described in [Find bugs before review](#find-bugs-before-review).
 5. **Test-merge with the other open branches,** as described in [Check for conflicts before review](#check-for-conflicts-before-review).
 6. **Review.** Run the [guided review](references/guided-review.md) in this conversation, from the repositories, the exact parent, head, and spec commits, the cleanup, bug review, and test merge results, the chunk map, and the destination. Reuse a review only while its approval still matches those inputs. **Why:** approval covers exact commits. If they change, nobody approved the new ones.
-7. **Squash** each child into its immediate parent as one commit, including the final release merge, following [Git operations](references/git-operations.md). **Why:** the parent's history then shows one reviewed commit per change.
+7. **Squash** each child into its immediate parent as one commit, including the final release merge, following [Git operations](references/git-operations.md). Then push the parent right away if it has a copy on the remote, as a plain push. The merge approval covers that push. **Why:** the parent's history then shows one reviewed commit per change. Pushing at once keeps the remote in step: the child's copy can then be deleted, and the other children's pull requests show only their own work.
 8. **Children first.** A parent can merge into its own parent, or be removed, only after all its children are resolved and removed, at every depth.
 9. **Sync the survivors,** as described in [Keep children on their parent's head](#keep-children-on-their-parents-head).
 

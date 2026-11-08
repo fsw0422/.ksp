@@ -183,6 +183,10 @@ Then the worktree and branch, such as "Worktree: `backend-initial-class-recovery
 
 **Example: an approval goes stale.** The user approves the backend change, but before the merge, a sibling merges into the same parent and the backend branch is rebased. The rebase changed two lines in the approved diff. The agent reopens only the chunk with those lines and asks again for that part.
 
+**Example: pushing the parent.** The approved backend change is squashed into `initial`, which has a copy on `origin`. The agent pushes `initial` right away, with a plain `git push`. Then `remove` deletes `origin/initial-pause-limit`, and `sync` moves the siblings onto the pushed head. Without the push, `remove` would stop with `Push initial, then run remove again.`, and a sibling's pull request into `initial` would show the Pause limit change as part of its own work.
+
+**Example: an open pull request.** `remove` stops and lists `#12 Add the Pause limit (from it)`. The change was reviewed here and squashed locally, so GitHub never merged that pull request, and deleting the branch would show it as "Closed" rather than "Merged". The agent shows the user the link. The user closes it with a comment naming the squash commit, or approves `--close-prs`, and `remove` runs again.
+
 ## Keeping children on their parent's head
 
 Whenever a parent gets new commits, its children rebase onto them, so they build on what's really there. The git-worktrees `sync` command does it, and leaves a branch alone only when a rebase isn't safe.

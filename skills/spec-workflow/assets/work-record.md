@@ -24,7 +24,7 @@ Updated: <YYYY-MM-DD HH:MM>
   | --- | --- | --- | --- | --- | --- | --- |
   | <repo> | `<absolute path>` | `<branch>` | `<sha>` | `<sha>` | – | <passed / not run> |
 
-  Base is the parent commit where this branch's own work begins. Fill in Squash when that repository's merge succeeds, so a retry skips it.
+  Base is the parent commit where this branch's own work begins. Fill in Squash when that repository's merge succeeds, and add "pushed" once the parent's push goes through, such as `` `a1b2c3d`, pushed ``, so a retry skips what's done.
 
 - **Chunk map:** <chunks in build order, each with its requirement IDs and repositories; mark the riskiest and the ones already built>
 - **Unaffected:** <repo>: <evidence>

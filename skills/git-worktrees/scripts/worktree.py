@@ -3,7 +3,7 @@
   python3 worktree.py add <repo> <branch> [--from <parent>] [--env-from <folder>]
   python3 worktree.py sync <repo>
   python3 worktree.py parent <worktree> <parent>
-  python3 worktree.py remove <worktree>
+  python3 worktree.py remove <worktree> [--close-prs]
 """
 import argparse
 import sys
@@ -13,7 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))  # so `python3 -I` find
 
 from checkouts import (GitError, add_worktree, branch_exists, checkout_of, git, main_checkout,  # noqa: E402
                        remote_branch, remove_worktree, sibling_folder)
-from cleanup import delete_branch, plan  # noqa: E402
+from cleanup import Plan, delete_branch, plan  # noqa: E402
 from env_copy import copy_env  # noqa: E402
 from lineage import makes_loop, parent_links, record_parent  # noqa: E402
 from remote_copy import remote_copy, short_name, tip_of  # noqa: E402
@@ -69,7 +69,7 @@ def parent(worktree, parent_branch):
     return True
 
 
-def remove(worktree):
+def remove(worktree, close_prs):
     if not worktree.is_dir():
         sys.exit(f'{worktree} does not exist. If it was removed by hand, run `git worktree prune` '
                  'in the main checkout and remove its .code-workspace entry yourself.')
@@ -78,11 +78,14 @@ def remove(worktree):
     if folder == main:
         sys.exit(f'{folder} is the main checkout, not a worktree.')
     branch = git(folder, 'branch', '--show-current')
-    place, notes = plan(main, branch) if branch else (None, [])
+    decision = plan(main, branch, close_prs) if branch else Plan(None, [], [])
+    if decision.stop:
+        print('\n'.join(decision.notes + decision.stop))
+        return False
     remove_worktree(main, folder)
     print(f'Removed {folder}.')
     ok = update_workspaces(main, lambda file: remove_folder(file, folder))
-    for line in notes + (delete_branch(main, branch, place) if place else []):
+    for line in decision.notes + (delete_branch(main, branch, decision.place) if decision.place else []):
         print(line)
     return ok
 
@@ -117,6 +120,9 @@ def cli():
     parent_parser.add_argument('parent', help='a local branch')
     remove_parser = commands.add_parser('remove', help='remove a worktree, and its branch once that is merged')
     remove_parser.add_argument('worktree', type=Path)
+    remove_parser.add_argument('--close-prs', action='store_true',
+                               help="delete the branch's copy on the remote even if open pull requests use it, "
+                                    "or they can't be checked")
     args = parser.parse_args()
     try:
         if args.command == 'add':
@@ -127,7 +133,7 @@ def cli():
         elif args.command == 'parent':
             ok = parent(args.worktree, args.parent)
         else:
-            ok = remove(args.worktree)
+            ok = remove(args.worktree, args.close_prs)
     except GitError as error:
         sys.exit(f'git: {error}')
     sys.exit(0 if ok else 1)

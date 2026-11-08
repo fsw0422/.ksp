@@ -1,11 +1,11 @@
 ---
 name: git-worktrees
-description: "Create, sync and remove git worktrees with one script. It puts each worktree beside the repository's main checkout as `<repo folder>-<branch>`, copies the `.env`, keeps VS Code's `.code-workspace` file in step, keeps every branch on its parent's head with its copy on the remote current, and deletes a merged branch here and on the remote. Use it whenever you create or remove a git worktree, and whenever a branch that has children gets new commits (a merge, a commit, a pull, or a rebase), in any repository and from any skill, such as Spec Workflow, instead of Claude Code's own worktree features (`EnterWorktree` with a name, a subagent's `isolation: worktree`, `use_worktree`, or `claude --worktree`)."
+description: "Create, sync and remove git worktrees with one script. It puts each worktree beside the repository's main checkout as `<repo folder>-<branch>`, copies the `.env`, keeps VS Code's `.code-workspace` file in step, keeps every branch on its parent's head with its copy on the remote current, and deletes a merged branch here and on the remote once that loses no work and closes no open pull request. Use it whenever you create or remove a git worktree, and whenever a branch that has children gets new commits (a merge, a commit, a pull, or a rebase), in any repository and from any skill, such as Spec Workflow, instead of Claude Code's own worktree features (`EnterWorktree` with a name, a subagent's `isolation: worktree`, `use_worktree`, or `claude --worktree`)."
 ---
 
 # Git Worktrees
 
-Create, sync and remove git worktrees with this skill's script. Each worktree goes beside the repository's main checkout, never inside a repository. Each branch follows its parent, the branch it was created from: when the parent gets new commits, the branch is rebased onto them, and its copy on the remote follows. Once its work is merged, removing its worktree deletes the branch here and on the remote.
+Create, sync and remove git worktrees with this skill's script. Each worktree goes beside the repository's main checkout, never inside a repository. Each branch follows its parent, the branch it was created from: when the parent gets new commits, the branch is rebased onto them, and its copy on the remote follows. Once its work is merged, removing its worktree deletes the branch here and on the remote, after checking that this loses no work and closes no open pull request.
 
 **Why:** the folder name shows the repository and branch at a glance, paths stay short, and no checkout sits inside another one. Claude Code's automatic cleanup never removes these folders. The copied `.env` lets the worktree run, and the workspace file shows every worktree in one VS Code window. A branch that follows its parent always builds on what's really there, so conflicts show up early, while they're small.
 
@@ -120,7 +120,7 @@ Use the same command when a branch moves to a different parent. The next sync re
 ## Remove a worktree
 
 ```bash
-python3 <this skill's folder>/scripts/worktree.py remove <worktree>
+python3 <this skill's folder>/scripts/worktree.py remove <worktree> [--close-prs]
 ```
 
 It runs `git worktree remove`, which refuses a worktree with uncommitted changes, untracked files, or a lock. Then it removes the folder's entry from the same workspace files.
@@ -134,7 +134,36 @@ Deleted branch 001-initial-pause-limit: 001-initial has all its work. Its tip is
 origin/001-initial-pause-limit: deleted from origin
 ```
 
-It keeps the branch when it has no recorded parent, when other branches build on it, or when it has work that neither the parent nor the parent's copy on the remote has. It keeps the copy on the remote when that copy has commits the branch doesn't, and says so when the remote already deleted it.
+It keeps the branch when it has no recorded parent, when other branches build on it, or when it has work that neither the parent nor the parent's copy on the remote has. It says so when the remote already deleted the branch's copy.
+
+### Before it deletes a copy on the remote
+
+Deleting a branch on the remote can lose work or close pull requests, so the script checks the copy first. If a check fails, it stops before removing anything and says why. Run `remove` again once that's fixed.
+
+```mermaid
+flowchart TD
+    Start[remove a worktree] --> Merged{Does the parent have all its work?}
+    Merged -->|No| Keep[Remove the worktree, keep the branch]
+    Merged -->|Yes| Copy{Does the branch have a copy on the remote?}
+    Copy -->|No| Local[Remove the worktree, delete the branch]
+    Copy -->|Yes| Checks{Do all three checks pass?}
+    Checks -->|No| Stop[Stop before removing anything, and say why]
+    Checks -->|Yes| Both[Remove the worktree, delete the branch here and on the remote]
+```
+
+1. **The copy holds nothing new.** If someone else pushed commits to it, deleting it would lose them.
+2. **The parent's copy on the remote has the work too.** Otherwise the work would be left only on this machine. For example, after a squash into `001-initial` that isn't pushed yet, it says `Push 001-initial, then run remove again.`
+3. **No open pull request uses it.** Deleting a branch on GitHub closes the pull requests from it, as "Closed" rather than "Merged", and closes or retargets the ones into it. The script asks the `gh` CLI. For a fork, it also looks in the parent's repository, where the fork's pull requests live.
+
+```text
+Stopped before removing anything: deleting origin/001-initial-pause-limit would close the pull requests from it, and close or retarget those into it:
+  #12 Add the Pause limit (from it): https://github.com/example/ichbinkalt-backend/pull/12
+Merge or close them first, or run remove again with --close-prs.
+```
+
+If `gh` can't tell, because it isn't installed or logged in, or the remote isn't on GitHub, the script stops too. `--close-prs` skips the pull request check, for when the user has decided those pull requests can close. The other two checks still apply.
+
+**Why stop instead of keeping the branch:** a kept branch has no worktree left to run `remove` from, so its copy on the remote would stay behind with nothing to clean it up. Stopping leaves everything in place for the next try.
 
 ## Don't use Claude Code's own worktree features
 
@@ -160,13 +189,17 @@ It keeps the branch when it has no recorded parent, when other branches build on
 | Sync: `... not updated, because the push failed` | The local rebase stays. If the reason says `stale info`, someone pushed in between: run `sync` again, which fetches and checks again. Otherwise fix the cause, such as the network, and run `sync` again. |
 | `Couldn't fetch ...` | The checks used the last fetch, and pushes may fail. Run the command again once the remote is reachable. |
 | Remove: `Kept branch ...: it has work that isn't in ...` | Nothing is lost. If you know it was merged some other way, delete it yourself with `git branch -D <branch>`. |
+| Remove: `Stopped ...: ... has 1 commit that ... doesn't` | Someone else pushed to the branch after its work was merged. Ask the user whether to pull those commits in or drop them. |
+| Remove: `Stopped ...: ... doesn't have its work yet` | Push the parent, then run `remove` again. |
+| Remove: `Stopped ...: deleting ... would close the pull requests ...` | Show the user the listed pull requests. Merge or close them, or, with the user's OK, run `remove` again with `--close-prs`. |
+| Remove: `Stopped ...: couldn't check the pull requests ...` | If `gh` isn't logged in, ask the user to run `gh auth login`. If a sandbox blocked the network, run the command again with network access. With the user's OK, `--close-prs` deletes the copy without checking. |
 | Remove: `... not deleted, because the push failed` | Run the printed command once the remote is reachable. |
 
 ## How it works
 
-- `scripts/worktree.py` runs the commands. `checkouts.py` wraps git, `env_copy.py` copies the `.env`, `workspace.py` edits the workspace files, `lineage.py` keeps each branch's parent and base, `sync.py` rebases the children, `cleanup.py` deletes merged branches, and `remote_copy.py` fetches, checks, pushes and deletes each branch's copy on the remote.
+- `scripts/worktree.py` runs the commands. `checkouts.py` wraps git, `env_copy.py` copies the `.env`, `workspace.py` edits the workspace files, `lineage.py` keeps each branch's parent and base, `sync.py` rebases the children, `cleanup.py` decides what happens to a removed worktree's branch, `remote_copy.py` fetches, checks, pushes and deletes each branch's copy on the remote, and `pull_requests.py` asks `gh` which open pull requests use a copy.
 - **Leases:** every push names the commit it expects on the remote, as in `--force-with-lease=<branch>:<commit>`. If the remote has anything else by then, the push fails instead of overwriting it.
 - Each branch's parent and base live in git config, as `branch.<name>.worktreeParent` and `branch.<name>.worktreeBase`. They follow a renamed branch and go away with a deleted one.
 - **Why the base matters:** the base is the parent commit where a branch's own commits start. A rebase gives commits new IDs, so after a parent is rebased, its old commits still sit under its children, and a plain `git rebase` would try to replay them a second time. Sync replays only the branch's own commits, with `git rebase --onto <parent's head> <base>`. If a branch was rebased by hand, its fork point is newer than the recorded base, and sync uses the fork point instead.
-- It needs only Python 3 and git. It reads workspace files with Python's built-in `json`, which can't keep comments, so it leaves a file that has comments for a manual edit instead of rewriting it without them.
+- It needs Python 3 and git. Deleting a branch's copy on GitHub also needs the `gh` CLI, logged in. It reads workspace files with Python's built-in `json`, which can't keep comments, so it leaves a file that has comments for a manual edit instead of rewriting it without them.
 - Tests: `python3 -m unittest discover -s <this skill's folder>/tests`. They run on throwaway repositories.
