@@ -36,7 +36,7 @@ Details live in reference files: [Git operations](references/git-operations.md) 
 | Parent, child, sibling | A child branches from its parent and merges back into it. Siblings share a parent | `initial-retained-audio` is a child of `initial` |
 | Integration branch | A branch that collects reviewed changes, such as `main` or a release branch. Nobody edits it directly; changes arrive as reviewed squashes | `main`, `001-initial` |
 | Checkpoint | A commit that saves unfinished work so another branch can build on it | `initial-retained-audio: Save draft before codec fix` |
-| Base | The parent commit where a branch's own work begins. Rebases use it to replay only that branch's commits | the parent SHA recorded when the branch was created |
+| Base | The parent commit where a branch's own work begins. Rebases use it to replay only that branch's commits | the parent's head when the branch was created, which the git-worktrees script records and moves after each sync |
 | Chunk | One behavior or decision, built and reviewed as a unit | "Restore saved audio on reopen" |
 | Work record | `WORK_RECORD.md` at the workspace root: the current state of all work | see [Keep one work record](#keep-one-work-record) |
 | Cleanup pass | A tidy-up of the change before review that keeps its behavior | removing a helper the change made unused |
@@ -231,7 +231,7 @@ Don't use the repository or folder name as the prefix. The squash commit body sa
 
 ### Set up and keep branches clean
 
-Create and remove worktrees with the [git-worktrees](../git-worktrees/SKILL.md) skill. It copies the parent's `.env` and keeps the `.code-workspace` file in step, as [Set up the new worktree](references/git-operations.md#set-up-the-new-worktree) describes.
+Create and remove worktrees with the [git-worktrees](../git-worktrees/SKILL.md) skill. It copies the parent's `.env`, keeps the `.code-workspace` file in step, and records the parent, so its `sync` command keeps the branch on the parent's head, as [Set up the new worktree](references/git-operations.md#set-up-the-new-worktree) describes.
 
 Keep integration branches, including `main`, clean outside merges. Make spec and code edits in short-lived child worktrees.
 
@@ -347,7 +347,7 @@ sequenceDiagram
 6. **Review.** Run the [guided review](references/guided-review.md) in this conversation, from the repositories, the exact parent, head, and spec commits, the cleanup, bug review, and test merge results, the chunk map, and the destination. Reuse a review only while its approval still matches those inputs. **Why:** approval covers exact commits. If they change, nobody approved the new ones.
 7. **Squash** each child into its immediate parent as one commit, including the final release merge, following [Git operations](references/git-operations.md). **Why:** the parent's history then shows one reviewed commit per change.
 8. **Children first.** A parent can merge into its own parent, or be removed, only after all its children are resolved and removed, at every depth.
-9. **Rebase the survivors,** as described in [Rebase after a merge](#rebase-after-a-merge).
+9. **Sync the survivors,** as described in [Keep children on their parent's head](#keep-children-on-their-parents-head).
 
 ### Check for conflicts before review
 
@@ -375,38 +375,35 @@ Adjust only when the result reads and works as well as before, such as a new REA
 
 More examples: [Test merges before review](references/worked-examples.md#test-merges-before-review).
 
-### Rebase after a merge
+### Keep children on their parent's head
 
-```mermaid
-flowchart TD
-    New[Parent gets a new commit] --> How{Where did it come from?}
-    How -->|A child was squash-merged| Each[Take each remaining child of that parent]
-    How -->|The parent itself was rebased| Each
-    How -->|A checkpoint of unfinished work| Stay[Children stay where they are]
-    Each --> Busy{Paused by the user, or in review?}
-    Busy -->|No| Now[Rebase it now, then its own children]
-    Busy -->|Yes| Later[Mark it as needing a rebase. Do it before more work or its merge]
-```
+When a parent gets new commits, every child follows: it's rebased onto the parent's new head, parents first, at every depth. Any new commit counts: a squash merge, a fix the user commits and pushes directly, a pull of someone else's work, a checkpoint, or a rebase of the parent itself. The [git-worktrees](../git-worktrees/SKILL.md#keep-children-on-their-parents-head) `sync` command does the rebasing. Run it in every repository where a parent moved:
+
+1. After each squash merge, once the merged child is removed.
+2. After any other commit or pull on a branch that has children.
+3. When starting or resuming work in a repository, because the user may have committed or pulled since.
+4. Before a review or a merge.
+5. During a review, between chunks, never in the middle of one.
 
 For example, after `initial-storage-fix` is squash-merged into `initial`:
 
 ```text
 initial                                   ← the squash lands here
 ├── initial-storage-fix                   merged, then removed
-├── initial-retained-audio                rebased now
+├── initial-retained-audio                rebased
 │   └── initial-retained-audio-codec-fix  rebased right after its parent
-└── initial-profile-settings              paused by the user: marked, rebased later
+└── initial-profile-settings              paused by the user: rebased too
 ```
 
-Only repositories where the parent changed are rebased. Record the needed rebase in the work record for any branch that waits.
+Sync leaves a child as it was when it has uncommitted files, when its copy on the remote has someone else's commits, or when its rebase conflicts. Record each such child in the work record as needing a rebase, with the reason. If the uncommitted files are this workflow's own unfinished work, commit them as a checkpoint and sync again; never commit someone else's edits. Resolve a conflict with the command sync prints. If it needs a new decision, leave that branch blocked and explain the decision needed.
 
 **Why:**
 
-- Siblings should build on what is really in the parent now, and rebasing soon surfaces conflicts while the context is fresh.
-- A paused branch should stay as the user left it, and a review shouldn't shift in the middle of a chunk.
-- A checkpoint is unfinished work, and siblings shouldn't pick it up.
+- Children should build on what's really in the parent now, whatever brought it there, and rebasing soon surfaces conflicts while the context is fresh.
+- A paused or in-review branch follows too: a clean rebase changes only what its work sits on, not the work itself, and a conflict leaves it exactly as it was.
+- A checkpoint counts like any other commit: a child lands on top of it anyway when it merges into that parent.
 
-A clean rebase doesn't prove the code still matches the spec. Check changed requirements, APIs, and callers separately. Adapt code within accepted decisions and test it. If a conflict needs a new decision, leave that work blocked and explain the decision needed.
+A clean rebase doesn't prove the code still matches the spec. Before more work, a review, or a merge on a rebased branch, check changed requirements, APIs, and callers, adapt code within accepted decisions, and run its checks. During a review, reopen only the chunks whose lines changed, which `range-diff` shows. New commits also make an earlier merge approval stale, as step 6 of [Review and merge](#review-and-merge) says.
 
 ### Finish the family and the release
 
@@ -414,11 +411,11 @@ Repositories merge one at a time. Record each success so a retry skips it. The f
 
 Keep an integration branch until its planned changes are done or the user changes the scope. The final release needs its own approval and verified results on every required destination branch. Record each change's name and result SHAs in the work history. Deployment and publication are separate actions.
 
-More examples: [Review and merge](references/worked-examples.md#review-and-merge) and [Rebasing after a merge](references/worked-examples.md#rebasing-after-a-merge).
+More examples: [Review and merge](references/worked-examples.md#review-and-merge) and [Keeping children on their parent's head](references/worked-examples.md#keeping-children-on-their-parents-head).
 
 ## Which task comes next?
 
-After an interruption, review decision, merge, cleanup, rebase, failure, or resumed session, compare the work record with Git.
+After an interruption, review decision, merge, cleanup, rebase, failure, or resumed session, sync the repositories involved, as [Keep children on their parent's head](#keep-children-on-their-parents-head) says, then compare the work record with Git.
 
 A question doesn't count. Answer it from the work record and Git, keep the current work and review position, and change nothing. For a status question, say where things stand, for example "review paused at chunk 2 of 5 in `backend-initial-retained-audio`".
 

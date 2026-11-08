@@ -183,23 +183,27 @@ Then the worktree and branch, such as "Worktree: `backend-initial-class-recovery
 
 **Example: an approval goes stale.** The user approves the backend change, but before the merge, a sibling merges into the same parent and the backend branch is rebased. The rebase changed two lines in the approved diff. The agent reopens only the chunk with those lines and asks again for that part.
 
-## Rebasing after a merge
+## Keeping children on their parent's head
 
-After a child merges, its siblings rebase onto the updated parent so they build on what's really there. Some branches wait instead, so the user's pause and their review aren't disturbed.
+Whenever a parent gets new commits, its children rebase onto them, so they build on what's really there. The git-worktrees `sync` command does it, and leaves a branch alone only when a rebase isn't safe.
 
 ```text
 initial                                   ← the initial-storage-fix squash lands here
 ├── initial-storage-fix                   merged, then removed
-├── initial-retained-audio                rebased now
+├── initial-retained-audio                rebased
 │   └── initial-retained-audio-codec-fix  rebased right after its parent
-└── initial-profile-settings              paused by the user: marked, rebased later
+└── initial-profile-settings              paused by the user: rebased too
 ```
 
-**Example: a paused sibling.** The user paused `initial-profile-settings` last week. After the storage fix merges, the branch isn't touched. Its work record entry says `Needs rebase: onto 4f2c1a9, after initial-storage-fix merged`. When the user resumes it, the rebase happens first.
+**Example: a paused sibling.** The user paused `initial-profile-settings` last week. After the storage fix merges, sync rebases it too. Its own commits come out unchanged, so nothing in the paused work moves. When the user resumes it, it's already current.
 
-**Example: a checkpoint doesn't trigger anything.** The agent saves a checkpoint on `initial-retained-audio` to start the codec fix. The other children of `initial` aren't rebased, because a checkpoint is unfinished work, and they shouldn't pick it up.
+**Example: the user commits directly.** The user fixes a typo on `initial` and pushes it, outside any session. The next time the agent starts work in that repository, sync moves every child of `initial` onto the fix.
 
-**Example: a conflict that needs a decision.** Rebasing the history branch onto the new storage format conflicts: history expects one audio file per Class, but storage now saves several chunks. How history should handle chunks is a product decision. The agent stops that branch, records it as blocked, and explains, "History needs to know whether to replay the chunks in sequence or join them into one file. Which do you want?"
+**Example: a checkpoint.** The agent saves a checkpoint on `initial-retained-audio` to start the codec fix. Its other child, `initial-retained-audio-waveform`, rebases onto the checkpoint. If the draft doesn't compile yet, the waveform tests fail until the audio work is fixed. The waveform work would land on that draft anyway when it merges.
+
+**Example: someone else's commit.** A teammate pushed a commit to `origin/initial-retained-audio`. Sync leaves the local branch alone and says its remote copy has 1 commit it lacks. The agent asks the user before pulling it in, because a rebase followed by a force-push would erase the teammate's commit.
+
+**Example: a conflict that needs a decision.** Rebasing the history branch onto the new storage format conflicts: history expects one audio file per Class, but storage now saves several chunks. Sync undoes the rebase and reports the files. How history should handle chunks is a product decision, so the agent records the branch as blocked and explains, "History needs to know whether to replay the chunks in sequence or join them into one file. Which do you want?"
 
 ## Picking the next task
 

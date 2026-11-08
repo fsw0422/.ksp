@@ -32,7 +32,7 @@ Updated: <YYYY-MM-DD HH:MM>
 - **Bug review:** <not run | skipped: docs only | no findings | fixed: <finding> in `<sha>`, re-reviewed `<files>`: <clean | new problem, asked the user>; plausible: <finding>, in chunk <name>; outside scope: <finding>>, at `<level>`, heads `<shas>`
 - **Test merges:** <not run | clean with every open branch | conflict with `<branch>` in `<files>`: adjusted, left for its rebase, or decision asked>, at heads `<shas>`
 - **Review:** <not started | chunk <n> of <m>, accepted 1–<n> | approved for `<destination>` at `<shas>`>
-- **Needs rebase:** <no | onto `<sha>`, after `<sibling>` merged; expect a conflict in `<files>` when a test merge found one>
+- **Needs rebase:** <no | left behind by sync on `<date>`: a conflict in `<files>`, uncommitted files, or commits on its remote copy that it lacks>
 - **Done so far:** <merged repositories, removed worktrees, rebased siblings>
 - **Recovery:** <checkpoint commits and refs under `refs/recovery/`>; delete when <condition>
 - **Blocked by:** <nothing | the decision or failure, and who must act>

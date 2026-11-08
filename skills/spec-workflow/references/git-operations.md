@@ -8,10 +8,10 @@ Read the repository's instructions. Inspect worktrees, branches, HEADs, staged a
 
 **Why:** a branch created on top of a misunderstood state carries that mistake into every later step.
 
-Choose the parent as described in [Where should a worktree go?](../SKILL.md#where-should-a-worktree-go), then verify it against Git and the work record in every affected repository. Create the branch from:
+Choose the parent as described in [Where should a worktree go?](../SKILL.md#where-should-a-worktree-go), then verify it against Git and the work record in every affected repository. Create the branch from the parent's current head:
 
-- a checkpoint commit, for a child that builds on unfinished work
-- the current HEAD of the branch where its result belongs, for a sibling or a new root change: usually an integration branch such as `001-initial`, or `main` for a new root
+- for a child that builds on unfinished work, the parent branch right after its checkpoint commit
+- for a sibling or a new root change, the branch where its result belongs: usually an integration branch such as `001-initial`, or `main` for a new root
 
 Record the parent's worktree path, branch, base SHA, and why the change belongs there. Explain the choice before creating anything.
 
@@ -33,15 +33,15 @@ Git checkpoints don't save external databases, devices, or ignored files. If one
 
 ### Set up the new worktree
 
-Create the worktree with the [git-worktrees](../../git-worktrees/SKILL.md) script. Pass the start chosen above, a checkpoint commit or the parent branch, as `--from`, and the parent's recorded worktree path as `--env-from`, so the `.env` comes from the parent. Record only whether the `.env` was copied or skipped, as the script reports it. Only [project setup](project-setup.md) creates a `.code-workspace` file.
+Create the worktree with the [git-worktrees](../../git-worktrees/SKILL.md) script. Pass the parent branch as `--from`, so the script records it as the parent and its `sync` keeps the new branch on that head. Pass the parent's recorded worktree path as `--env-from`, so the `.env` comes from the parent. Record the start commit the script prints as the base, and whether the `.env` was copied or skipped. Only [project setup](project-setup.md) creates a `.code-workspace` file.
 
 ### If the actual parent changes
 
 A new parent commit or a priority change doesn't rename anything. A change to the actual parent branch does.
 
 1. Pause writers and save the current state.
-2. Rename the branches consistently across the family, including any children, because their names start with the old name.
-3. Rebase onto the new parent with `git rebase --onto <new-parent-head> <old-base> <branch>`.
+2. Rename the branches consistently across the family, including any children, because their names start with the old name. A branch's recorded parent and base follow its rename, but its children still name the old one.
+3. Record the new parent with the git-worktrees `parent` command, for the moved branch and for each child whose parent was renamed. Then run `sync`: it rebases the moved branch onto the new parent from its recorded base, so only its own commits move.
 4. Move the worktrees with `git worktree move`, and update the paths in the work record and `.code-workspace`.
 5. Check the result with `git worktree list --porcelain`.
 
@@ -155,7 +155,7 @@ If a squash fails, keep what you need in Git before resolving or resetting anyth
 
 1. Check the squash result in the parent.
 2. Remove the completed child's worktree, its `.code-workspace` entry, and its branch.
-3. Rebase the remaining siblings and their children.
+3. Run the git-worktrees `sync`, which rebases the remaining siblings and their children.
 4. Check the results and reopen affected reviews.
 5. Choose the next task.
 
@@ -167,54 +167,19 @@ Remove the worktree with the [git-worktrees](../../git-worktrees/SKILL.md) scrip
 
 ### Rebase recursively, from parent to child
 
-[Rebase after a merge](../SKILL.md#rebase-after-a-merge) says which branches to rebase now and which wait. This section says how.
+[Keep children on their parent's head](../SKILL.md#keep-children-on-their-parents-head) says when to sync. The git-worktrees [`sync`](../../git-worktrees/SKILL.md#keep-children-on-their-parents-head) command does the rebasing: parents first, at every depth, each branch inside its own worktree, replaying only its own commits from its recorded base. It saves each old tip and base under `refs/recovery/sync/<time>/`, compares each branch's own commits before and after, undoes a rebase that conflicts, and never pushes.
 
-Before the first rebase, save the old tips and old bases of the **whole affected subtree** as refs under `refs/recovery/`, and commit any current edits as checkpoints. Then, in each branch's worktree, replay only its own commits:
+After a sync:
 
-```text
-git rebase --onto <new-parent-head> <old-base> <branch>
-```
-
-Rebase the sibling first, then its children onto their updated parents, at every depth.
-
-```mermaid
-sequenceDiagram
-    participant P as Updated parent
-    participant S as Sibling
-    participant C as Child of the sibling
-    participant G as Grandchild
-    P->>S: Rebase sibling onto new parent HEAD
-    S->>C: Rebase child onto new sibling HEAD
-    C->>G: Rebase grandchild onto new child HEAD
-```
-
-**Why the recorded base matters:** a rebase gives the rebased commits new IDs. Git can then mistake the old copies for new work and replay them a second time. The recorded base tells Git exactly where a branch's own work starts.
-
-```text
-Before:   initial ── X ── S                        S = squash of a sibling
-                     └── audio: a1 ── a2
-                                       └── codec-fix: c1        base = a2
-
-Step 1:   git rebase --onto S X initial-retained-audio
-          initial ── X ── S ── a1' ── a2'
-
-Step 2:   git rebase --onto a2' a2 initial-retained-audio-codec-fix
-          initial ── X ── S ── a1' ── a2' ── c1'                 new base = a2'
-```
-
-In step 2, a plain `git rebase` would treat `a1` and `a2` as new work, because their rebased copies `a1'` and `a2'` have different IDs, and try to replay them again. Don't guess a new merge base after rewriting history. Inspect any unclear existing merge history before choosing what to replay.
-
-After each rebase:
-
-- Confirm that the new parent HEAD is an ancestor of the branch.
-- Compare the old and new changes relative to their parents, using content checks and `range-diff` where helpful. Check that unique work survived without duplication.
-- Check changed specs, APIs, callers, and relevant tests separately.
-- Record the new parent HEAD as the branch's new base.
+- Record the new heads, and the recovery refs it printed, in the work record.
+- Read each rebased branch's summary. "Unchanged" means every one of its own commits has the same diff as before. Look at any commit it calls changed or dropped.
+- Check changed specs, APIs, callers, and relevant tests separately, before more work, a review, or a merge on that branch.
 - Reopen affected reviews: new heads, bases, or spec inputs make earlier approvals stale.
+- Record each branch it left behind as needing a rebase, with its reason.
 
-This local workflow doesn't authorize force-pushing.
+To resolve a conflict, run the command sync printed, in that branch's worktree. If it can't be resolved within accepted decisions, leave the branch as it was, record it as blocked, and hold dependent merges until it's updated and checked.
 
-If a rebase or check fails, keep the stopped state and record completed and remaining steps. Don't skip commits, throw away conflict evidence, or repeat completed work. Hold further dependent merges until the affected branches are updated and checked. Repair the failure, or return unaffected, authorized work to the next-task choice.
+This local workflow doesn't authorize force-pushing. Sync lists each branch whose copy on the remote is now out of date; tell the user, who decides whether to push it.
 
 ## Recovery and verification
 
@@ -230,14 +195,14 @@ Record evidence when a repository is unaffected instead of creating an empty cou
 
 Recovery points live in Git, and their status lives in the work record. Don't copy files into a separate folder.
 
-- Save old tips, old bases, and failed attempts as refs under `refs/recovery/`. They cost almost nothing, and Git keeps them safe.
+- Save old tips, old bases, and failed attempts as refs under `refs/recovery/`. They cost almost nothing, and Git keeps them safe. `sync` saves its own under `refs/recovery/sync/`.
 - Commit uncommitted edits as checkpoints instead of copying them.
 - Record review inputs as commit SHAs in the work record. Nothing else needs to be frozen.
 - If something Git can't hold is needed and can't be recreated, such as a local test database, ask the user how to keep it. Never copy credentials, dependency folders such as `node_modules`, build output, or caches; an install or a build brings those back.
 
 **Why:** Git already stores every version of the code compactly. Copies outside Git only grow: one workspace collected 16 GB of saved folders, mostly dependency and build folders that a reinstall would have recreated.
 
-List each change's recovery refs in its work record entry. Delete the refs this workflow created for a change once all of these hold:
+List each change's recovery refs in its work record entry. Delete the refs this workflow, or a sync it ran, created for a change once all of these hold:
 
 1. Its content is in the integration branch, or in `main`.
 2. Checks there have passed.

@@ -19,6 +19,14 @@ def git_succeeds(cwd, *args):
     return subprocess.run(['git', '-C', str(cwd), *args], capture_output=True).returncode == 0
 
 
+def git_try(cwd, *args):
+    """Run git in cwd and return its output, or None if it fails."""
+    try:
+        return git(cwd, *args)
+    except GitError:
+        return None
+
+
 def checkouts(repo):
     """List (path, branch) for every checkout of the repository, the main checkout first."""
     found = []
@@ -53,12 +61,12 @@ def add_worktree(repo, branch, start, folder):
     if branch_exists(repo, branch):
         git(repo, 'worktree', 'add', str(folder), branch)
         return f'existing branch {branch}'
-    remote = None if start else _remote_branch(repo, branch)
+    remote = None if start else remote_branch(repo, branch)
     if remote:
         git(repo, 'worktree', 'add', '--track', '-b', branch, str(folder), remote)
         return f'new branch {branch}, tracking {remote}'
-    git(repo, 'worktree', 'add', '-b', branch, str(folder), start or 'HEAD')
-    return f'new branch {branch} from {start or f"the current commit of {repo}"}'
+    git(repo, 'worktree', 'add', '-b', branch, str(folder), start)
+    return f'new branch {branch} from {start} at {git(repo, "rev-parse", "--short", branch)}'
 
 
 def remove_worktree(main, folder):
@@ -66,7 +74,7 @@ def remove_worktree(main, folder):
     git(main, 'worktree', 'remove', str(folder))
 
 
-def _remote_branch(repo, branch):
+def remote_branch(repo, branch):
     """Return the one remote branch with this name, such as origin/fix-login, or None."""
     names = git(repo, 'for-each-ref', '--format=%(refname:short)', f'refs/remotes/*/{branch}').splitlines()
     return names[0] if len(names) == 1 else None
