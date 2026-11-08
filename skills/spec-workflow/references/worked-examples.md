@@ -81,7 +81,7 @@ initial
 
 ## Planning chunks
 
-A chunk is one behavior or decision that the user can understand and judge on its own. The chunk map lists the chunks in build order before building starts. That way the user knows the plan, the riskiest part can be shown early, and the review later follows a map the user has already seen.
+A chunk is one behavior or decision that the user can understand and judge on its own. The chunk map lists the chunks in build order before building starts. That way the user knows the plan, the riskiest part is built first, and the review later follows a map the user has already seen.
 
 **Example: a chunk map.** For Class recovery, partway through building:
 
@@ -92,8 +92,6 @@ A chunk is one behavior or decision that the user can understand and judge on it
 ```
 
 `✓` is built, `▶` is being built, and `○` is planned. Saving audio is the riskiest chunk, because the saved format is hard to change later.
-
-**Example: offering a preview.** After the first chunk is built and its tests pass, the agent asks, "Saving audio is ready for a quick look before I build restore and retry. Want a preview?" If the user says yes, the guided review shows that one chunk. The user might say, "also store each chunk's length in its file name." The agent adjusts the code and the map, and keeps building. Nothing is approved yet; the final review still covers everything.
 
 **Example: splitting a chunk off.** The team isn't sure about the saved format yet. Instead of building restore and retry on a format that might change, the agent makes "save audio" its own child branch. It's reviewed and merged first, and the rest builds on a settled format.
 

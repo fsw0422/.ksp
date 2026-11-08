@@ -245,7 +245,7 @@ Before building, sketch a **chunk map**: the pieces of behavior the change adds,
 
 - Building in a planned order gives the user a path they can follow, instead of a finished change they see all at once.
 - The review later starts from a map the user has already seen, so its chunks make sense.
-- An early look at the riskiest chunk catches a wrong direction before the rest is built on top of it.
+- Building the riskiest chunk first shows a wrong direction early, before the rest is built on top of it.
 
 ```mermaid
 flowchart TD
@@ -254,11 +254,10 @@ flowchart TD
     Big -->|Yes| Own[Give it its own branch, using the parent rule]
     Big -->|No| Build[Build the chunks in order]
     Own --> Build
-    Build --> Preview[After the riskiest chunk, offer a preview]
-    Preview --> Change{Does the user want changes?}
-    Change -->|Yes| Adjust[Adjust the map and the code]
+    Build --> Wrong{Does building show the plan was wrong?}
+    Wrong -->|Yes| Adjust[Update the map]
     Adjust --> Build
-    Change -->|No| Rest[Build the rest, then review from the map]
+    Wrong -->|No| Rest[Clean up, then review from the final map]
 ```
 
 For example, the chunk map for `initial-class-recovery`:
@@ -269,10 +268,8 @@ For example, the chunk map for `initial-class-recovery`:
 ○ Offer a retry when loading fails   REC-013            frontend
 ```
 
-After chunk 1 is built and its tests pass: "Saving audio is ready for a quick look before I build restore and retry. Want a preview?"
-
 - **Split what doesn't fit.** A chunk that is big, risky, or useful on its own becomes its own branch, placed by the [parent rule](#choose-the-parent), with its own review and squash. For example, if the saved audio format is still uncertain, chunk 1 becomes a child branch, so restore and retry build on a settled format.
-- **Preview, don't approve.** After the riskiest chunk is built and its checks pass, offer a preview: a [guided review](references/guided-review.md) of that chunk, in this same conversation. A preview is only a look: it approves nothing, and the final review still covers the whole change. Wait for the answer before building on top of that chunk; work that doesn't depend on it can go on. If the user declines, keep building. If the riskiest chunk got its own branch, that branch's own review replaces the preview.
+- **A look approves nothing.** If the user asks to see a built chunk before the review, show it. The merge review still covers the whole change.
 - **Keep the map current.** When building shows the plan was wrong, because a chunk merges into another, splits, or a new one appears, update the map in the work record. The review starts from the final map and says how it differs from the plan, and why.
 
 More examples: [Planning chunks](references/worked-examples.md#planning-chunks).

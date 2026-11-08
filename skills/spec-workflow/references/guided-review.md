@@ -1,6 +1,6 @@
 # Guided review
 
-Use these rules for Spec Workflow's guided review: a walk through a change with the user, one chunk at a time, so they can question it and decide. It runs for a preview of the riskiest chunk, for a spec before it's accepted, and before every merge, as [Review and merge](../SKILL.md#review-and-merge) describes. Stay in the current conversation.
+Use these rules for Spec Workflow's guided review: a walk through a change with the user, one chunk at a time, so they can question it and decide. It runs for a spec before it's accepted, and before every merge, as [Review and merge](../SKILL.md#review-and-merge) describes. Stay in the current conversation.
 
 ## Establish the comparison
 
@@ -8,9 +8,9 @@ Take the exact base, head, and spec commits from the work record, and verify the
 
 **Why:** the user should judge only what this change adds, and nothing in the diff should surprise you halfway through.
 
-Name the change, its repositories and their worktree paths, and the review scope: spec acceptance, one repository, a coordinated merge, or the final release. A spec review can come before the code, but it doesn't approve the implementation. Code-only work needs no invented spec counterpart. A preview, such as a look at the first built chunk of the chunk map, can discuss unfinished work without calling it ready to merge.
+Name the change, its repositories and their worktree paths, and the review scope: spec acceptance, one repository, a coordinated merge, or the final release. A spec review can come before the code, but it doesn't approve the implementation. Code-only work needs no invented spec counterpart.
 
-For a merge review, check that the [cleanup pass](code-cleanup.md), the [bug review](bug-review.md), and the [test merges](git-operations.md#test-merge-with-open-branches) cover the exact scope and commits, including a recorded "no code cleanup" result or a skip reason where one applies. If one is missing or stale, say so before the first chunk. Include all cleanup edits and bug fixes in the reviewed diff. A preview comes before these steps, so it has none of them, and the review doesn't run them itself.
+For a merge review, check that the [cleanup pass](code-cleanup.md), the [bug review](bug-review.md), and the [test merges](git-operations.md#test-merge-with-open-branches) cover the exact scope and commits, including a recorded "no code cleanup" result or a skip reason where one applies. If one is missing or stale, say so before the first chunk. Include all cleanup edits and bug fixes in the reviewed diff. The review doesn't run these steps itself.
 
 For a [spec and code sync](spec-code-sync.md), include the finding, the accepted decision, and the change's [mode](spec-code-sync.md#use-the-tasks-mode). Explain the affected APIs, consumers, and data, and why old contracts or migrations are kept or removed. `--not-live` allows replacements within the accepted scope; unrelated feature decisions and merge approval still need their usual review.
 
