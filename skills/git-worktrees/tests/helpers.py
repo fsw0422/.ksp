@@ -12,7 +12,8 @@ SCRIPT = Path(__file__).resolve().parent.parent / 'scripts' / 'worktree.py'
 # Ignore the user's git config, such as commit signing, and give commits an author.
 GIT_ENV = {**os.environ, 'GIT_CONFIG_GLOBAL': os.devnull, 'GIT_CONFIG_NOSYSTEM': '1',
            'GIT_AUTHOR_NAME': 'Test', 'GIT_AUTHOR_EMAIL': 'test@example.com',
-           'GIT_COMMITTER_NAME': 'Test', 'GIT_COMMITTER_EMAIL': 'test@example.com'}
+           'GIT_COMMITTER_NAME': 'Test', 'GIT_COMMITTER_EMAIL': 'test@example.com',
+           'GIT_WORKTREES_UNLIST_PAUSE': '0'}  # no VS Code to wait for
 
 # A stand-in for `gh pr list`. It logs each call, fails when told to, and otherwise prints the pull
 # requests saved in head.json or base.json, keeping those listed in the repository it was asked about.
@@ -46,6 +47,12 @@ def git_maybe(cwd, *args):
 def run_script(*args, env=GIT_ENV):
     return subprocess.run([sys.executable, '-I', str(SCRIPT), *map(str, args)],
                           capture_output=True, text=True, env=env)
+
+
+def start_script(*args, **env):
+    """Start the script without waiting for it, with extra environment variables."""
+    return subprocess.Popen([sys.executable, '-I', str(SCRIPT), *map(str, args)], stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE, text=True, env={**GIT_ENV, **env})
 
 
 def commit(folder, name, text, message):

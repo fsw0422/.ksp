@@ -123,13 +123,15 @@ Use the same command when a branch moves to a different parent. The next sync re
 python3 <this skill's folder>/scripts/worktree.py remove <worktree> [--close-prs]
 ```
 
-It runs `git worktree remove`, which refuses a worktree with uncommitted changes, untracked files, or a lock. Then it removes the folder's entry from the same workspace files.
+It first removes the folder's entry from the same workspace files and waits 3 seconds, so VS Code drops the folder while its files still exist. Then it runs `git worktree remove`, which refuses a worktree with uncommitted changes, untracked files, or a lock. If git refuses, the script puts the entry back.
+
+**Why this order:** a language server, such as the IntelliJ one, that sees a listed folder's files vanish can keep that folder's modules in its cache. On its next start it fails on them, with errors such as `can't parse url with authority: file://$WORKSPACE_54$/src/test`.
 
 Then it deals with the branch. When its parent already has all its work, the script deletes the branch here and its copy on the remote, after saving its tip as `refs/recovery/removed/<time>/<branch>`. It fetches first, so a branch merged on the remote, such as through a pull request, counts even before you pull its parent.
 
 ```text
-Removed /Users/kev/projects/ichbinkalt/ichbinkalt-backend-001-initial-pause-limit.
 ichbinkalt.code-workspace: removed
+Removed /Users/kev/projects/ichbinkalt/ichbinkalt-backend-001-initial-pause-limit.
 Deleted branch 001-initial-pause-limit: 001-initial has all its work. Its tip is saved as refs/recovery/removed/2026-11-08-171500/001-initial-pause-limit.
 origin/001-initial-pause-limit: deleted from origin
 ```
@@ -201,5 +203,6 @@ If `gh` can't tell, because it isn't installed or logged in, or the remote isn't
 - **Leases:** every push names the commit it expects on the remote, as in `--force-with-lease=<branch>:<commit>`. If the remote has anything else by then, the push fails instead of overwriting it.
 - Each branch's parent and base live in git config, as `branch.<name>.worktreeParent` and `branch.<name>.worktreeBase`. They follow a renamed branch and go away with a deleted one.
 - **Why the base matters:** the base is the parent commit where a branch's own commits start. A rebase gives commits new IDs, so after a parent is rebased, its old commits still sit under its children, and a plain `git rebase` would try to replay them a second time. Sync replays only the branch's own commits, with `git rebase --onto <parent's head> <base>`. If a branch was rebased by hand, its fork point is newer than the recorded base, and sync uses the fork point instead.
+- `GIT_WORKTREES_UNLIST_PAUSE` sets the wait after the workspace files change, in seconds. The default is 3, and the tests use 0.
 - It needs Python 3 and git. Deleting a branch's copy on GitHub also needs the `gh` CLI, logged in. It reads workspace files with Python's built-in `json`, which can't keep comments, so it leaves a file that has comments for a manual edit instead of rewriting it without them.
 - Tests: `python3 -m unittest discover -s <this skill's folder>/tests`. They run on throwaway repositories.

@@ -6,7 +6,9 @@
   python3 worktree.py remove <worktree> [--close-prs]
 """
 import argparse
+import os
 import sys
+import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))  # so `python3 -I` finds the modules beside this file
@@ -82,12 +84,38 @@ def remove(worktree, close_prs):
     if decision.stop:
         print('\n'.join(decision.notes + decision.stop))
         return False
-    remove_worktree(main, folder)
+    ok, unlisted = unlist(main, folder)
+    try:
+        remove_worktree(main, folder)
+    except GitError:
+        for file in unlisted:
+            print(f'{file.name}: {add_folder(file, folder)} back, because the worktree stays')
+        raise
     print(f'Removed {folder}.')
-    ok = update_workspaces(main, lambda file: remove_folder(file, folder))
     for line in decision.notes + (delete_branch(main, branch, decision.place) if decision.place else []):
         print(line)
     return ok
+
+
+def unlist(main, folder):
+    """Remove the folder from the workspace files, then give VS Code a moment to drop it.
+
+    A language server that sees the files of a folder VS Code still lists vanish can keep
+    that folder's modules in its cache, and fail on its next start. So the folder leaves
+    VS Code while its files still exist. Return False if a file failed, and the files changed.
+    """
+    unlisted = []
+
+    def change(file):
+        outcome = remove_folder(file, folder)
+        if outcome == 'removed':
+            unlisted.append(file)
+        return outcome
+
+    ok = update_workspaces(main, change)
+    if unlisted:
+        time.sleep(float(os.environ.get('GIT_WORKTREES_UNLIST_PAUSE', '3')))
+    return ok, unlisted
 
 
 def update_workspaces(main, change):

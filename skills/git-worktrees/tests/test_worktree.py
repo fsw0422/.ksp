@@ -5,10 +5,11 @@ Run: python3 -m unittest discover -s <this skill's folder>/tests
 import json
 import shutil
 import tempfile
+import time
 import unittest
 from pathlib import Path
 
-from helpers import commit, git, git_maybe, run_script
+from helpers import commit, git, git_maybe, run_script, start_script
 
 
 class WorktreeScriptTest(unittest.TestCase):
@@ -81,6 +82,33 @@ class WorktreeScriptTest(unittest.TestCase):
         self.assertEqual(self.workspace_paths(), ['app', 'zeta'])
         self.assertIn("Kept branch fix/login: it has work that isn't in main", result.stdout)
         git(self.repo, 'show-ref', '--verify', '--quiet', 'refs/heads/fix/login')
+
+    def test_remove_takes_the_folder_out_of_vscode_before_deleting_it(self):
+        run_script('add', self.repo, 'spare', '--from', 'main')
+        folder = self.root / 'app-spare'
+        process = start_script('remove', folder, GIT_WORKTREES_UNLIST_PAUSE='1')
+        unlisted_while_present = False
+        while process.poll() is None:
+            try:
+                unlisted_while_present |= folder.exists() and 'app-spare' not in self.workspace_paths()
+            except json.JSONDecodeError:
+                pass  # read while the script was writing the file
+            time.sleep(0.02)
+        _, stderr = process.communicate()
+        self.assertEqual(process.returncode, 0, stderr)
+        self.assertTrue(unlisted_while_present, 'the folder was deleted while VS Code still listed it')
+        self.assertFalse(folder.exists())
+
+    def test_remove_that_git_refuses_puts_the_entry_back(self):
+        run_script('add', self.repo, 'fix/login', '--from', 'main')
+        folder = self.root / 'app-fix-login'
+        (folder / 'draft.txt').write_text('not saved yet\n')
+        result = run_script('remove', folder)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn('git:', result.stderr)
+        self.assertTrue((folder / 'draft.txt').exists())
+        self.assertEqual(self.workspace_paths(), ['app', 'app-fix-login', 'zeta'])
+        self.assertIn('demo.code-workspace: added back, because the worktree stays', result.stdout)
 
     def test_remove_deletes_a_branch_with_nothing_new(self):
         run_script('add', self.repo, 'spare', '--from', 'main')
