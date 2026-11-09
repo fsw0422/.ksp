@@ -25,7 +25,7 @@ flowchart TD
 
 **Why this order:** a decision written in the spec can be reviewed and reused. Code written first tends to become the decision without anyone choosing it. Reviewing the finished change means the user approves exactly what lands.
 
-Details live in reference files: [Git operations](references/git-operations.md) for commands and checks, [Writing specs](references/writing-specs.md), [Code cleanup](references/code-cleanup.md), [Bug review](references/bug-review.md), [Guided review](references/guided-review.md), [Spec and code sync](references/spec-code-sync.md), and [Project setup](references/project-setup.md). [Worked examples](references/worked-examples.md) explains every rule in more detail, with several examples each.
+Details live in reference files: [Git operations](references/git-operations.md) for commands and checks, [Writing specs](references/writing-specs.md), [Code cleanup](references/code-cleanup.md), [Bug review](references/bug-review.md), [Guided review](references/guided-review.md), which fills the brief for the [guided-review](../guided-review/SKILL.md) skill, [Spec and code sync](references/spec-code-sync.md), and [Project setup](references/project-setup.md). [Worked examples](references/worked-examples.md) explains every rule in more detail, with several examples each.
 
 ## Words used here
 
@@ -239,7 +239,7 @@ Keep integration branches, including `main`, clean outside merges. Make spec and
 
 ## Plan the chunks
 
-Before building, sketch a **chunk map**: the pieces of behavior the change adds, in the order you'll build them. For each chunk, name its behavior, its requirement IDs when the spec has them, and the repositories it touches. Mark the riskiest chunk, and build it as early as its dependencies allow. Keep the map in the work record, and share it when building starts. The user can reorder or split it; wait for their OK only if they asked to approve plans first. While building, keep the map current with the same marks the [guided review](references/guided-review.md#one-chunk-then-a-pause) uses: ✓ built, ▶ being built, ○ planned.
+Before building, sketch a **chunk map**: the pieces of behavior the change adds, in the order you'll build them. For each chunk, name its behavior, its requirement IDs when the spec has them, and the repositories it touches. Mark the riskiest chunk, and build it as early as its dependencies allow. Keep the map in the work record, and share it when building starts. The user can reorder or split it; wait for their OK only if they asked to approve plans first. While building, keep the map current with the same marks the [guided review](../guided-review/SKILL.md#start-every-chunk-with-a-map-and-a-location-line) uses: ✓ built, ▶ being built, ○ planned.
 
 **Why:**
 
@@ -327,7 +327,7 @@ sequenceDiagram
     participant U as User
     participant G as Git
     W->>W: Re-check the parent, run the cleanup pass, bug review, checks, and test merges
-    W->>R: Diff, exact commits, cleanup, bug review, and test merge results, destination
+    W->>R: The brief: exact commits, checks, chunk map, destination
     R->>U: One chunk at a time
     U->>R: Approve for the destination
     R->>W: Review record with the decision
@@ -341,7 +341,7 @@ sequenceDiagram
 3. **Re-check the parent and run the cleanup pass** for the proposed scope, before the final review.
 4. **Run the bug review,** as described in [Find bugs before review](#find-bugs-before-review).
 5. **Test-merge with the other open branches,** as described in [Check for conflicts before review](#check-for-conflicts-before-review).
-6. **Review.** Run the [guided review](references/guided-review.md) in this conversation, from the repositories, the exact parent, head, and spec commits, the cleanup, bug review, and test merge results, the chunk map, and the destination. Reuse a review only while its approval still matches those inputs. **Why:** approval covers exact commits. If they change, nobody approved the new ones.
+6. **Review.** Run the [guided-review](../guided-review/SKILL.md) skill in this conversation, with the brief that [Guided review](references/guided-review.md) describes: the repositories, the exact parent, head, and spec commits, the cleanup, bug review, and test merge results, the chunk map, and the destination. Reuse a review only while its approval still matches those inputs. **Why:** approval covers exact commits. If they change, nobody approved the new ones.
 7. **Squash** each child into its immediate parent as one commit, including the final release merge, following [Git operations](references/git-operations.md). Then push the parent right away if it has a copy on the remote, as a plain push. The merge approval covers that push. **Why:** the parent's history then shows one reviewed commit per change. Pushing at once keeps the remote in step: the child's copy can then be deleted, and the other children's pull requests show only their own work.
 8. **Children first.** A parent can merge into its own parent, or be removed, only after all its children are resolved and removed, at every depth.
 9. **Sync the survivors,** as described in [Keep children on their parent's head](#keep-children-on-their-parents-head).

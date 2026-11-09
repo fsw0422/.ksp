@@ -160,22 +160,7 @@ Where the new section sits doesn't matter much, so the agent moves it to the end
 
 Approval is for exact commits. That's why the review comes after the cleanup pass, and why any later change to those commits sends the affected part back to review.
 
-**Example: the start of a chunk.** The user first sees where they are:
-
-```mermaid
-flowchart LR
-    C1[✓ Save audio] --> C2[▶ Restore audio] --> C3[○ Retry on failure]
-    classDef current stroke-width:4px
-    class C2 current
-```
-
-Then the worktree and branch, such as "Worktree: `backend-initial-class-recovery`, linked to its folder · Branch: `initial-class-recovery`", and then the chunk itself: what changed, with its key lines as a diff, why, how it's used, and how to judge it. It ends with one line of choices: `next`, `line by line`, or any question.
-
-**Example: which code goes in the chat.** The chunk "Restore audio" changes `restoreClass.ts`, its test, and a logging helper, and renames `audioList` to `audioChunks` in 8 other files. The chat shows the lines in `restoreClass.ts` that load and sort the audio, with two notes, and the test line that checks the order. It shows the rename once and lists the other 7 files. The logging helper gets one sentence. When the user replies "line by line", the agent shows the helper's lines as a diff with notes, and waits.
-
-**Example: a spec chunk.** A chunk raises the Pause limit in the spec from 3 to 5. A diff of the spec's long lines would scroll sideways, so the chat quotes the wording instead: before, "A Class allows 3 Pauses"; after, "A Class allows 5 Pauses".
-
-**Example: "looks good" in the middle.** After chunk 2, the user says "looks good". The agent marks chunk 2 as accepted and shows chunk 3. That covers chunk 2 only. The merge needs its own approval at the end, for a named destination, such as "approve for `initial`".
+The [guided-review](../../guided-review/SKILL.md) skill shows what a chunk looks like, and its [examples](../../guided-review/references/examples.md) cover which code goes in the chat, a prose chunk, and "looks good" in the middle. The examples below are Spec Workflow's own.
 
 **Example: a merge that fails halfway.** The approved change touches specs, backend, and frontend. The specs squash succeeds and is recorded, then the backend squash succeeds and is recorded, then the frontend squash hits a conflict. The agent saves the conflict state and resolves it. If the resolution changed anything the user approved, it shows that part again. When it resumes, it continues with frontend only, because specs and backend are already done.
 

@@ -59,13 +59,13 @@ Save the complete child change in a commit, within the user's authorization. Rec
 git diff <base> <head>
 ```
 
-Check `git status` so intended uncommitted or untracked files aren't left out. Then run the [test merges](#test-merge-with-open-branches) on the committed head. Start the [guided review](guided-review.md) from the repositories, the base, head, and spec SHAs, the scope, the checks including the test merge results, the chunk map, and the destination. A checkpoint doesn't approve a merge. If the work is already committed, don't create an empty commit to mark it approved.
+Check `git status` so intended uncommitted or untracked files aren't left out. Then run the [test merges](#test-merge-with-open-branches) on the committed head. Start the [guided review](guided-review.md) with its brief: the repositories, the base, head, and spec SHAs, the scope, the checks including the test merge results, the chunk map, and the destination. A checkpoint doesn't approve a merge. If the work is already committed, don't create an empty commit to mark it approved.
 
 **Why:** the review must cover exact commits. Anything uncommitted, or changed afterwards, isn't what the user reviewed.
 
 Before merging, verify that:
 
-- the [review record](guided-review.md#review-record) covers the current inputs and destination
+- the [review record](guided-review.md#the-review-record) covers the current inputs and destination
 - the cleanup result covers the same inputs and merge scope, or records why no code cleanup applies
 - the bug review covers the current code, or records why it was skipped
 - the parent is clean, and every child below the merging branch is resolved and removed

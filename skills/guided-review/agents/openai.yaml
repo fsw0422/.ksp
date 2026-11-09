@@ -1,0 +1,4 @@
+interface:
+  display_name: "Guided Review"
+  short_description: "Walk through a change one chunk at a time, with its code as diffs"
+  default_prompt: "Use $guided-review to walk me through this change one chunk at a time: show the changed code, explain why each part changed, and wait for me between chunks."

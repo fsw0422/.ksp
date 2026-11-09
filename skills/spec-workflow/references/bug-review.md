@@ -54,4 +54,4 @@ An edit the user asks for during the guided review gets the same: its tests, the
 
 ## Record the result
 
-For each repository, record in the work record the level, each fix and its commit, the re-review and what it found, each plausible issue and its chunk, the findings outside scope, and the heads the review covered. The [guided review](guided-review.md) shows each finding in its chunk.
+For each repository, record in the work record the level, each fix and its commit, the re-review and what it found, each plausible issue and its chunk, the findings outside scope, and the heads the review covered. The [guided review](guided-review.md) shows each finding in its chunk, as the [guided-review](../../guided-review/SKILL.md#explain-the-chunk) skill describes.
