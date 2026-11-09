@@ -6,6 +6,19 @@ More examples for the [guided review](../SKILL.md)'s rules. All are made up.
 
 The chunk "Lock after 5 failures" changes `limiter.py`, its test, and a logging helper, and renames `attempts` to `failures` in 8 other files. The chat shows the lines in `limiter.py` that count and lock, with two notes, and the test line that checks the limit. It shows the rename once and lists the other 7 files. The logging helper gets one sentence. When the user replies "line by line", the agent shows the helper's lines as a diff with notes, and waits.
 
+## Line numbers in a diff
+
+When the user replies "line by line", the agent shows the logging helper. Its hunk header, `@@ -38,3 +40,3 @@`, says the hunk starts at line 40 of the head file, and `git show 8d41e07:auth/log.py | cat -n | sed -n '40,42p'` prints those lines with their numbers:
+
+```diff
+  40  def log_failure(account):
+-         logger.info("failed login %s", account.id)
++ 41      logger.info("failed login %s, %d in a row", account.id, account.failures)
+  42      metrics.count("login.failure")
+```
+
+The removed line has no number, because it isn't in the head file. Line 41 replaced it.
+
 ## A prose chunk
 
 A chunk raises the lock time in the spec from 15 to 30 minutes. A diff of the spec's long lines would scroll sideways, so the chat quotes the wording instead: before, "A locked account opens again after 15 minutes"; after, "A locked account opens again after 30 minutes".

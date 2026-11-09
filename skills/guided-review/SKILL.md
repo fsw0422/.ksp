@@ -91,12 +91,14 @@ For the current chunk, explain each of these in detail, in easy words, with as m
 **Show the code itself, not only a link.** Under What changed, show the lines that carry the chunk's decision as a `diff` block, plus the test lines that check it. That's usually 5 to 20 lines.
 
 - Above the block, name the file, its lines, and the commit. A link to the file can follow as an extra.
-- Under the block, explain the important lines in short notes, each naming the code it explains.
+- Put each line's number in the head file right after its `+` or space, as in the example below. A removed line has no number, because it isn't in the head file. The `+` or `-` stays first, so the chat still colors the lines.
+- Take the numbers from Git, not by counting. A hunk header such as `@@ -38,3 +40,3 @@` says the hunk starts at line 40 of the head file. `git show <head>:<file> | cat -n | sed -n '40,42p'` prints those lines with their numbers, in the diff's order without the removed lines, so each number goes on the diff line with the same text.
+- Under the block, explain the important lines in short notes, each pointing at its line by number, such as "Line 22 starts the count again".
 - Cut unrelated lines, and mark the cut with `…`. For an edit repeated in many places, such as a rename, show one example and list the other files.
 - Name the chunk's other changed lines in a sentence. Their diffs come in line by line, if the user asks for it.
 - For a spec or other prose, quote the new wording, and the old wording when it matters, instead of a diff. Code blocks don't wrap, so a diff of long lines scrolls sideways, worst on a phone.
 
-**Why:** a link opens the whole file as it is today, not the change, and its line numbers drift after edits and rebases. It often can't open at all: the desktop app opens only files inside the session's folders, and a phone may not open it. The user approves the code, so they need to see the code, not only a description of it.
+**Why:** a link opens the whole file as it is today, not the change, and its line numbers drift after edits and rebases. It often can't open at all: the desktop app opens only files inside the session's folders, and a phone may not open it. The user approves the code, so they need to see the code, not only a description of it. Line numbers let a note or a question point at a line, such as "line 22", and let the user find it in the IDE.
 
 A chunk might start with this map, sent as an image (made up):
 
@@ -124,21 +126,21 @@ Where images can't be sent, the same map as text:
 > `auth/limiter.py`, lines 18–23, at `8d41e07`:
 >
 > ```diff
->  def record_failure(account):
->      account.failures += 1
-> +    if account.failures >= MAX_FAILURES:
-> +        account.locked_until = now() + LOCK_TIME
-> +        account.failures = 0
->      save(account)
+>   18  def record_failure(account):
+>   19      account.failures += 1
+> + 20      if account.failures >= MAX_FAILURES:
+> + 21          account.locked_until = now() + LOCK_TIME
+> + 22          account.failures = 0
+>   23      save(account)
 > ```
 >
 > - `MAX_FAILURES` is 5 and `LOCK_TIME` is 15 minutes, both set at the top of the file.
-> - `account.failures = 0` starts the count again, so the first wrong password after the lock doesn't lock the account at once.
+> - Line 22 starts the count again, so the first wrong password after the lock doesn't lock the account at once.
 >
 > `tests/test_limiter.py`, line 31, the test that checks the limit:
 >
 > ```diff
-> +    assert locked_after(failures=5) and not locked_after(failures=4)
+> + 31      assert locked_after(failures=5) and not locked_after(failures=4)
 > ```
 >
 > **Why:** AUTH-88's second criterion: 5 failed logins in a row lock the account for 15 minutes.
@@ -154,6 +156,24 @@ When the brief names extra rules, such as a domain glossary or team conventions,
 Use a small Mermaid diagram when it helps, sent as an image like the map: a call hierarchy for usage, a sequence diagram for ordering, a data-flow diagram for transformations, or a state diagram or flowchart for lifecycle choices. Label real calls, payloads, and failure paths, and mark anything unverified. Don't invent a call graph, defend unnecessary complexity, or force a diagram onto a trivial rename. Check diagrams the change adds or edits in files with the mermaid-image script, and don't claim a diagram renders if you haven't checked. Without mermaid-image, say that it wasn't checked.
 
 > For the chunk above, a sequence diagram would show `login()`, `record_failure()`, and the account store, with a locked account's "Try again at 14:35" drawn as its own arrow back to the user.
+
+**Show other code the same way.** When you show code to explain it, not as a diff, such as a caller under How it's used or an answer to "show callers", use a block for its language. Put each line's number in front of it, from `git show <head>:<file> | cat -n`, and name the file, its lines, and the commit above the block.
+
+> For the chunk above, the user asks where `record_failure()` is called:
+>
+> `auth/login.py`, lines 31–36, at `8d41e07`:
+>
+> ```python
+> 31  def login(account, password):
+> 32      if account.locked_until and account.locked_until > now():
+> 33          return locked_message(account)
+> 34      if not check_password(account, password):
+> 35          record_failure(account)
+> 36          return WRONG_PASSWORD
+> ```
+>
+> - Line 32 checks the lock before the password, so a locked account gets "Try again at 14:35", even with the right password.
+> - Line 35 is the only call to `record_failure()`.
 
 ## Pause after each chunk
 
@@ -176,7 +196,7 @@ flowchart TD
 
 | What the user says | What happens |
 | --- | --- |
-| Next / continue | Move on by one line in line mode, or one chunk in chunk mode. This never approves the whole change |
+| Next / continue | Move on by one group in line mode, or one chunk in chunk mode. This never approves the whole change |
 | Why / show callers / what if it fails | Stay on this chunk and explain the requested path |
 | Line by line | Go through the chunk's other changed lines in small groups of about 10 lines or one function. Show each group as a diff with notes, and wait between steps |
 | Looks good / approve this chunk | Record this chunk as accepted and present the next one. It covers only this chunk, not the whole change |
@@ -210,8 +230,8 @@ When coverage is complete or explicitly waived, recap the scope, open issues, ch
 ## Check before you send
 
 - **The first reply** names the comparison, from the merge base to a pinned head, and where each input came from. It flags each gap. If the change has code and no bug review covered it, one ran first.
-- **Each chunk** starts with the progress map, then the location line, then the title. It covers what changed, why, how it's used, and how to judge it, with the key lines as a `diff` and the file, lines, and commit above them.
-- **Each reply** explains one chunk at most, and ends with one line of choices.
+- **Each chunk** starts with the progress map, then the location line, then the title. It covers what changed, why, how it's used, and how to judge it, with the key lines as a `diff` and the file, lines, and commit above them. Each line-by-line step shows its lines the same way, after the location line.
+- **Each reply** explains one chunk at most, and ends with one line of choices. Each line of code it shows has its number from Git, except a removed line.
 - **Never** take "next" or "looks good" as approval of the whole change, or show the base branch's newer commits as part of the change. Never edit, switch branches, commit, push, or post unless the brief or the user allows it.
 
 More examples, such as which code goes in the chat: [Examples](references/examples.md).
