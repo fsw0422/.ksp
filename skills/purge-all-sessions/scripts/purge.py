@@ -279,8 +279,9 @@ def cmd_plan(a):
         purge_x, rm_x, filt_x, sql = plan_codex()
     rm_p = [] if a.no_playwright else plan_playwright(a.playwright_profile, a.min_age)
     rm = sorted({safe(p, a.platform) for p in rm_c + rm_x + rm_p})
+    filt = [f for f in filt_c + filt_x if f['ids'] and os.path.exists(f['path'])]
     man = {'version': 2, 'platform': a.platform, 'created': time.time(), 'rm': rm,
-           'filter': filt_c + filt_x, 'sql': sql, 'codex_ids': sorted(purge_x)}
+           'filter': filt, 'sql': sql, 'codex_ids': sorted(purge_x)}
     job_tmp = os.environ.get('CLAUDE_JOB_DIR')
     path = a.manifest or os.path.join(job_tmp + '/tmp' if job_tmp else tempfile.gettempdir(), 'purge-manifest.json')
     json.dump(man, open(path, 'w'))
@@ -321,10 +322,10 @@ def cmd_apply(a):
         n += 1
     print('deleted', n, 'items')
     for f in man['filter']:
-        p = safe_file(f['path'], platform)
         ids = set(f['ids'])
-        if not os.path.exists(p) or not ids:
+        if not ids or not os.path.exists(f['path']):
             continue
+        p = safe_file(f['path'], platform)
         keep, dropped = [], 0
         for line, d in read_jsonl(p):
             if d is not None and d.get(f['key']) in ids:
