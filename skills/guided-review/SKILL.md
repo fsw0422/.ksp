@@ -91,8 +91,7 @@ For the current chunk, explain each of these in detail, in easy words, with as m
 **Show the code itself, not only a link.** Under What changed, show the lines that carry the chunk's decision as a `diff` block, plus the test lines that check it. That's usually 5 to 20 lines.
 
 - Above the block, name the file, its lines, and the commit. A link to the file can follow as an extra.
-- Put each line's number in the head file right after its `+` or space, as in the example below. A removed line has no number, because it isn't in the head file. The `+` or `-` stays first, so the chat still colors the lines.
-- Take the numbers from Git, not by counting. A hunk header such as `@@ -38,3 +40,3 @@` says the hunk starts at line 40 of the head file. `git show <head>:<file> | cat -n | sed -n '40,42p'` prints those lines with their numbers, in the diff's order without the removed lines, so each number goes on the diff line with the same text.
+- Number the lines from the reviewed head, not by counting. A hunk header such as `@@ -38,3 +40,3 @@` says the hunk starts at line 40 of the head file, and `git show <head>:<file> | cat -n | sed -n '40,42p'` prints those lines with their numbers, in the diff's order without the removed lines.
 - Under the block, explain the important lines in short notes, each pointing at its line by number, such as "Line 22 starts the count again".
 - Cut unrelated lines, and mark the cut with `…`. For an edit repeated in many places, such as a rename, show one example and list the other files.
 - Name the chunk's other changed lines in a sentence. Their diffs come in line by line, if the user asks for it.
@@ -157,7 +156,7 @@ Use a small Mermaid diagram when it helps, sent as an image like the map, or as 
 
 > For the chunk above, a sequence diagram would show `login()`, `record_failure()`, and the account store, with a locked account's "Try again at 14:35" drawn as its own arrow back to the user.
 
-**Show other code the same way.** When you show code to explain it, not as a diff, such as a caller under How it's used or an answer to "show callers", use a block for its language. Put each line's number in front of it, from `git show <head>:<file> | cat -n`, and name the file, its lines, and the commit above the block.
+**Show other code the same way.** When you show code to explain it, not as a diff, such as a caller under How it's used or an answer to "show callers", use a block for its language, numbered from the reviewed head, with the file, its lines, and the commit above it.
 
 > For the chunk above, the user asks where `record_failure()` is called:
 >
