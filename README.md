@@ -18,8 +18,8 @@ switches you want, and put machine-local exports in `~/.zlogin`:
 
 ```zsh
 # ~/.zshenv
-KSP_PLUGIN_OP_SECRETS=1   # 1Password secrets loader for tmux panes and IDE terminals
-OP_SECRETS_VAULT=Employee # vault op-secrets reads from
+KSP_PLUGIN_OP_SECRETS=1              # 1Password secrets loader for tmux panes and IDE terminals
+KSP_PLUGIN_OP_SECRETS_VAULT=Employee # vault op-secrets reads from
 ```
 
 A switch that is unset or `0` skips that plugin. Details and all config knobs
@@ -31,7 +31,7 @@ Set the switches in `~/.zshenv`, not `~/.zprofile`: only login shells run
 ### plugins/op-secrets.zsh
 
 Templateless 1Password secrets loader. Every **API Credential** item in
-`$OP_SECRETS_VAULT` becomes an env var named after its title
+`$KSP_PLUGIN_OP_SECRETS_VAULT` becomes an env var named after its title
 (`"Grafana API Key"` → `GRAFANA_API_KEY`), read from the item's built-in
 `credential` field. Every tmux pane and IDE terminal (VS Code, JetBrains)
 loads its own copy from 1Password at startup; other shells never touch
@@ -40,9 +40,9 @@ reach the others.
 
 Loading runs in the background, so the prompt appears at once, and the first
 command waits until the secrets are in. It keeps trying for
-`$OP_SECRETS_BOOT_WAIT` seconds (default 120), for example while 1Password is
-locked. If it still fails, the shell says so, and `refresh-op-secrets` loads
-them later.
+`$KSP_PLUGIN_OP_SECRETS_BOOT_WAIT` seconds (default 120), for example while
+1Password is locked. If it still fails, the shell says so, and
+`refresh-op-secrets` loads them later.
 
 - Add a secret: create an API Credential item in the vault, run
   `refresh-op-secrets`. That shell gets it now, and new shells from then on.

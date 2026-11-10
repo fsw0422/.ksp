@@ -9,12 +9,12 @@
 # (variable names and titles — never values) is cached on disk to skip the
 # ~3s `op item list`; new or renamed items are picked up by running
 # refresh-op-secrets, which relists live and rewrites the cache.
-OP_SECRETS_VAULT=${OP_SECRETS_VAULT:-Employee}
+KSP_PLUGIN_OP_SECRETS_VAULT=${KSP_PLUGIN_OP_SECRETS_VAULT:-Employee}
 _OP_SECRETS_ROWS_CACHE="$HOME/.cache/op-secrets/rows.tsv"
 
 _op_secret_rows_live() {
 	setopt localoptions pipefail
-	op item list --vault "$OP_SECRETS_VAULT" --categories "API Credential" --format json | jq -r 'sort_by(.title)[] | [(.title | ascii_upcase | gsub("[^A-Z0-9]+"; "_") | gsub("^_+|_+$"; "")), .title] | @tsv'
+	op item list --vault "$KSP_PLUGIN_OP_SECRETS_VAULT" --categories "API Credential" --format json | jq -r 'sort_by(.title)[] | [(.title | ascii_upcase | gsub("[^A-Z0-9]+"; "_") | gsub("^_+|_+$"; "")), .title] | @tsv'
 }
 
 _op_secrets_rows() {
@@ -77,11 +77,11 @@ _op_secrets_read_all() {
 		names+=("$var")
 		if (( first )); then
 			first=0
-			value=$(op read "op://$OP_SECRETS_VAULT/$title/credential" 2>/dev/null) || return 1
+			value=$(op read "op://$KSP_PLUGIN_OP_SECRETS_VAULT/$title/credential" 2>/dev/null) || return 1
 			[[ -n "$value" ]] || return 1
 			vals[$var]=$value
 		else
-			exec {fd}< <(op read "op://$OP_SECRETS_VAULT/$title/credential" 2>/dev/null)
+			exec {fd}< <(op read "op://$KSP_PLUGIN_OP_SECRETS_VAULT/$title/credential" 2>/dev/null)
 			fds+=("$fd")
 			fvars+=("$var")
 		fi
@@ -174,7 +174,7 @@ _op_secrets_apply() {
 	(( removed )) && changes+=("$removed removed")
 	local summary="no changes"
 	(( ${#changes} )) && summary="${(j:, :)changes}"
-	_OP_SECRETS_SUMMARY="loaded ${#names} secrets from vault '$OP_SECRETS_VAULT' ($summary)"
+	_OP_SECRETS_SUMMARY="loaded ${#names} secrets from vault '$KSP_PLUGIN_OP_SECRETS_VAULT' ($summary)"
 	return 0
 }
 
@@ -202,7 +202,7 @@ refresh-op-secrets() {
 	local rows sep out
 	rows=$(_op_secret_rows_live) || return 1
 	if [[ -z "$rows" ]]; then
-		print -u2 "refresh-op-secrets: no API Credential items in vault '$OP_SECRETS_VAULT'."
+		print -u2 "refresh-op-secrets: no API Credential items in vault '$KSP_PLUGIN_OP_SECRETS_VAULT'."
 		return 1
 	fi
 	_op_secrets_write_cache "$rows"
@@ -233,6 +233,6 @@ _op_secrets_wanted_env() {
 if [[ -o interactive ]] && _op_secrets_wanted_env; then
 	autoload -Uz add-zsh-hook
 	_OP_SECRETS_SEP=$(uuidgen)
-	exec {_OP_SECRETS_FD}< <(_op_secrets_emit "$_OP_SECRETS_SEP" $(( $(date +%s) + ${OP_SECRETS_BOOT_WAIT:-120} )) 2>/dev/null)
+	exec {_OP_SECRETS_FD}< <(_op_secrets_emit "$_OP_SECRETS_SEP" $(( $(date +%s) + ${KSP_PLUGIN_OP_SECRETS_BOOT_WAIT:-120} )) 2>/dev/null)
 	add-zsh-hook preexec _op_secrets_drain
 fi
