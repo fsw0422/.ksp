@@ -96,6 +96,26 @@ checkout, as `<repo folder>-<branch>`. It copies the `.env` and keeps a VS Code
 it instead of Claude Code's own worktree features, which put worktrees inside
 the repository. It needs only Python 3 and git.
 
+### Purging sessions
+
+`purge-all-sessions` deletes AI session data for good, in two ways:
+
+- **Dead sessions:** ask Claude or Codex to purge old sessions. It removes only
+  hidden or archived ones on that platform, and keeps every live one.
+- **Everything:** `scripts/wipe.py` wipes all Claude Code and Codex session
+  data: transcripts, tool outputs, logs, caches, prompt history, and the
+  session details kept in `~/.claude.json` and `~/.codex/config.toml`.
+  Settings, logins, skills, plugins, and memory stay. Quit both tools first,
+  because it refuses to delete while one is running:
+
+  ```sh
+  python3 -I ~/.ksp/skills/purge-all-sessions/scripts/wipe.py        # dry run
+  python3 -I ~/.ksp/skills/purge-all-sessions/scripts/wipe.py --yes  # delete
+  ```
+
+  `--claude-only` and `--codex-only` limit it to one tool. Asking Claude or
+  Codex to wipe everything gets you the dry run and this command.
+
 ## Global instructions and settings
 
 The shared user-level instructions live here in `AGENTS.md`.
