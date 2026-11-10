@@ -1,4 +1,4 @@
 interface:
   display_name: "Mermaid Image"
-  short_description: "Turn Mermaid diagrams into PNG images offline"
+  short_description: "Show diagrams as PNG images, or ASCII where images can't be sent"
   default_prompt: "Use $mermaid-image to turn this diagram into an image."
