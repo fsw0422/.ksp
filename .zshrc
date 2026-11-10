@@ -6,6 +6,10 @@ is_vscode_session() {
 	[[ "${TERM_PROGRAM}" == "vscode" || -n "${VSCODE_IPC_HOOK_CLI}" || -n "${VSCODE_GIT_IPC_HANDLE}" || -n "${VSCODE_INJECTION}" || -n "${VSCODE_SHELL_INTEGRATION}" ]]
 }
 
+is_jetbrains_session() {
+	[[ "${TERMINAL_EMULATOR}" == "JetBrains-JediTerm" ]]
+}
+
 # Claude desktop app Terminal tabs would each join the shared tmux session as
 # another client. tmux sizes the window to the newest client, so a small tab
 # (often 80x24) shrinks the real terminal and fills the rest with dots.
@@ -13,31 +17,27 @@ is_claude_desktop_session() {
 	[[ "${TERM_PROGRAM}" == "claude-desktop" ]]
 }
 
-# JetBrains IDEs set INTELLIJ_ENVIRONMENT_READER when they launch a background
-# shell to read environment variables. That shell is not a real terminal session,
-# so skip terminal UI setup like tmux, prompts, and completions during that pass.
-is_intellij_environment_reader() {
-	[[ -n "${INTELLIJ_ENVIRONMENT_READER}" ]]
-}
-
-# VS Code sets VSCODE_RESOLVING_ENVIRONMENT when resolving shell env vars, but
-# real VS Code terminals can inherit it too. Only treat it as the resolver when
-# stdout is not a terminal, then skip terminal UI setup during that background pass.
-is_vscode_environment_reader() {
-	[[ -n "${VSCODE_RESOLVING_ENVIRONMENT}" && ! -t 1 ]]
-}
-
+# Editors launch a background shell to read environment variables. That shell is
+# not a real terminal session, so skip terminal UI setup like tmux, prompts, and
+# completions during that pass.
+# - JetBrains IDEs set INTELLIJ_ENVIRONMENT_READER for it.
+# - VS Code sets VSCODE_RESOLVING_ENVIRONMENT, but real VS Code terminals can
+#   inherit it too, so only count it when stdout is not a terminal.
 is_editor_environment_reader() {
-	is_intellij_environment_reader || is_vscode_environment_reader
+	[[ -n "${INTELLIJ_ENVIRONMENT_READER}" || ( -n "${VSCODE_RESOLVING_ENVIRONMENT}" && ! -t 1 ) ]]
 }
 
-# Load any plugins that are enabled. Must happen before the tmux block below:
-# its exec replaces this shell, so anything later in this file never runs in
-# the terminal's initial shell (op-secrets' 1Password waiter must fire here).
+# Load any plugins that are enabled. Kept before the tmux block below so they
+# also load in the terminal's initial shell: that block's exec replaces the
+# shell, so anything later in this file never runs there.
 [[ -r ~/.ksp/load-plugins.zsh ]] && source ~/.ksp/load-plugins.zsh
 
 # Start TMUX
-if [[ -z "${TMUX}" && "${TERMINAL_EMULATOR}" != "JetBrains-JediTerm" && -z "${SSH_CONNECTION}" ]] && ! is_vscode_session && ! is_claude_desktop_session && ! is_editor_environment_reader; then
+if [[ -z "${TMUX}" && -z "${SSH_CONNECTION}" ]] \
+	&& ! is_jetbrains_session \
+	&& ! is_vscode_session \
+	&& ! is_claude_desktop_session \
+	&& ! is_editor_environment_reader; then
 	tmux_session_name="${TMUX_SESSION_NAME:-main}"
 
 	tmux new-session -d -s "${tmux_session_name}" 2>/dev/null
@@ -55,7 +55,7 @@ if [[ -n "${TMUX}" ]] \
 fi
 
 # Disable Vim in IDEs
-if [[ "${TERMINAL_EMULATOR}" == "JetBrains-JediTerm" ]] || is_vscode_session; then
+if is_jetbrains_session || is_vscode_session; then
 	view() {
 		echo "Error: vim should be executed in a dedicated terminal." >&2
 		return 1

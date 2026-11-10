@@ -9,16 +9,16 @@ untracked dotfiles in `$HOME`. Startup order is the contract:
 
 | File | Runs | Role |
 |---|---|---|
-| `~/.zprofile` (untracked) | login, before `.zshrc` | per-machine plugin switches + plugin config |
+| `~/.zshenv` (untracked) | every shell, before `.zshrc` | per-machine plugin switches + plugin config |
 | `~/.zshrc` (this repo) | every interactive shell | sources `load-plugins.zsh` |
-| `~/.zlogin` (untracked) | login, after `.zshrc` | machine-local env vars — may rely on plugin-provided values (e.g. secrets) |
+| `~/.zlogin` (untracked) | login, after `.zshrc` | machine-local env vars — can't use op-secrets values, which arrive at the first command |
 
-New machine setup: clone this repo to `~/.ksp`, create `~/.zprofile` with the
+New machine setup: clone this repo to `~/.ksp`, create `~/.zshenv` with the
 switches you want, and put machine-local exports in `~/.zlogin`:
 
 ```zsh
-# ~/.zprofile
-KSP_PLUGIN_OP_SECRETS=1   # 1Password → tmux-cached secrets loader
+# ~/.zshenv
+KSP_PLUGIN_OP_SECRETS=1   # 1Password secrets loader for tmux panes and IDE terminals
 KSP_PLUGIN_AI_PURGE=1     # purge-ai-sessions: wipe Claude Code / Codex session data
 OP_SECRETS_VAULT=Employee # vault op-secrets reads from
 ```
@@ -26,21 +26,35 @@ OP_SECRETS_VAULT=Employee # vault op-secrets reads from
 A switch that is unset or `0` skips that plugin. Details and all config knobs
 are documented in each plugin's header comment.
 
+Set the switches in `~/.zshenv`, not `~/.zprofile`: only login shells run
+`.zprofile`, so a plain `zsh` or `exec zsh` would start without the plugins.
+
 ### plugins/op-secrets.zsh
 
 Templateless 1Password secrets loader. Every **API Credential** item in
 `$OP_SECRETS_VAULT` becomes an env var named after its title
 (`"Grafana API Key"` → `GRAFANA_API_KEY`), read from the item's built-in
-`credential` field. Values resolve once per tmux server and are published to
-the tmux global environment; panes inherit without re-authenticating.
+`credential` field. Every tmux pane and IDE terminal (VS Code, JetBrains)
+loads its own copy from 1Password at startup; other shells never touch
+1Password. Nothing is shared through tmux, and a change in one shell does not
+reach the others.
+
+Loading runs in the background, so the prompt appears at once, and the first
+command waits until the secrets are in. It keeps trying for
+`$OP_SECRETS_BOOT_WAIT` seconds (default 120), for example while 1Password is
+locked. If it still fails, the shell says so, and `refresh-op-secrets` loads
+them later.
 
 - Add a secret: create an API Credential item in the vault, run
-  `refresh-op-secrets`.
-- Rotate a secret: change it in 1Password, run `refresh-op-secrets` once —
-  every open pane re-imports at its next prompt (epoch + precmd hook).
+  `refresh-op-secrets`. That shell gets it now, and new shells from then on.
+- Rotate a secret: change it in 1Password. New shells read the new value; an
+  open shell gets it when you run `refresh-op-secrets` there.
   Long-running processes keep the env they started with; restart them if they
   cache the value.
-- Item titles are load-bearing: renaming an item renames the env var.
+- Item titles are load-bearing: renaming an item renames the env var. Run
+  `refresh-op-secrets` after a rename.
+- Only the item list (variable names and titles, never values) is cached, in
+  `~/.cache/op-secrets/`. Values are read from 1Password every time.
 
 ### plugins/ai-purge.zsh
 
