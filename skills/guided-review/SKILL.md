@@ -153,7 +153,7 @@ Where images can't be sent, the same map as text:
 
 When the brief names extra rules, such as a domain glossary or team conventions, check each chunk they apply to against them. Show how the chunk meets them, with a small table or diagram when it helps, and flag what breaks them.
 
-Use a small Mermaid diagram when it helps, sent as an image like the map: a call hierarchy for usage, a sequence diagram for ordering, a data-flow diagram for transformations, or a state diagram or flowchart for lifecycle choices. Label real calls, payloads, and failure paths, and mark anything unverified. Don't invent a call graph, defend unnecessary complexity, or force a diagram onto a trivial rename. Check diagrams the change adds or edits in files with the mermaid-image script, and don't claim a diagram renders if you haven't checked. Without mermaid-image, say that it wasn't checked.
+Use a small Mermaid diagram when it helps, sent as an image like the map, or as ASCII where images can't be sent: a call hierarchy for usage, a sequence diagram for ordering, a data-flow diagram for transformations, or a state diagram or flowchart for lifecycle choices. Label real calls, payloads, and failure paths, and mark anything unverified. Don't invent a call graph, defend unnecessary complexity, or force a diagram onto a trivial rename. Check diagrams the change adds or edits in files with the mermaid-image script, and don't claim a diagram renders if you haven't checked. Without mermaid-image, say that it wasn't checked.
 
 > For the chunk above, a sequence diagram would show `login()`, `record_failure()`, and the account store, with a locked account's "Try again at 14:35" drawn as its own arrow back to the user.
 
