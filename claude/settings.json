@@ -13,6 +13,7 @@
   },
   "tui": "fullscreen",
   "preferredNotifChannel": "iterm2",
+  "agentPushNotifEnabled": true,
   "autoMemoryEnabled": false,
   "autoDreamEnabled": false,
   "hooks": {
