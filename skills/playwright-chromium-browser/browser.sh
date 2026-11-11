@@ -71,7 +71,9 @@ start() {
 	# The mock keychain and basic password store match Playwright's own launch, so the
 	# profile's saved sign-ins stay readable. The four flags after them also match it,
 	# so the profile's installed extensions (Claude in Chrome among them) and default
-	# apps stay off and cannot open tabs of their own. The last three keep tabs that
+	# apps stay off and cannot open tabs of their own. --disable-infobars hides Chrome
+	# for Testing's "only for automated testing" bar, which shows on every window,
+	# along with Chrome's other infobars. The last three keep tabs that
 	# are not in front running at full speed. It opens one blank tab instead of using
 	# --no-startup-window: a browser started without a window ignores Cmd+Q and the
 	# Dock icon. tidy closes that blank tab once an agent opens a real page.
@@ -86,6 +88,7 @@ start() {
 		--disable-search-engine-choice-screen \
 		--no-first-run \
 		--no-default-browser-check \
+		--disable-infobars \
 		--disable-background-timer-throttling \
 		--disable-backgrounding-occluded-windows \
 		--disable-renderer-backgrounding \
