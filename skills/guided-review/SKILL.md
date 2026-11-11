@@ -86,7 +86,7 @@ For the current chunk, explain each of these in detail, in easy words, with as m
 - **What changed:** before and after in words, then the code itself, as described below.
 - **Why:** the requirement, defect, or tradeoff, from the brief's why. Separate evidence from guesses about past intent.
 - **How it's used:** real callers, data movement, side effects, and failure paths.
-- **How to judge it:** simpler alternatives, the checks that actually ran, each check's findings for this chunk, and open questions. Say what a check confirmed and how it was fixed. Give each plausible issue with a suggested change, for the user to accept or reject.
+- **Before you accept it:** simpler alternatives, the checks that actually ran, each check's findings for this chunk, and open questions. Say what a check confirmed and how it was fixed. Give each plausible issue with a suggested change, for the user to accept or reject.
 
 **Show the code itself, not only a link.** Under What changed, show the lines that carry the chunk's decision as a `diff` block, plus the test lines that check it. That's usually 5 to 20 lines.
 
@@ -146,7 +146,7 @@ Where images can't be sent, the same map as text:
 >
 > **How it's used:** `login()` calls `record_failure()` after a wrong password, and checks `locked_until` before it checks the password. A locked account gets "Try again at 14:35", not "Wrong password".
 >
-> **How to judge it:** a simpler option is a delay after each failure, but that ties up a worker for every attempt. CI ran with 42 passing tests. The bug review found one plausible issue: two logins at the same moment can both read 4 failures, so a sixth try gets through. Suggested change: increase the count in the database, in one step. Accept it, or keep the current behavior?
+> **Before you accept it:** a simpler option is a delay after each failure, but that ties up a worker for every attempt. CI ran with 42 passing tests. The bug review found one plausible issue: two logins at the same moment can both read 4 failures, so a sixth try gets through. Suggested change: increase the count in the database, in one step. Make that change, or keep the current behavior?
 >
 > Reply `next` or `line by line`, or ask anything.
 
@@ -229,7 +229,7 @@ When coverage is complete or explicitly waived, recap the scope, open issues, ch
 ## Check before you send
 
 - **The first reply** names the comparison, from the merge base to a pinned head, and where each input came from. It flags each gap. If the change has code and no bug review covered it, one ran first.
-- **Each chunk** starts with the progress map, then the location line, then the title. It covers what changed, why, how it's used, and how to judge it, with the key lines as a `diff` and the file, lines, and commit above them. Each line-by-line step shows its lines the same way, after the location line.
+- **Each chunk** starts with the progress map, then the location line, then the title. It covers what changed, why, how it's used, and what to know before you accept it, with the key lines as a `diff` and the file, lines, and commit above them. Each line-by-line step shows its lines the same way, after the location line.
 - **Each reply** explains one chunk at most, and ends with one line of choices. Each line of code it shows has its number from Git, except a removed line.
 - **Never** take "next" or "looks good" as approval of the whole change, or show the base branch's newer commits as part of the change. Never edit, switch branches, commit, push, or post unless the brief or the user allows it.
 
