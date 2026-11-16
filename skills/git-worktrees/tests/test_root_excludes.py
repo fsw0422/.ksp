@@ -56,6 +56,35 @@ class RootExcludesTest(unittest.TestCase):
         self.assertIn('demo.code-workspace: lists other', output)
         self.assertIn(f'{self.root.name}/.vscode/settings.json: hides app, app-feature, other, zeta', output)
 
+    def test_add_never_shows_the_new_worktree_in_the_root(self):
+        self.add()  # creates the settings file, so the next add only adds to it
+        process = start_script('add', self.repo, 'second', '--from', 'main')
+        second = self.root / 'app-second'
+        hidden_whenever_present = True
+        while process.poll() is None:
+            try:
+                hidden_whenever_present &= not second.exists() or 'app-second' in self.read_settings()['files.exclude']
+            except json.JSONDecodeError:
+                pass  # read while the script was writing the file
+            time.sleep(0.005)
+        stdout, stderr = process.communicate()
+        self.assertEqual(process.returncode, 0, stdout + stderr)
+        self.assertTrue(hidden_whenever_present, 'the root showed the new worktree')
+        self.assertLess(stdout.index('settings.json: hides app-second'), stdout.index('Created'))
+
+    def test_sync_lists_and_hides_a_worktree_made_elsewhere(self):
+        git(self.repo, 'worktree', 'add', '-q', '-b', 'by-hand', str(self.root / 'app-by-hand'))
+        result = run_script('sync', self.repo)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn('app-by-hand', self.workspace_paths())
+        self.assertIn('app-by-hand', self.read_settings()['files.exclude'])
+
+    def test_a_root_workspace_lists_a_repository_it_did_not_list_yet(self):
+        self.write_workspace(['.', 'zeta'])
+        self.add()
+        self.assertEqual(self.workspace_paths(), ['.', 'app', 'app-feature', 'other', 'zeta'])
+        self.assertEqual(list(self.read_settings()['files.exclude']), ['app', 'app-feature', 'other', 'zeta'])
+
     def test_a_checkout_taken_out_of_the_workspace_comes_back(self):
         self.add()
         self.write_workspace(['.', 'app', 'app-feature', 'zeta'])  # as when other is removed in VS Code

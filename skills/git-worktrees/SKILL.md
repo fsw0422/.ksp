@@ -40,7 +40,7 @@ The script does four more things:
 1. **Names the folder** `<repo folder>-<branch>`, beside the main checkout, with any `/` in the branch name as `-`. For example, branch `fix/login` of `~/code/app` goes in `~/code/app-fix-login`.
 2. **Copies the `.env`** when the source has one and the worktree doesn't, with the same permissions. It never prints the file. If Git doesn't ignore `.env`, it adds a local exclusion, so the file can't be committed.
 3. **Updates the workspace file.** Each `.code-workspace` file beside the main checkout that lists the main checkout gets the new folder, with a relative path, in sorted place. With no such file, it does nothing. It never creates one.
-4. **Shows each checkout once.** A workspace can list its own folder as a root, with `"path": "."`, to show the files beside the checkouts. That root would show every checkout in it as well. So the script lists each checkout directly in that root as its own folder, then hides the listed folders in the root's `.vscode/settings.json`, in `files.exclude` and `files.watcherExclude`. The root then shows only the loose files and other folders. It does this on every `add` and `remove`, so it also catches checkouts cloned or added by hand, and creates the settings file when needed:
+4. **Shows each checkout once.** A workspace can list its own folder as a root, with `"path": "."`, to show the files beside the checkouts. In such a workspace, every Git checkout in that folder is listed as its own folder, and none shows inside the root. So the script lists each checkout there that the workspace doesn't list yet, then hides the listed folders in the root's `.vscode/settings.json`, in `files.exclude` and `files.watcherExclude`. The root then shows only the loose files and other folders. It hides a new worktree before creating it, so the folder never shows in the root, even for a moment. It does this on every `add`, `remove` and `sync`, so it also catches checkouts made elsewhere, such as a clone or a worktree from another tool, and creates the settings file when needed:
 
    ```text
    ichbinkalt.code-workspace: lists ichbinkalt-docs
@@ -66,6 +66,8 @@ Git doesn't do this by itself, and nothing runs it automatically. Run `sync` in 
 ```bash
 python3 <this skill's folder>/scripts/worktree.py sync <repo>
 ```
+
+Sync also lists and hides checkouts made elsewhere in a workspace with an outer root, as step 4 of [Create a worktree](#create-a-worktree) describes.
 
 For example, after three new commits on `master`, one of them pushed straight to it:
 

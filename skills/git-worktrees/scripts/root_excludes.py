@@ -1,9 +1,9 @@
-"""Show each checkout in a VS Code workspace once: as its own folder, never inside an outer root.
+"""Show each Git checkout in a VS Code workspace once: as its own folder, never inside the workspace's root.
 
 A .code-workspace file can list its own folder as a root, with "path": ".", to show the files beside
-the checkouts. That root would show every checkout in it as well. So every checkout directly in the
-root is listed as its own folder, and the root's .vscode/settings.json hides exactly the checkouts
-the workspace lists, so VS Code doesn't show or watch them twice.
+the checkouts. That root would show every checkout in it as well. So every checkout in that folder is
+listed as its own folder, and the root's .vscode/settings.json hides the listed folders, so VS Code
+neither shows nor watches them twice. The root then shows only the loose files and other folders.
 """
 from checkouts import git_succeeds
 from workspace import WorkspaceError, add_folder, listed_folders, read_json, workspace_files, write_json
@@ -13,15 +13,16 @@ GLOB_CHARACTERS = set('*?[]{}')
 SETTINGS = (('files.exclude', '{}'), ('files.watcherExclude', '{}/**'))
 
 
-def hide_listed_folders(main):
-    """Tidy each outer root, in each workspace that lists the main checkout: list its checkouts, then hide them.
+def show_checkouts_once(main, ahead=None):
+    """Tidy each workspace beside the main checkout: list its folder's checkouts, then hide them in its roots.
 
+    ahead is a folder about to be created. It's hidden already, so it never shows in a root.
     Print what changed. Return False if a file couldn't be updated.
     """
     ok = True
-    for file in workspace_files(main):
+    for file in _workspaces(main):
         try:
-            for line in _sync(file):
+            for line in _list_checkouts(file) + _hide_listed(file, ahead):
                 print(line)
         except WorkspaceError as error:
             print(error)
@@ -29,12 +30,46 @@ def hide_listed_folders(main):
     return ok
 
 
-def _sync(file):
-    lines = _list_checkouts(file)
-    folders = listed_folders(file)
+def _workspaces(main):
+    """Return the workspace files beside the main checkout that list it, or list their own folder as a root."""
+    found = set(workspace_files(main))
+    for file in main.parent.glob('*.code-workspace'):
+        try:
+            if file.parent.resolve() in listed_folders(file):
+                found.add(file)
+        except WorkspaceError:
+            pass  # reported when the file lists the main checkout
+    return sorted(found)
+
+
+def _listed(file):
+    try:
+        return listed_folders(file)
+    except WorkspaceError as error:
+        raise WorkspaceError(f'{file.name}: {error}') from None
+
+
+def _list_checkouts(file):
+    """In a workspace that lists its own folder as a root, list every checkout in that folder."""
+    folders = _listed(file)
+    home = file.parent.resolve()
+    if home not in folders:
+        return []
+    found = sorted(child.resolve() for child in home.iterdir()
+                   if child.is_dir() and (child / '.git').exists() and child.resolve() not in folders)
+    for child in found:
+        add_folder(file, child)
+    return [f'{file.name}: lists {", ".join(child.name for child in found)}'] if found else []
+
+
+def _hide_listed(file, ahead):
+    folders = _listed(file)
+    lines = []
     for outer in _outer_roots(folders):
-        inner = sorted(folder.relative_to(outer).as_posix() for folder in folders if outer in folder.parents)
-        lines += _update(outer / '.vscode' / 'settings.json', outer, inner)
+        inner = {folder.relative_to(outer).as_posix() for folder in folders if outer in folder.parents}
+        if ahead and outer in ahead.parents:
+            inner.add(ahead.relative_to(outer).as_posix())
+        lines += _update(outer / '.vscode' / 'settings.json', outer, sorted(inner))
     return lines
 
 
@@ -45,18 +80,7 @@ def _outer_roots(folders):
     """
     return [outer for outer in folders
             if (any(outer in folder.parents for folder in folders) or (outer / '.vscode' / 'settings.json').is_file())
-            and not _is_checkout(outer)]
-
-
-def _list_checkouts(file):
-    """List each checkout directly in an outer root that holds listed folders, so it gets its own folder."""
-    folders = listed_folders(file)
-    holders = [outer for outer in _outer_roots(folders) if any(outer in folder.parents for folder in folders)]
-    found = sorted({child for outer in holders for child in outer.iterdir()
-                    if child.is_dir() and (child / '.git').exists() and child not in folders})
-    for child in found:
-        add_folder(file, child)
-    return [f'{file.name}: lists {", ".join(child.name for child in found)}'] if found else []
+            and not git_succeeds(outer, 'rev-parse', '--is-inside-work-tree')]
 
 
 def _update(settings, outer, inner):
@@ -104,10 +128,6 @@ def _looked_after(outer, name):
         return False
     path = outer / name
     return (path / '.git').exists() or not path.exists()
-
-
-def _is_checkout(folder):
-    return git_succeeds(folder, 'rev-parse', '--is-inside-work-tree')
 
 
 def _insert_sorted(patterns, key):

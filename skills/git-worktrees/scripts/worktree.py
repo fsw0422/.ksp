@@ -19,7 +19,7 @@ from cleanup import Plan, delete_branch, plan  # noqa: E402
 from env_copy import copy_env  # noqa: E402
 from lineage import makes_loop, parent_links, record_parent  # noqa: E402
 from remote_copy import remote_copy, short_name, tip_of  # noqa: E402
-from root_excludes import hide_listed_folders  # noqa: E402
+from root_excludes import show_checkouts_once  # noqa: E402
 from sync import sync  # noqa: E402
 from workspace import WorkspaceError, add_folder, remove_folder, workspace_files  # noqa: E402
 
@@ -34,13 +34,18 @@ def add(repo, branch, start, env_from):
         sys.exit(f'Branch {branch} already exists, so --from does not apply.')
     if not start and not exists and not remote_branch(repo, branch):
         sys.exit(f'New branch {branch} needs --from <parent>, the branch it builds on.')
-    print(f'Created {folder} on {add_worktree(repo, branch, start, folder)}')
+    tidy = show_checkouts_once(main, ahead=folder)  # hidden before it exists, so it never shows in a root
+    try:
+        print(f'Created {folder} on {add_worktree(repo, branch, start, folder)}')
+    except GitError:
+        show_checkouts_once(main)  # takes the hiding back
+        raise
     if start:
         print(record_start(repo, branch, start))
     source = env_from or (start and checkout_of(repo, start)) or repo
     print(f'.env: {copy_env(source, folder)}')
     listed = update_workspaces(main, lambda file: add_folder(file, folder))
-    return hide_listed_folders(main) and listed
+    return show_checkouts_once(main) and tidy and listed
 
 
 def record_start(repo, branch, start):
@@ -94,7 +99,7 @@ def remove(worktree, close_prs):
             print(f'{file.name}: {add_folder(file, folder)} back, because the worktree stays')
         raise
     print(f'Removed {folder}.')
-    ok = hide_listed_folders(main) and ok  # only now, so the folder never shows in a root while it exists
+    ok = show_checkouts_once(main) and ok  # only now, so the folder never shows in a root while it exists
     for line in decision.notes + (delete_branch(main, branch, decision.place) if decision.place else []):
         print(line)
     return ok
@@ -161,6 +166,7 @@ def cli():
             ok = add(args.repo.resolve(), args.branch, args.start, env_from)
         elif args.command == 'sync':
             ok = sync(args.repo.resolve())
+            ok = show_checkouts_once(main_checkout(args.repo.resolve())) and ok  # catches checkouts made elsewhere
         elif args.command == 'parent':
             ok = parent(args.worktree, args.parent)
         else:
