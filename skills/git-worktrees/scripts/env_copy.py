@@ -2,7 +2,7 @@
 import os
 from pathlib import Path
 
-from checkouts import git, git_succeeds
+from checkouts import keep_out_of_git
 
 
 def copy_env(source_dir, worktree):
@@ -20,16 +20,5 @@ def copy_env(source_dir, worktree):
     with os.fdopen(fd, 'wb') as out:
         out.write(source.read_bytes())
     os.chmod(target, mode)  # os.open applies the umask, so set the exact mode
-    _keep_out_of_git(worktree)
+    keep_out_of_git(worktree, '.env')
     return f'copied from {source_dir}'
-
-
-def _keep_out_of_git(worktree):
-    """Add a local Git exclusion for .env, unless Git already ignores it."""
-    if git_succeeds(worktree, 'check-ignore', '-q', '.env'):
-        return
-    exclude = Path(worktree, git(worktree, 'rev-parse', '--git-path', 'info/exclude'))
-    exclude.parent.mkdir(parents=True, exist_ok=True)
-    text = exclude.read_text() if exclude.exists() else ''
-    separator = '' if not text or text.endswith('\n') else '\n'
-    exclude.write_text(f'{text}{separator}/.env\n')

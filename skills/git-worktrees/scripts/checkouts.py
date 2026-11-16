@@ -1,4 +1,4 @@
-"""Git commands that find a repository's checkouts and add or remove worktrees."""
+"""Git commands that find a repository's checkouts, add or remove worktrees, and keep local files out of Git."""
 import subprocess
 from pathlib import Path
 
@@ -72,6 +72,17 @@ def add_worktree(repo, branch, start, folder):
 def remove_worktree(main, folder):
     """Remove the worktree. Git refuses one with changes, untracked files, or a lock."""
     git(main, 'worktree', 'remove', str(folder))
+
+
+def keep_out_of_git(worktree, path):
+    """Add a local Git exclusion for the path, such as .env, unless Git already ignores it."""
+    if git_succeeds(worktree, 'check-ignore', '-q', path):
+        return
+    exclude = Path(worktree, git(worktree, 'rev-parse', '--git-path', 'info/exclude'))
+    exclude.parent.mkdir(parents=True, exist_ok=True)
+    text = exclude.read_text() if exclude.exists() else ''
+    separator = '' if not text or text.endswith('\n') else '\n'
+    exclude.write_text(f'{text}{separator}/{path}\n')
 
 
 def remote_branch(repo, branch):
