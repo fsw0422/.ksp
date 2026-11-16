@@ -36,6 +36,25 @@ def remove_folder(file, folder):
     return 'removed'
 
 
+def listed_folders(file):
+    """Return the folders the workspace file lists, as resolved paths."""
+    data, _ = _load(file)
+    return [(file.parent / path).resolve() for path in map(_path_of, data.get('folders', [])) if path is not None]
+
+
+def read_json(file):
+    """Return the JSON file's data and indentation. Refuse a file with comments, which json can't keep."""
+    text = file.read_text()
+    try:
+        return json.loads(text), _indent(text)
+    except json.JSONDecodeError:
+        raise WorkspaceError('has comments or trailing commas, so update it by hand') from None
+
+
+def write_json(file, data, indent):
+    file.write_text(json.dumps(data, indent=indent, ensure_ascii=False) + '\n')
+
+
 def _lists(file, main):
     try:
         data, _ = _load(file)
@@ -46,18 +65,14 @@ def _lists(file, main):
 
 
 def _load(file):
-    text = file.read_text()
-    try:
-        data = json.loads(text)
-    except json.JSONDecodeError:
-        raise WorkspaceError('has comments or trailing commas, so update it by hand') from None
+    data, indent = read_json(file)
     if not isinstance(data, dict) or not isinstance(data.get('folders', []), list):
         raise WorkspaceError('has no folders list, so update it by hand')
-    return data, _indent(text)
+    return data, indent
 
 
 def _save(file, data, indent):
-    file.write_text(json.dumps(data, indent=indent, ensure_ascii=False) + '\n')
+    write_json(file, data, indent)
 
 
 def _indent(text):

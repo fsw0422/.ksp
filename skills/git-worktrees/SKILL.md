@@ -35,11 +35,25 @@ ichbinkalt.code-workspace: added
 
 If the parent is behind its own copy on the remote, as of the last fetch, the script adds a line such as `Note: 001-initial is 2 commits behind origin/001-initial, as of the last fetch. Pull it, then run sync.` It never fetches by itself.
 
-The script does three more things:
+The script does four more things:
 
 1. **Names the folder** `<repo folder>-<branch>`, beside the main checkout, with any `/` in the branch name as `-`. For example, branch `fix/login` of `~/code/app` goes in `~/code/app-fix-login`.
 2. **Copies the `.env`** when the source has one and the worktree doesn't, with the same permissions. It never prints the file. If Git doesn't ignore `.env`, it adds a local exclusion, so the file can't be committed.
-3. **Updates the workspace file.** Each `.code-workspace` file beside the main checkout that lists the main checkout gets the new folder, with a relative path, in sorted place. With no such file, it does nothing. It never creates one.
+3. **Updates the workspace file.** Each `.code-workspace` file beside the main checkout that lists the main checkout gets the new folder, with a relative path, in sorted place. When the folder has no `.code-workspace` file at all, it creates `<folder>.code-workspace`, with the folder itself as a root named `<folder> (root)`, so step 4 sets it up. It never does this in the home folder, a temporary folder, or a folder inside a Git checkout, and it leaves an existing workspace file without such a root as it is:
+
+   ```text
+   ichbinkalt.code-workspace: created, with ichbinkalt as its root
+   ```
+4. **Shows each checkout once.** A workspace can list its own folder as a root, with `"path": "."`, to show the files beside the checkouts. In such a workspace, every Git checkout in that folder is listed as its own folder, and none shows inside the root. So the script lists each checkout there that the workspace doesn't list yet, then hides the listed folders in the root's `.vscode/settings.json`, in `files.exclude` and `files.watcherExclude`. The root then shows only the loose files and other folders. It hides a new worktree before creating it, so the folder never shows in the root, even for a moment. It does this on every `add`, `remove` and `sync`, so it also catches checkouts made elsewhere, such as a clone or a worktree from another tool, and creates the settings file when needed:
+
+   ```text
+   ichbinkalt.code-workspace: lists ichbinkalt-docs
+   ichbinkalt/.vscode/settings.json: hides ichbinkalt-backend-001-initial-pause-limit, ichbinkalt-docs
+   ```
+
+   A checkout taken out of the workspace in VS Code comes back at the next run while it's still in the folder. To drop one for good, move it out of the folder or delete it.
+
+   It looks after only entries that name a checkout, or a folder that no longer exists. Patterns with glob characters, such as `**/node_modules`, and other folders, such as `.idea`, stay as they are. It never changes the settings of a root that's itself a Git checkout.
 
 To work in the new worktree in Claude Code, call `EnterWorktree` with its `path`. Claude Code asks the user first, because the folder is outside `.claude/worktrees/`.
 
@@ -56,6 +70,8 @@ Git doesn't do this by itself, and nothing runs it automatically. Run `sync` in 
 ```bash
 python3 <this skill's folder>/scripts/worktree.py sync <repo>
 ```
+
+Sync also lists and hides checkouts made elsewhere in a workspace with an outer root, as step 4 of [Create a worktree](#create-a-worktree) describes.
 
 For example, after three new commits on `master`, one of them pushed straight to it:
 
@@ -127,11 +143,14 @@ It first removes the folder's entry from the same workspace files and waits 3 se
 
 **Why this order:** a language server, such as the IntelliJ one, that sees a listed folder's files vanish can keep that folder's modules in its cache. On its next start it fails on them, with errors such as `can't parse url with authority: file://$WORKSPACE_54$/src/test`.
 
+An outer root, such as `"path": "."`, keeps hiding the folder until `git worktree remove` has deleted it. Only then does the script drop the folder's entries from that root's `.vscode/settings.json`, so the folder never shows up there while its files still exist.
+
 Then it deals with the branch. When its parent already has all its work, the script deletes the branch here and its copy on the remote, after saving its tip as `refs/recovery/removed/<time>/<branch>`. It fetches first, so a branch merged on the remote, such as through a pull request, counts even before you pull its parent.
 
 ```text
 ichbinkalt.code-workspace: removed
 Removed /Users/kev/projects/ichbinkalt/ichbinkalt-backend-001-initial-pause-limit.
+ichbinkalt/.vscode/settings.json: no longer hides ichbinkalt-backend-001-initial-pause-limit
 Deleted branch 001-initial-pause-limit: 001-initial has all its work. Its tip is saved as refs/recovery/removed/2026-11-08-171500/001-initial-pause-limit.
 origin/001-initial-pause-limit: deleted from origin
 ```
@@ -179,7 +198,7 @@ If `gh` can't tell, because it isn't installed or logged in, or the remote isn't
 | `New branch ... needs --from <parent>` | Pass the branch the new one builds on, such as `--from 001-initial`. |
 | `git:` and the branch is already used by another worktree | Work in that worktree instead. |
 | `git:` and the worktree contains modified or untracked files | Commit or save the work first. Never force the removal. |
-| `... so update it by hand` | The worktree step worked. Edit that workspace file yourself: add or remove the folder's entry, keep the entries sorted, and keep its comments. |
+| `... so update it by hand` | The worktree step worked. Edit that workspace file yourself: add or remove the folder's entry, keep the entries sorted, and keep its comments. For a `.vscode/settings.json`, add or remove the folder in `files.exclude` (as `<folder>`) and `files.watcherExclude` (as `<folder>/**`). |
 | `... does not exist.` | The worktree was removed by hand. Run `git worktree prune` in the main checkout, and remove its workspace entry yourself. |
 | Sync: `... uncommitted or untracked files` | Run `sync` again once that work is committed. Never commit or stash someone else's edits to make sync run. |
 | Sync: `its rebase conflicts in ...` | Run the printed command in that worktree, resolve the conflicts, and check the result. If a conflict needs a decision, ask the user. |
@@ -199,7 +218,7 @@ If `gh` can't tell, because it isn't installed or logged in, or the remote isn't
 
 ## How it works
 
-- `scripts/worktree.py` runs the commands. `checkouts.py` wraps git, `env_copy.py` copies the `.env`, `workspace.py` edits the workspace files, `lineage.py` keeps each branch's parent and base, `sync.py` rebases the children, `cleanup.py` decides what happens to a removed worktree's branch, `remote_copy.py` fetches, checks, pushes and deletes each branch's copy on the remote, and `pull_requests.py` asks `gh` which open pull requests use a copy.
+- `scripts/worktree.py` runs the commands. `checkouts.py` wraps git, `env_copy.py` copies the `.env`, `workspace.py` edits the workspace files, `root_excludes.py` lists the checkouts in an outer root and hides them there, `lineage.py` keeps each branch's parent and base, `sync.py` rebases the children, `cleanup.py` decides what happens to a removed worktree's branch, `remote_copy.py` fetches, checks, pushes and deletes each branch's copy on the remote, and `pull_requests.py` asks `gh` which open pull requests use a copy.
 - **Leases:** every push names the commit it expects on the remote, as in `--force-with-lease=<branch>:<commit>`. If the remote has anything else by then, the push fails instead of overwriting it.
 - Each branch's parent and base live in git config, as `branch.<name>.worktreeParent` and `branch.<name>.worktreeBase`. They follow a renamed branch and go away with a deleted one.
 - **Why the base matters:** the base is the parent commit where a branch's own commits start. A rebase gives commits new IDs, so after a parent is rebased, its old commits still sit under its children, and a plain `git rebase` would try to replay them a second time. Sync replays only the branch's own commits, with `git rebase --onto <parent's head> <base>`. If a branch was rebased by hand, its fork point is newer than the recorded base, and sync uses the fork point instead.
