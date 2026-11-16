@@ -15,6 +15,7 @@ sequenceDiagram
     participant R as Guided review
     participant U as User
     W->>R: A brief, or nothing
+    R->>U: The "Starting Guided Review" banner
     R->>R: Fill gaps with defaults, read the whole change, bug-review its code if none did
     R->>U: Inputs and their sources, the chunk map, then chunk 1
     U->>R: next, why, line by line, or change this
@@ -23,6 +24,20 @@ sequenceDiagram
     R->>W: Review record and decision
     W->>W: Does only what the decision allows
 ```
+
+## Show the banner first
+
+Before anything else, send this banner as a top-level heading:
+
+```markdown
+# Starting Guided Review
+```
+
+Send it once for each review, before you read the change or run a check. A review that continues after a pause, or in a new session, gets no second banner: its next chunk starts with its own heading, as usual.
+
+> Example: Spec Workflow finishes its bug review and its test merges, then starts the review. The next thing the user sees is the banner. The inputs, the chunk map, and chunk 1 follow it.
+
+**Why:** a workflow reports on a lot of work before the review, such as a cleanup pass and a bug review. The banner shows the moment the review starts, and the user finds it again when they scroll back.
 
 ## Establish the comparison
 
@@ -49,7 +64,7 @@ Every check in the brief must cover the exact commits under review. If a check i
 
 ## Open the review
 
-Start with the purpose, the comparison, the checks, and a short chunk map, then explain the first chunk right away. Say where each input came from, and flag any that came from a default or is missing. For example, for a Jira ticket (made up):
+Start with the purpose, the comparison, and the checks, then explain the first chunk right away. Its progress map shows the whole plan. Say where each input came from, and flag any that came from a default or is missing. For example, for a Jira ticket (made up):
 
 ```text
 Reviewing   AUTH-88-login-limit against main, from merge base 3f2a9c1 to 8d41e07   (from the ticket)
@@ -67,17 +82,18 @@ If the brief has a starting plan, such as a chunk map planned before building or
 
 **Why one chunk at a time:** a whole diff at once is too much to question. One chunk lets the user push back before the next one builds on it.
 
-## Start every chunk with a map and a location line
+## Start every chunk with a heading, a map, and a location line
 
-**Start every new or resumed chunk with a progress map, then the location line, then the chunk's title.** Don't use a bare counter such as "2/5": it shows the position, but not what's done or what comes next.
+**Start every new or resumed chunk with its heading, then the progress map, then the location line.**
 
+- The heading is a second-level heading with the chunk's number and title, such as `## Chunk 2 of 3: Lock after 5 failures`. The number doesn't replace the map: a counter such as "2 of 3" shows the position, but not what's done or what comes next.
 - Send the map as an image made with the [mermaid-image](../mermaid-image/SKILL.md) skill: left to right for 4 chunks or fewer, top-down for more. Give the current chunk a thicker border. Where images can't be sent, or mermaid-image isn't installed, use a text map, one chunk per line with its repositories.
 - Mark each chunk: ✓ accepted, ▶ now, ○ not yet, ↷ skipped, ✎ needs a change.
 - The location line names the worktree folder and the branch. Repeat it even when unchanged, and link the folder name to its absolute path. If a chunk spans repositories, name each worktree and its repository. Take the locations from the brief and Git, not from the chat's working directory.
 - For a pull request that isn't checked out, the location line names the repository and the branch or commit, and says that no local worktree is in use.
-- In line-by-line steps, repeat the location line and name the lines being explained, such as `limiter.py`, lines 18–25. The map comes back with the next chunk.
+- In line-by-line steps, repeat the location line and name the lines being explained, such as `limiter.py`, lines 18–25. The heading and the map come back with the next chunk.
 
-**Why:** the map shows the whole review at a glance, by name: what's covered, where you are, and what's left. With many worktrees open, the location line means the user never has to guess which copy of the code they're reading.
+**Why:** the heading says at once which chunk this is, and the user finds the chunk again when they scroll back. The map shows the whole review at a glance, by name: what's covered, where you are, and what's left. With many worktrees open, the location line means the user never has to guess which copy of the code they're reading.
 
 ## Explain the chunk
 
@@ -99,7 +115,11 @@ For the current chunk, explain each of these in detail, in easy words, with as m
 
 **Why:** a link opens the whole file as it is today, not the change, and its line numbers drift after edits and rebases. It often can't open at all: the desktop app opens only files inside the session's folders, and a phone may not open it. The user approves the code, so they need to see the code, not only a description of it. Line numbers let a note or a question point at a line, such as "line 22", and let the user find it in the IDE.
 
-A chunk might start with this map, sent as an image (made up):
+A chunk might start with this heading and map (made up). The map is sent as an image:
+
+```markdown
+## Chunk 2 of 3: Lock after 5 failures
+```
 
 ```mermaid
 flowchart LR
@@ -117,8 +137,6 @@ Where images can't be sent, the same map as text:
 ```
 
 > **Worktree:** auth-service-AUTH-88-login-limit, linked to its folder · **Branch:** AUTH-88-login-limit
->
-> **Lock after 5 failures**
 >
 > **What changed:** after 5 failed logins in a row, the account locks for 15 minutes. Before, there was no limit, so a script could guess passwords forever.
 >
@@ -228,8 +246,9 @@ When coverage is complete or explicitly waived, recap the scope, open issues, ch
 
 ## Check before you send
 
+- **The banner,** "Starting Guided Review", comes before everything else, once for each review.
 - **The first reply** names the comparison, from the merge base to a pinned head, and where each input came from. It flags each gap. If the change has code and no bug review covered it, one ran first.
-- **Each chunk** starts with the progress map, then the location line, then the title. It covers what changed, why, how it's used, and what to know before you accept it, with the key lines as a `diff` and the file, lines, and commit above them. Each line-by-line step shows its lines the same way, after the location line.
+- **Each chunk** starts with its heading, such as "Chunk 2 of 3: Lock after 5 failures", then the progress map, then the location line. It covers what changed, why, how it's used, and what to know before you accept it, with the key lines as a `diff` and the file, lines, and commit above them. Each line-by-line step shows its lines the same way, after the location line.
 - **Each reply** explains one chunk at most, and ends with one line of choices. Each line of code it shows has its number from Git, except a removed line.
 - **Never** take "next" or "looks good" as approval of the whole change, or show the base branch's newer commits as part of the change. Never edit, switch branches, commit, push, or post unless the brief or the user allows it.
 

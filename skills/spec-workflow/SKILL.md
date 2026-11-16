@@ -239,7 +239,7 @@ Keep integration branches, including `main`, clean outside merges. Make spec and
 
 ## Plan the chunks
 
-Before building, sketch a **chunk map**: the pieces of behavior the change adds, in the order you'll build them. For each chunk, name its behavior, its requirement IDs when the spec has them, and the repositories it touches. Mark the riskiest chunk, and build it as early as its dependencies allow. Keep the map in the work record, and share it when building starts. The user can reorder or split it; wait for their OK only if they asked to approve plans first. While building, keep the map current with the same marks the [guided review](../guided-review/SKILL.md#start-every-chunk-with-a-map-and-a-location-line) uses: ✓ built, ▶ being built, ○ planned.
+Before building, sketch a **chunk map**: the pieces of behavior the change adds, in the order you'll build them. For each chunk, name its behavior, its requirement IDs when the spec has them, and the repositories it touches. Mark the riskiest chunk, and build it as early as its dependencies allow. Keep the map in the work record, and share it when building starts. The user can reorder or split it; wait for their OK only if they asked to approve plans first. While building, keep the map current with the same marks the [guided review](../guided-review/SKILL.md#start-every-chunk-with-a-heading-a-map-and-a-location-line) uses: ✓ built, ▶ being built, ○ planned.
 
 **Why:**
 
