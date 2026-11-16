@@ -1,12 +1,12 @@
-"""Hide a workspace's listed folders inside a root that holds them, so VS Code shows each folder once.
+"""Show each checkout in a VS Code workspace once: as its own folder, never inside an outer root.
 
 A .code-workspace file can list its own folder as a root, with "path": ".", to show the files beside
-the checkouts. That root would show every listed checkout a second time. So the root's
-.vscode/settings.json hides exactly the checkouts the workspace lists, and VS Code doesn't watch
-them twice.
+the checkouts. That root would show every checkout in it as well. So every checkout directly in the
+root is listed as its own folder, and the root's .vscode/settings.json hides exactly the checkouts
+the workspace lists, so VS Code doesn't show or watch them twice.
 """
 from checkouts import git_succeeds
-from workspace import WorkspaceError, listed_folders, read_json, workspace_files, write_json
+from workspace import WorkspaceError, add_folder, listed_folders, read_json, workspace_files, write_json
 
 GLOB_CHARACTERS = set('*?[]{}')
 # Each setting, and the key that hides a folder in it.
@@ -14,7 +14,7 @@ SETTINGS = (('files.exclude', '{}'), ('files.watcherExclude', '{}/**'))
 
 
 def hide_listed_folders(main):
-    """Update each root that holds listed folders, in each workspace that lists the main checkout.
+    """Tidy each outer root, in each workspace that lists the main checkout: list its checkouts, then hide them.
 
     Print what changed. Return False if a file couldn't be updated.
     """
@@ -30,15 +30,33 @@ def hide_listed_folders(main):
 
 
 def _sync(file):
+    lines = _list_checkouts(file)
     folders = listed_folders(file)
-    lines = []
-    for outer in folders:
+    for outer in _outer_roots(folders):
         inner = sorted(folder.relative_to(outer).as_posix() for folder in folders if outer in folder.parents)
-        settings = outer / '.vscode' / 'settings.json'
-        if not (inner or settings.is_file()) or _is_checkout(outer):
-            continue  # never change a repository's own settings
-        lines += _update(settings, outer, inner)
+        lines += _update(outer / '.vscode' / 'settings.json', outer, inner)
     return lines
+
+
+def _outer_roots(folders):
+    """Return the roots that hold other listed folders, or keep settings for them, and aren't checkouts.
+
+    A root that's a checkout is left alone, so a repository's own settings never change.
+    """
+    return [outer for outer in folders
+            if (any(outer in folder.parents for folder in folders) or (outer / '.vscode' / 'settings.json').is_file())
+            and not _is_checkout(outer)]
+
+
+def _list_checkouts(file):
+    """List each checkout directly in an outer root that holds listed folders, so it gets its own folder."""
+    folders = listed_folders(file)
+    holders = [outer for outer in _outer_roots(folders) if any(outer in folder.parents for folder in folders)]
+    found = sorted({child for outer in holders for child in outer.iterdir()
+                    if child.is_dir() and (child / '.git').exists() and child not in folders})
+    for child in found:
+        add_folder(file, child)
+    return [f'{file.name}: lists {", ".join(child.name for child in found)}'] if found else []
 
 
 def _update(settings, outer, inner):

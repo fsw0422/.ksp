@@ -38,28 +38,41 @@ class RootExcludesTest(unittest.TestCase):
     def read_settings(self):
         return json.loads(self.settings.read_text())
 
+    def workspace_paths(self):
+        return [entry['path'] for entry in json.loads(self.workspace.read_text())['folders']]
+
     def add(self):
         result = run_script('add', self.repo, 'feature', '--from', 'main')
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         return result.stdout
 
-    def test_add_hides_every_listed_folder_in_the_root(self):
+    def test_add_lists_every_checkout_in_the_root_and_hides_them_there(self):
+        (self.root / 'notes').mkdir()  # not a checkout, so the root keeps showing it
         output = self.add()
+        self.assertEqual(self.workspace_paths(), ['.', 'app', 'app-feature', 'other', 'zeta'])
         settings = self.read_settings()
-        self.assertEqual(list(settings['files.exclude']), ['app', 'app-feature', 'zeta'])
-        self.assertEqual(list(settings['files.watcherExclude']), ['app-feature/**', 'app/**', 'zeta/**'])
-        self.assertIn(f'{self.root.name}/.vscode/settings.json: hides app, app-feature, zeta', output)
+        self.assertEqual(list(settings['files.exclude']), ['app', 'app-feature', 'other', 'zeta'])
+        self.assertEqual(list(settings['files.watcherExclude']), ['app-feature/**', 'app/**', 'other/**', 'zeta/**'])
+        self.assertIn('demo.code-workspace: lists other', output)
+        self.assertIn(f'{self.root.name}/.vscode/settings.json: hides app, app-feature, other, zeta', output)
+
+    def test_a_checkout_taken_out_of_the_workspace_comes_back(self):
+        self.add()
+        self.write_workspace(['.', 'app', 'app-feature', 'zeta'])  # as when other is removed in VS Code
+        result = run_script('remove', self.folder)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(self.workspace_paths(), ['.', 'app', 'other', 'zeta'])
+        self.assertEqual(list(self.read_settings()['files.exclude']), ['app', 'other', 'zeta'])
 
     def test_add_keeps_the_users_own_patterns(self):
         (self.root / '.idea').mkdir()
-        self.write_settings({'files.exclude': {'**/node_modules': True, '.idea': True, 'app': True, 'other': True},
+        self.write_settings({'files.exclude': {'**/node_modules': True, '.idea': True, 'app': True},
                              'editor.tabSize': 2})
-        output = self.add()
+        self.add()
         settings = self.read_settings()
-        # other is a checkout the workspace doesn't list, so the root shows it.
-        self.assertEqual(list(settings['files.exclude']), ['**/node_modules', '.idea', 'app', 'app-feature', 'zeta'])
+        self.assertEqual(list(settings['files.exclude']),
+                         ['**/node_modules', '.idea', 'app', 'app-feature', 'other', 'zeta'])
         self.assertEqual(settings['editor.tabSize'], 2)
-        self.assertIn('no longer hides other', output)
         self.assertIn('\n  "files.exclude"', self.settings.read_text())  # keeps the file's indentation
 
     def test_remove_shows_nothing_until_the_folder_is_gone(self):
@@ -77,14 +90,15 @@ class RootExcludesTest(unittest.TestCase):
         self.assertTrue(hidden_while_present, 'the root showed the folder while it still existed')
         self.assertFalse(self.folder.exists())
         settings = self.read_settings()
-        self.assertEqual(list(settings['files.exclude']), ['app', 'zeta'])
-        self.assertEqual(list(settings['files.watcherExclude']), ['app/**', 'zeta/**'])
+        self.assertEqual(list(settings['files.exclude']), ['app', 'other', 'zeta'])
+        self.assertEqual(list(settings['files.watcherExclude']), ['app/**', 'other/**', 'zeta/**'])
         self.assertIn('no longer hides app-feature', stdout)
 
     def test_workspace_without_an_outer_root_gets_no_settings(self):
         self.write_workspace(['app', 'zeta'])
         self.add()
         self.assertFalse(self.settings.exists())
+        self.assertEqual(self.workspace_paths(), ['app', 'app-feature', 'zeta'])
 
     def test_never_changes_the_settings_of_a_checkout(self):
         (self.repo / 'lib').mkdir()
