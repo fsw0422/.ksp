@@ -9,7 +9,7 @@ import time
 import unittest
 from pathlib import Path
 
-from helpers import commit, git, run_script, start_script
+from helpers import GIT_ENV, commit, git, run_script, start_script
 
 
 class RootExcludesTest(unittest.TestCase):
@@ -84,6 +84,28 @@ class RootExcludesTest(unittest.TestCase):
         self.add()
         self.assertEqual(self.workspace_paths(), ['.', 'app', 'app-feature', 'other', 'zeta'])
         self.assertEqual(list(self.read_settings()['files.exclude']), ['app', 'app-feature', 'other', 'zeta'])
+
+    def test_add_sets_up_a_folder_without_a_workspace(self):
+        self.workspace.unlink()
+        output = self.add()
+        created = self.root / f'{self.root.name}.code-workspace'
+        folders = json.loads(created.read_text())['folders']
+        self.assertEqual(folders[0], {'name': f'{self.root.name} (root)', 'path': '.'})
+        self.assertEqual([entry['path'] for entry in folders[1:]], ['app', 'app-feature', 'other', 'zeta'])
+        self.assertEqual(list(self.read_settings()['files.exclude']), ['app', 'app-feature', 'other', 'zeta'])
+        self.assertIn(f'{created.name}: created, with {self.root.name} as its root', output)
+        self.assertIn('\n\t"folders"', created.read_text())  # VS Code's own indentation
+
+    def test_never_sets_up_the_home_folder_or_a_checkout(self):
+        self.workspace.unlink()
+        for case, env, outer_repo in (('home folder', {'HOME': str(self.root)}, False), ('checkout', {}, True)):
+            with self.subTest(case):
+                if outer_repo:
+                    git(self.root, 'init', '-q', '-b', 'main')
+                result = run_script('add', self.repo, f'by-{case.split()[0]}', '--from', 'main', env={**GIT_ENV, **env})
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.assertEqual(list(self.root.glob('*.code-workspace')), [])
+                self.assertFalse(self.settings.exists())
 
     def test_a_checkout_taken_out_of_the_workspace_comes_back(self):
         self.add()

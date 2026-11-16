@@ -39,7 +39,11 @@ The script does four more things:
 
 1. **Names the folder** `<repo folder>-<branch>`, beside the main checkout, with any `/` in the branch name as `-`. For example, branch `fix/login` of `~/code/app` goes in `~/code/app-fix-login`.
 2. **Copies the `.env`** when the source has one and the worktree doesn't, with the same permissions. It never prints the file. If Git doesn't ignore `.env`, it adds a local exclusion, so the file can't be committed.
-3. **Updates the workspace file.** Each `.code-workspace` file beside the main checkout that lists the main checkout gets the new folder, with a relative path, in sorted place. With no such file, it does nothing. It never creates one.
+3. **Updates the workspace file.** Each `.code-workspace` file beside the main checkout that lists the main checkout gets the new folder, with a relative path, in sorted place. When the folder has no `.code-workspace` file at all, it creates `<folder>.code-workspace`, with the folder itself as a root named `<folder> (root)`, so step 4 sets it up. It never does this in the home folder, a temporary folder, or a folder inside a Git checkout, and it leaves an existing workspace file without such a root as it is:
+
+   ```text
+   ichbinkalt.code-workspace: created, with ichbinkalt as its root
+   ```
 4. **Shows each checkout once.** A workspace can list its own folder as a root, with `"path": "."`, to show the files beside the checkouts. In such a workspace, every Git checkout in that folder is listed as its own folder, and none shows inside the root. So the script lists each checkout there that the workspace doesn't list yet, then hides the listed folders in the root's `.vscode/settings.json`, in `files.exclude` and `files.watcherExclude`. The root then shows only the loose files and other folders. It hides a new worktree before creating it, so the folder never shows in the root, even for a moment. It does this on every `add`, `remove` and `sync`, so it also catches checkouts made elsewhere, such as a clone or a worktree from another tool, and creates the settings file when needed:
 
    ```text

@@ -4,7 +4,11 @@ A .code-workspace file can list its own folder as a root, with "path": ".", to s
 the checkouts. That root would show every checkout in it as well. So every checkout in that folder is
 listed as its own folder, and the root's .vscode/settings.json hides the listed folders, so VS Code
 neither shows nor watches them twice. The root then shows only the loose files and other folders.
+A folder with no .code-workspace file gets one set up that way.
 """
+import tempfile
+from pathlib import Path
+
 from checkouts import git_succeeds
 from workspace import WorkspaceError, add_folder, listed_folders, read_json, workspace_files, write_json
 
@@ -20,6 +24,8 @@ def show_checkouts_once(main, ahead=None):
     Print what changed. Return False if a file couldn't be updated.
     """
     ok = True
+    for line in _create_workspace(main.parent):
+        print(line)
     for file in _workspaces(main):
         try:
             for line in _list_checkouts(file) + _hide_listed(file, ahead):
@@ -28,6 +34,20 @@ def show_checkouts_once(main, ahead=None):
             print(error)
             ok = False
     return ok
+
+
+def _create_workspace(folder):
+    """Create <folder>.code-workspace with the folder as its root, when the folder has no workspace file.
+
+    Never in the home folder, a temporary folder or the file system's root, whose roots would show far
+    too much, nor inside a checkout, where the file would become an untracked file of that repository.
+    """
+    never = {Path.home().resolve(), Path(tempfile.gettempdir()).resolve(), Path('/tmp').resolve(), Path('/')}
+    if folder in never or any(folder.glob('*.code-workspace')) or git_succeeds(folder, 'rev-parse', '--is-inside-work-tree'):
+        return []
+    file = folder / f'{folder.name}.code-workspace'
+    write_json(file, {'folders': [{'name': f'{folder.name} (root)', 'path': '.'}], 'settings': {}}, '\t')
+    return [f'{file.name}: created, with {folder.name} as its root']
 
 
 def _workspaces(main):
