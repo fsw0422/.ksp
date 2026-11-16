@@ -57,7 +57,13 @@ The script does six more things:
    A checkout taken out of the workspace in VS Code comes back at the next run while it's still in the folder. To drop one for good, move it out of the folder or delete it.
 
    It looks after only entries that name a checkout, or a folder that no longer exists. Patterns with glob characters, such as `**/node_modules`, and other folders, such as `.idea`, stay as they are. It never changes the settings of a root that's itself a Git checkout.
-6. **Updates the IntelliJ workspace.** When `.idea/jb-workspace.xml` beside the main checkout lists the main checkout, it lists the new folder too, under its folder name and with the main checkout's Git remote. IntelliJ watches that file, so the folder shows up in its Project view at once. IntelliJ loads its modules and build at its next start, or right away with **Load Project** on it. With no such workspace, it does nothing. It never creates one.
+6. **Updates the IntelliJ workspace.** When `.idea/jb-workspace.xml` beside the main checkout is a multi-project workspace, every Git checkout in that folder is listed in it as a subproject, as in VS Code. So it lists the new folder, with the main checkout's Git remote, and any checkout there it doesn't list yet, with that checkout's `origin` remote, each under its folder name. When the folder has no `.idea` at all, it creates the workspace first, with the same exceptions as step 4: never in the home folder, a temporary folder, or a folder inside a Git checkout. A folder whose `.idea` belongs to an ordinary IntelliJ project stays as it is. It does this on every `add`, `remove` and `sync`:
+
+   ```text
+   ichbinkalt IntelliJ workspace: lists ichbinkalt-docs. IntelliJ loads them at its next start, or right away with Load Project on each in its Project view.
+   ```
+
+   IntelliJ watches that file, so new entries show up in its Project view at once. It loads their modules and builds at its next start, which for many new entries can take a while, or right away with **Load Project**.
 
 To work in the new worktree in Claude Code, call `EnterWorktree` with its `path`. Claude Code asks the user first, because the folder is outside `.claude/worktrees/`.
 
@@ -234,7 +240,7 @@ If `gh` can't tell, because it isn't installed or logged in, or the remote isn't
 
 ## How it works
 
-- `scripts/worktree.py` runs the commands. `checkouts.py` wraps git, `env_copy.py` copies the `.env`, `idea_copy.py` copies IntelliJ's untracked files, `editors.py` lists and unlists the folder in both editors' workspaces, `workspace.py` edits the VS Code workspace files, `root_excludes.py` lists the checkouts in an outer root and hides them there, `intellij_workspace.py` edits IntelliJ's `jb-workspace.xml` and finds what IntelliJ has loaded, `lineage.py` keeps each branch's parent and base, `sync.py` rebases the children, `cleanup.py` decides what happens to a removed worktree's branch, `remote_copy.py` fetches, checks, pushes and deletes each branch's copy on the remote, and `pull_requests.py` asks `gh` which open pull requests use a copy.
+- `scripts/worktree.py` runs the commands. `checkouts.py` wraps git, `env_copy.py` copies the `.env`, `idea_copy.py` copies IntelliJ's untracked files, `editors.py` lists and unlists the folder in both editors' workspaces, `workspace.py` edits the VS Code workspace files, `root_excludes.py` lists the checkouts in an outer root and hides them there, `intellij_workspace.py` edits IntelliJ's `jb-workspace.xml` and finds what IntelliJ has loaded, `intellij_sync.py` lists every checkout in it and creates it when missing, `lineage.py` keeps each branch's parent and base, `sync.py` rebases the children, `cleanup.py` decides what happens to a removed worktree's branch, `remote_copy.py` fetches, checks, pushes and deletes each branch's copy on the remote, and `pull_requests.py` asks `gh` which open pull requests use a copy.
 - **Leases:** every push names the commit it expects on the remote, as in `--force-with-lease=<branch>:<commit>`. If the remote has anything else by then, the push fails instead of overwriting it.
 - Each branch's parent and base live in git config, as `branch.<name>.worktreeParent` and `branch.<name>.worktreeBase`. They follow a renamed branch and go away with a deleted one.
 - **Why the base matters:** the base is the parent commit where a branch's own commits start. A rebase gives commits new IDs, so after a parent is rebased, its old commits still sit under its children, and a plain `git rebase` would try to replay them a second time. Sync replays only the branch's own commits, with `git rebase --onto <parent's head> <base>`. If a branch was rebased by hand, its fork point is newer than the recorded base, and sync uses the fork point instead.

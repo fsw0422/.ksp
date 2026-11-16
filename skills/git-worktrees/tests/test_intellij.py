@@ -6,6 +6,7 @@ import shutil
 import tempfile
 import time
 import unittest
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 from helpers import commit, git, run_script, start_script
@@ -144,11 +145,33 @@ class IntellijTest(unittest.TestCase):
         self.assertEqual(self.workspace.read_text(), text)
         self.assertTrue(self.folder.is_dir())
 
-    def test_workspace_without_the_main_checkout_is_untouched(self):
-        text = WORKSPACE.replace('$PROJECT_DIR$/app"', '$PROJECT_DIR$/elsewhere"')
-        self.workspace.write_text(text)
+    def entries(self):
+        return {entry.get('path').rsplit('/', 1)[-1]: entry for entry in ET.parse(self.workspace).iter('project') if entry.get('path')}
+
+    def test_a_workspace_lists_every_checkout_in_its_folder(self):
+        self.workspace.write_text(WORKSPACE.replace('$PROJECT_DIR$/app"', '$PROJECT_DIR$/elsewhere"'))
+        lib = self.root / 'lib'
+        lib.mkdir()
+        git(lib, 'init', '-q', '-b', 'main')
+        git(lib, 'remote', 'add', 'origin', 'https://github.com/test/lib.git')
         output = self.add()
-        self.assertEqual(self.workspace.read_text(), text)
+        entries = self.entries()
+        self.assertEqual(sorted(entries), ['app', 'app-feature', 'elsewhere', 'lib', 'other'])
+        self.assertEqual(entries['lib'].find('vcs').get('remoteUrl'), 'https://github.com/test/lib.git')
+        self.assertIsNone(entries['app'].find('vcs'))  # app has no remote
+        self.assertIn(f'{self.root.name} IntelliJ workspace: lists app, lib. IntelliJ loads them at its next start', output)
+
+    def test_a_folder_without_idea_gets_a_workspace_with_every_checkout(self):
+        shutil.rmtree(self.idea)
+        output = self.add()
+        self.assertIn(f'{self.root.name} IntelliJ workspace: created', output)
+        self.assertEqual(sorted(self.entries()), ['app', 'app-feature'])
+        self.assertIn('<option name="workspace" value="true" />', self.workspace.read_text())
+
+    def test_an_ordinary_intellij_project_is_left_alone(self):
+        self.workspace.unlink()  # its .idea stays, as an ordinary project's would
+        output = self.add()
+        self.assertFalse(self.workspace.exists())
         self.assertIn('IntelliJ: no multi-project workspace beside the main checkout lists it', output)
 
 

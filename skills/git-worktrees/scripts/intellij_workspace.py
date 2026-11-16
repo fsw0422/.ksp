@@ -10,6 +10,7 @@ import tempfile
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
+from checkouts import git_try
 from workspace import WorkspaceError
 
 HEADER = '<?xml version="1.0" encoding="UTF-8"?>\n'
@@ -22,8 +23,8 @@ BUILD_LINKS = (
 
 
 def intellij_workspaces(main):
-    """Return the IntelliJ workspace file beside the main checkout, in a list, if it lists the main checkout."""
-    file = main.parent / '.idea' / 'jb-workspace.xml'
+    """Return the IntelliJ workspace file beside the main checkout, in a list, if it's a workspace or lists it."""
+    file = workspace_file(main.parent)
     if not file.is_file():
         return []
     try:
@@ -31,7 +32,29 @@ def intellij_workspaces(main):
     except WorkspaceError:
         # Report a file this script can't update when it may list the checkout.
         return [file] if main.name in file.read_text(encoding='utf-8') else []
-    return [file] if _entries(root, file, main) else []
+    is_workspace = _settings(root).find("option[@name='workspace']")
+    return [file] if _entries(root, file, main) or (is_workspace is not None and is_workspace.get('value') == 'true') else []
+
+
+def workspace_file(folder):
+    return folder / '.idea' / 'jb-workspace.xml'
+
+
+def create_workspace(folder):
+    """Make the folder an IntelliJ multi-project workspace with no subprojects yet. Return its file."""
+    root = ET.Element('project', version='4')
+    settings = ET.SubElement(root, 'component', name='WorkspaceSettings')
+    ET.SubElement(settings, 'option', name='workspace', value='true')
+    file = workspace_file(folder)
+    file.parent.mkdir()
+    file.write_text(_serialize(root), encoding='utf-8')
+    return file
+
+
+def listed_subprojects(file):
+    """Return the folders the workspace lists, as paths."""
+    root, _ = _load(file)
+    return [_resolve(file, entry.get('path')) for entry in _settings(root).findall('project') if entry.get('path')]
 
 
 def workspace_name(file):
@@ -39,15 +62,21 @@ def workspace_name(file):
     return f'{file.parent.parent.name} IntelliJ workspace'
 
 
-def add_subproject(file, folder, main):
-    """List the folder as a subproject, with the main checkout's Git remote. Return what happened."""
+def add_subproject(file, folder, main=None):
+    """List the folder as a subproject, with its Git remote. Return what happened.
+
+    The remote comes from the main checkout's entry when there is one, or else from the folder's origin.
+    """
     root, newline = _load(file)
     if _entries(root, file, folder):
         return 'already listed'
     settings = _settings(root)
     entry = ET.Element('project', name=folder.name, path=_stored(file, folder))
-    main_entry = next(iter(_entries(root, file, main)), [])
-    entry.extend(copy.deepcopy(child) for child in main_entry)
+    main_entry = next(iter(_entries(root, file, main)), None) if main else None
+    if main_entry is not None:
+        entry.extend(copy.deepcopy(child) for child in main_entry)
+    elif remote := git_try(folder, 'remote', 'get-url', 'origin'):
+        ET.SubElement(entry, 'vcs', id='Git', remoteUrl=remote)
     projects = settings.findall('project')
     settings.insert(list(settings).index(projects[-1]) + 1 if projects else 0, entry)
     _save(file, root, newline)

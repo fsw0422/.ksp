@@ -36,14 +36,19 @@ def show_checkouts_once(main, ahead=None):
     return ok
 
 
-def _create_workspace(folder):
-    """Create <folder>.code-workspace with the folder as its root, when the folder has no workspace file.
+def may_set_up(folder):
+    """Return True if a workspace may be created in the folder.
 
     Never in the home folder, a temporary folder or the file system's root, whose roots would show far
-    too much, nor inside a checkout, where the file would become an untracked file of that repository.
+    too much, nor inside a checkout, where the files would become untracked files of that repository.
     """
     never = {Path.home().resolve(), Path(tempfile.gettempdir()).resolve(), Path('/tmp').resolve(), Path('/')}
-    if folder in never or any(folder.glob('*.code-workspace')) or git_succeeds(folder, 'rev-parse', '--is-inside-work-tree'):
+    return folder not in never and not git_succeeds(folder, 'rev-parse', '--is-inside-work-tree')
+
+
+def _create_workspace(folder):
+    """Create <folder>.code-workspace with the folder as its root, when the folder has no workspace file."""
+    if any(folder.glob('*.code-workspace')) or not may_set_up(folder):
         return []
     file = folder / f'{folder.name}.code-workspace'
     write_json(file, {'folders': [{'name': f'{folder.name} (root)', 'path': '.'}], 'settings': {}}, '\t')

@@ -3,8 +3,10 @@ import os
 import time
 
 from cleanup import STOP
+from intellij_sync import list_every_checkout
 from intellij_workspace import (add_subproject, intellij_workspaces, listed_name, loaded_links,
                                 remove_subproject, workspace_name)
+from root_excludes import show_checkouts_once
 from workspace import WorkspaceError, add_folder, remove_folder, workspace_files
 
 LOAD_HINT = (". To load it now, right-click it in IntelliJ's Project view and choose Load Project. "
@@ -19,6 +21,17 @@ def list_folder(main, folder):
 
     in_vscode = _update_vscode(main, lambda file: add_folder(file, folder))
     in_intellij = _update_intellij(main, to_intellij)
+    return in_vscode and in_intellij
+
+
+def tidy(main, ahead=None):
+    """Bring both editors' workspaces beside the main checkout in line with every checkout there.
+
+    VS Code shows each checkout once, and IntelliJ lists each one. ahead is a folder about to be
+    created: VS Code hides it already, and IntelliJ lists it once it exists. Return False if a file failed.
+    """
+    in_vscode = show_checkouts_once(main, ahead)
+    in_intellij = ahead is not None or list_every_checkout(main)
     return in_vscode and in_intellij
 
 
