@@ -6,9 +6,7 @@
   python3 worktree.py remove <worktree> [--close-prs]
 """
 import argparse
-import os
 import sys
-import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))  # so `python3 -I` finds the modules beside this file
@@ -16,12 +14,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))  # so `python3 -I` find
 from checkouts import (GitError, add_worktree, branch_exists, checkout_of, git, main_checkout,  # noqa: E402
                        remote_branch, remove_worktree, sibling_folder)
 from cleanup import Plan, delete_branch, plan  # noqa: E402
+from editors import intellij_stops, list_folder, tidy, unlist  # noqa: E402
 from env_copy import copy_env  # noqa: E402
+from idea_copy import copy_idea  # noqa: E402
 from lineage import makes_loop, parent_links, record_parent  # noqa: E402
 from remote_copy import remote_copy, short_name, tip_of  # noqa: E402
-from root_excludes import show_checkouts_once  # noqa: E402
 from sync import sync  # noqa: E402
-from workspace import WorkspaceError, add_folder, remove_folder, workspace_files  # noqa: E402
 
 
 def add(repo, branch, start, env_from):
@@ -34,18 +32,19 @@ def add(repo, branch, start, env_from):
         sys.exit(f'Branch {branch} already exists, so --from does not apply.')
     if not start and not exists and not remote_branch(repo, branch):
         sys.exit(f'New branch {branch} needs --from <parent>, the branch it builds on.')
-    tidy = show_checkouts_once(main, ahead=folder)  # hidden before it exists, so it never shows in a root
+    tidied = tidy(main, ahead=folder)  # hidden before it exists, so it never shows in a root
     try:
         print(f'Created {folder} on {add_worktree(repo, branch, start, folder)}')
     except GitError:
-        show_checkouts_once(main)  # takes the hiding back
+        tidy(main)  # takes the hiding back
         raise
     if start:
         print(record_start(repo, branch, start))
     source = env_from or (start and checkout_of(repo, start)) or repo
     print(f'.env: {copy_env(source, folder)}')
-    listed = update_workspaces(main, lambda file: add_folder(file, folder))
-    return show_checkouts_once(main) and tidy and listed
+    print(f'.idea: {copy_idea(source, folder)}')
+    listed = list_folder(main, folder)
+    return tidy(main) and tidied and listed
 
 
 def record_start(repo, branch, start):
@@ -81,63 +80,28 @@ def parent(worktree, parent_branch):
 def remove(worktree, close_prs):
     if not worktree.is_dir():
         sys.exit(f'{worktree} does not exist. If it was removed by hand, run `git worktree prune` '
-                 'in the main checkout and remove its .code-workspace entry yourself.')
+                 'in the main checkout and remove its workspace entries yourself.')
     folder = worktree.resolve()
     main = main_checkout(folder)
     if folder == main:
         sys.exit(f'{folder} is the main checkout, not a worktree.')
     branch = git(folder, 'branch', '--show-current')
     decision = plan(main, branch, close_prs) if branch else Plan(None, [], [])
-    if decision.stop:
-        print('\n'.join(decision.notes + decision.stop))
+    stop = intellij_stops(main, folder) + decision.stop
+    if stop:
+        print('\n'.join(decision.notes + stop))
         return False
     ok, unlisted = unlist(main, folder)
     try:
         remove_worktree(main, folder)
     except GitError:
-        for file in unlisted:
-            print(f'{file.name}: {add_folder(file, folder)} back, because the worktree stays')
+        for name, add_back in unlisted:
+            print(f'{name}: {add_back()} back, because the worktree stays')
         raise
     print(f'Removed {folder}.')
-    ok = show_checkouts_once(main) and ok  # only now, so the folder never shows in a root while it exists
+    ok = tidy(main) and ok  # only now, so the folder never shows in a root while it exists
     for line in decision.notes + (delete_branch(main, branch, decision.place) if decision.place else []):
         print(line)
-    return ok
-
-
-def unlist(main, folder):
-    """Remove the folder from the workspace files, then give VS Code a moment to drop it.
-
-    A language server that sees the files of a folder VS Code still lists vanish can keep
-    that folder's modules in its cache, and fail on its next start. So the folder leaves
-    VS Code while its files still exist. Return False if a file failed, and the files changed.
-    """
-    unlisted = []
-
-    def change(file):
-        outcome = remove_folder(file, folder)
-        if outcome == 'removed':
-            unlisted.append(file)
-        return outcome
-
-    ok = update_workspaces(main, change)
-    if unlisted:
-        time.sleep(float(os.environ.get('GIT_WORKTREES_UNLIST_PAUSE', '3')))
-    return ok, unlisted
-
-
-def update_workspaces(main, change):
-    """Apply the change to each workspace file that lists the main checkout. Return False if one failed."""
-    files = workspace_files(main)
-    if not files:
-        print('VS Code: no .code-workspace file beside the main checkout lists it')
-    ok = True
-    for file in files:
-        try:
-            print(f'{file.name}: {change(file)}')
-        except WorkspaceError as error:
-            print(f'{file.name}: {error}')
-            ok = False
     return ok
 
 
@@ -148,7 +112,7 @@ def cli():
     add_parser.add_argument('repo', type=Path, help='any checkout of the repository')
     add_parser.add_argument('branch')
     add_parser.add_argument('--from', dest='start', help='the branch a new branch builds on, recorded as its parent')
-    add_parser.add_argument('--env-from', type=Path, help='checkout to copy .env from')
+    add_parser.add_argument('--env-from', type=Path, help="checkout to copy .env and IntelliJ's untracked files from")
     sync_parser = commands.add_parser('sync', help="move every child branch onto its parent's head")
     sync_parser.add_argument('repo', type=Path, help='any checkout of the repository')
     parent_parser = commands.add_parser('parent', help="record the branch a worktree's branch builds on")
@@ -166,7 +130,7 @@ def cli():
             ok = add(args.repo.resolve(), args.branch, args.start, env_from)
         elif args.command == 'sync':
             ok = sync(args.repo.resolve())
-            ok = show_checkouts_once(main_checkout(args.repo.resolve())) and ok  # catches checkouts made elsewhere
+            ok = tidy(main_checkout(args.repo.resolve())) and ok  # catches checkouts made elsewhere
         elif args.command == 'parent':
             ok = parent(args.worktree, args.parent)
         else:

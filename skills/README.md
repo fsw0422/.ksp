@@ -91,8 +91,9 @@ install, and it never touches the shared browser window.
 ### Git worktrees
 
 `git-worktrees` creates and removes worktrees beside each repository's main
-checkout, as `<repo folder>-<branch>`. It copies the `.env` and keeps a VS Code
-`.code-workspace` file in step. The global instructions tell both tools to use
+checkout, as `<repo folder>-<branch>`. It copies the `.env` and IntelliJ's
+untracked `.idea` files, and keeps a VS Code `.code-workspace` file and an
+IntelliJ multi-project workspace in step. The global instructions tell both tools to use
 it instead of Claude Code's own worktree features, which put worktrees inside
 the repository. It needs only Python 3 and git.
 
