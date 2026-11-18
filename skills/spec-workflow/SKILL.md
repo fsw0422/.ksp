@@ -25,7 +25,7 @@ flowchart TD
 
 **Why this order:** a decision written in the spec can be reviewed and reused. Code written first tends to become the decision without anyone choosing it. Reviewing the finished change means the user approves exactly what lands.
 
-Details live in reference files: [Git operations](references/git-operations.md) for commands and checks, [Writing specs](references/writing-specs.md), [Code cleanup](references/code-cleanup.md), [Bug review](references/bug-review.md), [Guided review](references/guided-review.md), which fills the brief for the [guided-review](../guided-review/SKILL.md) skill, [Spec and code sync](references/spec-code-sync.md), [Spec from code](references/spec-from-code.md), [Storyboards and screen pictures](references/screen-pictures.md), and [Project setup](references/project-setup.md). [Worked examples](references/worked-examples.md) explains every rule in more detail, with several examples each.
+Details live in reference files: [Git operations](references/git-operations.md) for commands and checks, [Writing specs](references/writing-specs.md), [Code cleanup](references/code-cleanup.md), [Bug review](references/bug-review.md), [Guided review](references/guided-review.md), which fills the brief for the [guided-review](../guided-review/SKILL.md) skill, [Spec and code sync](references/spec-code-sync.md), [Spec from code](references/spec-from-code.md), [Storyboards and screen pictures](references/screen-pictures.md), [Technical changes](references/technical-changes.md), and [Project setup](references/project-setup.md). [Worked examples](references/worked-examples.md) explains every rule in more detail, with several examples each.
 
 ## Words used here
 
@@ -132,7 +132,8 @@ Decide whether the request needs a spec decision before any code.
 | New or unclear behavior, API rule, or shared domain term | Update the spec, glossary, or contract that defines it. Review and commit that decision before writing code that depends on it. | Otherwise the code becomes the decision without anyone choosing it. |
 | New or changed rule for the look or the wording, such as a colour, a text style, or a rule for a component, where the spec repository has a design folder | Update the design folder first, as [Use the design folder](references/screen-pictures.md#use-the-design-folder) describes. | The look is a decision too. If each screen's code sets it, the screens drift apart. |
 | Build or fix behavior the spec already defines | Use the accepted spec version. No spec edit is needed. | The decision already exists. |
-| Local rename, proven dead code, internal restructuring, or a clear internal bug | Code-only work is fine if it needs no new product, contract, or domain decision. | Nothing a user or another system sees changes. |
+| A technical change that no user can see, but that crosses features or is hard to reverse, such as a new module structure, a storage change, or a data migration | Decide it in a decision record first, with the architecture pages and contracts it changes, as [Technical changes](references/technical-changes.md) describes. Review and accept that before the code. | The target is then agreed before files move, not found in the merge review. |
+| Local rename, proven dead code, small internal restructuring, or a clear internal bug | Code-only work is fine if it needs no new product, contract, or domain decision. | Nothing a user or another system sees changes. |
 
 > Example: renaming a local variable `tmp` to `audioChunk` is code-only. Renaming the domain term Class to Lesson is a spec decision first, because every repository, API, and table uses that word. Aligning code with a term the spec already uses needs no new decision.
 
@@ -171,6 +172,19 @@ When a change adds or changes a screen, one of its states, or the words a user r
 > Example: a new Retry line for saved audio is sketched under the app's real player. The user moves it above the message on the storyboard's page and accepts the spec. The merge review then shows the built screen, and says what differs from that sketch.
 
 **Why:** a screen is hard to judge from a table of rules, and a description can't show that a line is cut off.
+
+## Decide a technical change before building it
+
+A change that no user can see has no behavior rule to check against. When it crosses features or is hard to reverse, read [Technical changes](references/technical-changes.md). In short:
+
+1. Decide the target in a decision record, and update the data cards, architecture pages, and contracts it changes. Review and accept that first.
+2. Argue from numbers: each operation's service level in its contract, and each store's data card.
+3. Cut the work into steps that each keep behavior and merge alone.
+4. Run nothing on real data without the user's OK.
+
+> Example: the History list is slower than its contract allows. The data card shows that its access pattern has no index. A decision record chooses a new index over a second table. The code follows, and the same load test shows the result.
+
+**Why:** a feature's target is its spec. Without a decision record, a technical change's target is whatever the code ends up as.
 
 ## Map domain language into code
 

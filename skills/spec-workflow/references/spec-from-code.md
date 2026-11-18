@@ -35,7 +35,7 @@ flowchart TD
 
 ## What a run may change
 
-- **The spec repository,** for the named scope: feature documents, contracts, the domain model, the design folder, and storyboards.
+- **The spec repository,** for the named scope: feature documents, contracts, the domain model, data cards, the design folder, and storyboards.
 - **No behavior.** What the code does stays as it is, including what looks like a bug.
 - **Tooling in the code repositories,** and nothing else there: stories and stand-ins that draw existing screens, and requirement IDs in test titles. Each is a code-only change of its own, through the usual review.
 - **Nothing outside the scope.** A second scope needs its own request.
@@ -53,6 +53,7 @@ An accepted spec that already covers part of the scope stays as it is. Where it 
 - **Say whether each rule is proven or read.** A rule that no test shows is still a rule, but the review says so.
 - **Use the code's own names, and ask.** The names of features and domain terms are decisions. Propose the names the code uses, and flag two names for one thing, as [Map domain language into code](../SKILL.md#map-domain-language-into-code) describes.
 - **Never turn a finding or a question into a rule.** The user decides each one.
+- **Don't read a target from the code.** A [data card](technical-changes.md#a-data-card-for-each-store) can be filled from the stores, keys, and queries in the code. A service level or a budget can't: the code doesn't know how fast it was meant to be. Leave those to the user.
 
 > Example: the code lets a Class pause 5 times, and a test shows it. That's a rule, and it's proven. The code also charges a credit twice when a resume fails. That looks unintended, so it's a finding. The user decides: write it down as built, or fix it later.
 

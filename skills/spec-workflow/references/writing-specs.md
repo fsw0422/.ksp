@@ -45,12 +45,14 @@ Every fact has one owning document. Other documents link to the owner instead of
 | The customer, the promise, the product boundary, and global success measures | `README.md`, which links to rules instead of stating them |
 | A behavior rule and its requirements | One feature document |
 | Message shapes | A contract, such as OpenAPI for HTTP or JSON Schema for events |
+| How fast and how reliably an operation must answer | The same contract, as the operation's service level |
+| What a store holds, how it's read and written, and what drives its cost | A data card under `architecture/data/` |
 | What a state of a screen looks like, and where it sits in a flow | The feature's storyboard, beside its feature document |
 | The look and the wording of the whole app: its rules and its token values | The design folder |
 | System boundaries and deployment | Architecture documents, which don't own product behavior |
 | Domain terms and their names in code | One place, such as `architecture/domain-model.md` or a glossary |
 | The reasons for a big choice | A decision record |
-| Dated evidence | Research documents, which never state requirements |
+| Research about the world outside the app, with its date | Research documents, which never state requirements. The app's own measurements aren't research, as [Keep targets and measurements apart](technical-changes.md#keep-targets-and-measurements-apart) describes |
 
 **Why:** two copies of one rule drift apart, and then every reader has to guess which one is current.
 
