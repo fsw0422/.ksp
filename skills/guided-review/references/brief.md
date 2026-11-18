@@ -39,7 +39,7 @@ Comparison   backend: 6ace5c4..72894cf, in backend-initial-class-recovery
 Why          REC-012 and REC-013, at spec commit 4c7a113
 Plan         the chunk map in the work record
 Checks       cleanup pass: no edits. Bug review at medium: 1 fixed, 1 plausible. Test merges: clean. 18 tests pass
-Extra rules  domain mapping, the spec guardrail, --not-live
+Extra rules  domain mapping, the spec guardrail, --breaking
 Edits        in the change's worktree, then its tests, the cleanup check, and one re-review
 Decision     "approve for initial", after which Spec Workflow squashes and merges
 Record       the change's entry in WORK_RECORD.md

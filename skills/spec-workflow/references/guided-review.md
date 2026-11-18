@@ -27,7 +27,7 @@ Accepting a spec allows building. It doesn't approve the code or the merge.
 
 **Spec guardrail.** New behavior or shared terms missing from the specs follow the [spec guardrail](../SKILL.md#when-to-return-to-specs): keep the existing code, pause dependent merges, and decide in the spec first. Don't rewrite specs to justify the code.
 
-**Spec and code sync.** For a [spec and code sync](spec-code-sync.md), include the finding, the accepted decision, and the change's [mode](spec-code-sync.md#use-the-tasks-mode). Explain the affected APIs, consumers, and data, and why old contracts or migrations are kept or removed. `--not-live` allows replacements within the accepted scope; unrelated feature decisions and merge approval still need their usual review.
+**Spec and code sync.** For a [spec and code sync](spec-code-sync.md), include the finding, the accepted decision, and the change's [mode](spec-code-sync.md#use-the-tasks-mode). Explain the affected APIs, consumers, and data, and why old contracts or migrations are kept or removed. `--breaking` allows replacements within the accepted scope; unrelated feature decisions and merge approval still need their usual review.
 
 **Screens.** For a change that touches a screen, each chunk shows its artboards in a spec review, and its pictures in a merge review, as [Show them in a review](screen-pictures.md#show-them-in-a-review) describes. Read the storyboard's page back before each chunk and before you record the decision, so the user's edits on the page are in the commit they decide on.
 
@@ -43,6 +43,6 @@ Keep the skill's review record in the change's entry in the work record, with th
 
 | Record | Spec Workflow adds |
 | --- | --- |
-| Identity and scope | The mode, live or `--not-live`, and for a sync, the finding and the accepted decision |
+| Identity and scope | The mode, live or `--breaking`, and for a sync, the finding and the accepted decision |
 | Commits | Each repository's accepted spec commit, and the cleanup, bug review, and test merge results. For a change that touches a screen, the storyboard's page and the latest picture run |
 | Decision | The decision, as listed in [Fill the brief](#fill-the-brief), with its destination and the heads it covers |

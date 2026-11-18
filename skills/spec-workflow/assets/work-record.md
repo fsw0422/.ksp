@@ -12,7 +12,7 @@ Updated: <YYYY-MM-DD HH:MM>
 
 - **State:** <spec draft | implementing | cleanup | in review | approved | merging | blocked | paused>
 - **Goal:** <the result we want, in one sentence>
-- **Mode:** <live | --not-live>, from <the request | the project default | the default>
+- **Mode:** <live | --breaking>, from <the request | the project default | the default>
 - **Authorized:** <what the user has approved for this change, such as "build within the accepted spec" or "merge into `initial`">
 - **Parent:** `<parent branch>`, because <why the change belongs there>
 - **Depends on:** <other changes this one waits for, or nothing>

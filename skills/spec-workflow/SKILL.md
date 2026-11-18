@@ -1,6 +1,6 @@
 ---
 name: spec-workflow
-description: "Guide spec changes and matching code across repositories with worktrees, guided reviews, squash merges, and recursive rebases. Set up a new project's spec repository from a template. Treat work as live by default; --not-live allows direct replacement of superseded specs and matching code before release. Track priorities and prepare the next worktree. Questions and plans stay read-only."
+description: "Guide spec changes and matching code across repositories with worktrees, guided reviews, squash merges, and recursive rebases. Set up a new project's spec repository from a template. Treat work as live by default; --breaking allows direct replacement of superseded specs and matching code for features that aren't released yet. Compare spec and code with --compare, which walks each difference with the user. Build a spec from existing code with --from-code. Track priorities and prepare the next worktree. Questions and plans stay read-only."
 ---
 
 # Spec Workflow
@@ -25,7 +25,7 @@ flowchart TD
 
 **Why this order:** a decision written in the spec can be reviewed and reused. Code written first tends to become the decision without anyone choosing it. Reviewing the finished change means the user approves exactly what lands.
 
-Details live in reference files: [Git operations](references/git-operations.md) for commands and checks, [Writing specs](references/writing-specs.md), [Code cleanup](references/code-cleanup.md), [Bug review](references/bug-review.md), [Guided review](references/guided-review.md), which fills the brief for the [guided-review](../guided-review/SKILL.md) skill, [Spec and code sync](references/spec-code-sync.md), [Storyboards and screen pictures](references/screen-pictures.md), and [Project setup](references/project-setup.md). [Worked examples](references/worked-examples.md) explains every rule in more detail, with several examples each.
+Details live in reference files: [Git operations](references/git-operations.md) for commands and checks, [Writing specs](references/writing-specs.md), [Code cleanup](references/code-cleanup.md), [Bug review](references/bug-review.md), [Guided review](references/guided-review.md), which fills the brief for the [guided-review](../guided-review/SKILL.md) skill, [Spec and code sync](references/spec-code-sync.md), [Spec from code](references/spec-from-code.md), [Storyboards and screen pictures](references/screen-pictures.md), and [Project setup](references/project-setup.md). [Worked examples](references/worked-examples.md) explains every rule in more detail, with several examples each.
 
 ## Words used here
 
@@ -56,6 +56,26 @@ Read the repository's README before working there, and again when you switch wor
 
 Starting a new project, or working in a spec repository that doesn't have the template's layout yet? Read [Project setup](references/project-setup.md) first. It creates the spec repository from a template, plus the workspace files this workflow uses.
 
+## Options on the request
+
+Three options change how a request is handled. Each answers its own question, so they combine freely:
+
+| Option | Its question | Without it |
+| --- | --- | --- |
+| `--breaking` | May this change break old clients and old saved data? | No. The work is live, and old behavior keeps working |
+| `--compare` | Should spec and code be compared across a whole scope, both ways? | Only what the current change touches is checked |
+| `--from-code` | Should the spec be written from the code, for a named scope? | The spec is the source, and the code follows it |
+
+```text
+$spec-workflow --breaking <change>              in Codex
+/spec-workflow --compare the Review feature     in Claude Code
+/spec-workflow --from-code the screens          in Claude Code
+```
+
+These are options in the prompt, not shell commands. [Choose the compatibility mode](#choose-the-compatibility-mode) describes `--breaking`, [Compare spec and code when asked](#compare-spec-and-code-when-asked) describes `--compare`, and [Build the spec from code when asked](#build-the-spec-from-code-when-asked) describes `--from-code`.
+
+> Example: `--compare` finds an export that the spec doesn't have, and the user decides to remove it. `--breaking` then says how: without it, old app versions that call the export keep working until it's retired. With it, the export is deleted in one change.
+
 ## Choose the compatibility mode
 
 The mode decides how a change replaces old behavior.
@@ -63,11 +83,11 @@ The mode decides how a change replaces old behavior.
 | Mode | What it does | Why |
 | --- | --- | --- |
 | Live, the default | Keep supported API and event formats, client behavior, and saved data working. Use transitions, deprecations, and upgrade migrations where needed. Keep the contract and decision history that explains supported versions. | Released clients and real users depend on the old behavior. |
-| `--not-live` | Directly replace the specs, contracts, and code that the accepted change clearly supersedes. Update links and retire replaced requirement IDs. Carry the change into models, APIs, storage, callers, and tests. Skip old-client paths and upgrade migrations unless the user asks for them. Keep fresh setup and schema creation reproducible. | Nothing released depends on the old behavior, so compatibility code would only add weight. |
+| `--breaking` | Break freely, in one change, with no thought for backward or forward compatibility. Directly replace the specs, contracts, and code that the accepted change clearly supersedes. Update links and retire replaced requirement IDs. Carry the change into models, APIs, storage, callers, and tests. Skip old-client paths and upgrade migrations unless the user asks for them. Keep fresh setup and schema creation reproducible. | It's only for features that aren't released yet. Nothing released depends on the old behavior, so compatibility code would only add weight. |
 
 ```mermaid
 flowchart TD
-    Mode{--not-live from the request or a project default?} -->|No| Live[Keep old clients and saved data working]
+    Mode{--breaking from the request or a project default?} -->|No| Live[Keep old clients and saved data working]
     Mode -->|Yes| Replace[Replace old specs, contracts, and code directly]
     Live --> Spec[Agree on the updated spec]
     Replace --> Spec
@@ -77,21 +97,21 @@ flowchart TD
 **Where the mode comes from.** The user chooses it: with the flag on the request, or with a standing user or project instruction that sets a default, such as a line in the user's global instructions or in the workspace `AGENTS.md`. Without either, the task is live, even if nothing has been released. Don't guess the mode from hints such as a branch name.
 
 ```text
-$spec-workflow --not-live <change>     in Codex
-/spec-workflow --not-live <change>     in Claude Code
+$spec-workflow --breaking <change>     in Codex
+/spec-workflow --breaking <change>     in Claude Code
 ```
 
-These are options in the prompt, not shell commands.
+`--not-live` is this option's old name. Read it as `--breaking` in older work records and project instructions.
 
 **Keep it for the whole family.** Record the mode and where it came from in the work record, and keep it when resuming. A child or prerequisite keeps its family's mode. A new, unrelated task starts from the default again.
 
-> Example: a storage fix needed by a `--not-live` feature stays `--not-live`. It shouldn't start adding migrations just because it got its own branch.
+> Example: a storage fix needed by a `--breaking` feature stays `--breaking`. It shouldn't start adding migrations just because it got its own branch.
 
-**Scope.** Both modes bring the accepted spec and the affected code into agreement, within the accepted task. Neither starts a project-wide audit. Honor a narrower request, such as a plan, an audit-only report, or docs-only work.
+**Scope.** Both modes bring the accepted spec and the affected code into agreement, within the accepted task. Neither starts a wider comparison, and neither turns the direction around: `--compare` and `--from-code` are separate options. Honor a narrower request, such as a plan, a compare-only report, or docs-only work.
 
-**What `--not-live` doesn't allow.** It's permission to replace what the accepted change clearly supersedes, nothing more. It doesn't decide unrelated feature removals or settle unclear requirements. It doesn't allow merging without review and approval. Deleting saved data, resetting a database, or removing deployed resources each needs explicit permission for that specific target. Current rules such as retry safety and data retention still apply. If a supported deployed client would break, pause that part and ask.
+**What `--breaking` doesn't allow.** It's permission to replace what the accepted change clearly supersedes, nothing more. It doesn't decide unrelated feature removals or settle unclear requirements. It doesn't allow merging without review and approval. Deleting saved data, resetting a database, or removing deployed resources each needs explicit permission for that specific target. Current rules such as retry safety and data retention still apply. If a supported deployed client would break, pause that part and ask.
 
-**Why:** "not live" means no released client depends on the old shape. It doesn't mean the current rules stop mattering.
+**Why:** "breaking" means old clients and old saved data may stop working, because none of them are released. It doesn't mean the current rules stop mattering.
 
 **Old test data.** A direct replacement can leave records in old shapes in test environments, such as a test phone or a local database. Each change says what happens to them: either the new code skips or clearly rejects old shapes, or the agent proposes resetting a named test environment and waits for the user's OK.
 
@@ -120,11 +140,11 @@ Before calling code dead, check supported callers, configuration, contracts, and
 
 **If the spec is missing or unclear,** show the relevant code, link the document that should define it, and propose a small wording change or clear options. Pause code that depends on the decision, including in other branches. Independent, authorized work can continue unless the user paused everything.
 
-**Don't change a spec just to justify existing code.** Keep each requirement in the document that owns it. Keep requirement IDs when only the wording changes. Record deferred work only when agreed.
+**Don't change a spec just to justify existing code.** The one exception is a scope the user names with `--from-code`, as [Build the spec from code when asked](#build-the-spec-from-code-when-asked) describes. Keep each requirement in the document that owns it. Keep requirement IDs when only the wording changes. Record deferred work only when agreed.
 
 **Why:** the spec is the decision. If code can rewrite it, nobody decided anything.
 
-**Record why, in the right place.** A choice that crosses features or is hard to reverse gets a decision record in the spec repository, in the form [Writing specs](references/writing-specs.md#decisions) describes. A smaller reason goes in the squash commit message. Under `--not-live`, rewrite a replaced decision to the current one, and add a short "Why we changed" note if the old option might come up again.
+**Record why, in the right place.** A choice that crosses features or is hard to reverse gets a decision record in the spec repository, in the form [Writing specs](references/writing-specs.md#decisions) describes. A smaller reason goes in the squash commit message. Under `--breaking`, rewrite a replaced decision to the current one, and add a short "Why we changed" note if the old option might come up again.
 
 > Example: "keep recorded Class audio for replay" affects recording, recovery, history, and storage, so it gets a decision record. "Clear the request timer when headers arrive" is local, so its reason goes in the commit message.
 
@@ -495,9 +515,24 @@ If the workspace has only an older log, such as `COMMIT_REVIEW_QUEUE.md`, leave 
 
 More examples: [The work record](references/worked-examples.md#the-work-record).
 
-## Check accumulated differences when asked
+## Compare spec and code when asked
 
-Normal work only updates the code affected by the accepted change. A project-wide comparison runs only when the user asks for an audit or a broader sync. It checks both ways: code with no spec, and specs with no working code. Read [Spec and code sync](references/spec-code-sync.md). `--not-live` doesn't widen the scope.
+Normal work only updates the code affected by the accepted change. A wider comparison runs only when the user asks for it, with `--compare` and a scope, or in words. Read [Compare spec and code when asked](references/spec-code-sync.md#compare-spec-and-code-when-asked). In short:
+
+1. Compare both ways: code with no spec, specs with no working code, and places where the two differ.
+2. Show every difference in one table.
+3. Walk the differences one at a time, in the style of a guided review: explain what differs and why, lay out the options, and let the user decide each one. Don't run the guided-review skill for it, and run no checks: a comparison only reads.
+4. Change nothing during the walk. Afterwards, show the changes that the decisions lead to, and start one when the user says so.
+
+`--breaking` doesn't start a comparison or widen its scope.
+
+**Why one at a time:** keeping or removing a feature is a product decision. A table shows how much there is to decide. It can't show what each choice costs.
+
+## Build the spec from code when asked
+
+For code that nobody knows well, or whose spec is missing, the user can turn the direction around for a named scope, with `--from-code`. Read [Spec from code](references/spec-from-code.md). In short: the code at one commit is the source, and the spec describes what it does today. A run changes no behavior. Something that looks unintended becomes a finding, not a rule and not a fix. The user reviews the spec one feature at a time and accepts it, and from then on the spec is the source again.
+
+> Example: `--from-code the screens and the design` writes the design folder from the theme code, adds a story for each existing state, and draws each feature's storyboard from those stories.
 
 ## Stay within the request
 

@@ -149,7 +149,7 @@ flowchart TD
 
 Write a decision record only for a choice that crosses features or is hard to reverse. Start from the [decision template](../assets/templates/decision.md), name it `decisions/NN-short-title.md`, keep its status in the header block, and cover Context, Decision, and Consequences. Feature documents link to it.
 
-When a decision changes, follow the task's [compatibility mode](../SKILL.md#choose-the-compatibility-mode). Under `--not-live`, rewrite the record to the current decision, and add a short "Why we changed" note when the old option might come up again. In live mode, keep the history that explains supported versions.
+When a decision changes, follow the task's [compatibility mode](../SKILL.md#choose-the-compatibility-mode). Under `--breaking`, rewrite the record to the current decision, and add a short "Why we changed" note when the old option might come up again. In live mode, keep the history that explains supported versions.
 
 **Why:** people and agents read files, not Git history. A decision record can be linked from every feature it affects, while a commit message can only be found by someone who already knows which commit to look at.
 

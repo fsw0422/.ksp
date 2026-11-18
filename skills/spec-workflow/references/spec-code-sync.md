@@ -1,23 +1,23 @@
 # Spec and code sync
 
-Make the affected code match the accepted spec, including its domain terms, APIs, storage, and behavior. This happens in every task, in both modes. The direction is always spec to code: code changes to match an accepted decision, and code never changes the spec on its own.
+Make the affected code match the accepted spec, including its domain terms, APIs, storage, and behavior. This happens in every task, in both modes. The direction is spec to code: code changes to match an accepted decision, and code never changes the spec on its own. The one exception is a scope the user names with `--from-code`, as [Spec from code](spec-from-code.md) describes.
 
 ## Use the task's mode
 
 Apply the task's [compatibility mode](../SKILL.md#choose-the-compatibility-mode) across every repository in the change family. Record the accepted spec commits, scope, decisions, and checks.
 
 - **Live:** if a required change can't stay compatible, explain the break and settle that decision before dependent code.
-- **`--not-live`:** revise or remove the specs, contracts, and decision records the new decision clearly replaces. Update incoming links, diagrams, and requirement references together. Retire replaced requirement IDs instead of giving their identity to a different rule. Git keeps the old text, so don't keep a second active definition, or an obsolete document, just to explain history. Then update all affected first-party code, callers, schema definitions, fixtures, and tests, and remove the code and old-client paths that exist only for the replaced decision. Build missing behavior within the accepted task's scope without asking again.
+- **`--breaking`:** revise or remove the specs, contracts, and decision records the new decision clearly replaces. Update incoming links, diagrams, and requirement references together. Retire replaced requirement IDs instead of giving their identity to a different rule. Git keeps the old text, so don't keep a second active definition, or an obsolete document, just to explain history. Then update all affected first-party code, callers, schema definitions, fixtures, and tests, and remove the code and old-client paths that exist only for the replaced decision. Build missing behavior within the accepted task's scope without asking again.
 
 **Why:** with two active definitions of one rule, every reader has to guess which one is current.
 
-> Example (made up): under `--not-live`, a new rule replaces `PAUSE-003`. The old ID disappears and is never reused. The new rule gets a new ID, links that pointed at `PAUSE-003` now point at it, and the code path that served only the old rule is deleted.
+> Example (made up): under `--breaking`, a new rule replaces `PAUSE-003`. The old ID disappears and is never reused. The new rule gets a new ID, links that pointed at `PAUSE-003` now point at it, and the code path that served only the old rule is deleted.
 
 If evidence contradicts the mode, such as a supported deployed client that would break, pause that part and settle it with the user. Don't ask again just because an accepted replacement breaks old behavior.
 
-## Audit existing differences when asked
+## Compare spec and code when asked
 
-A whole-project audit starts only when the user asks to compare existing specs and code broadly. `--not-live` alone doesn't start it or widen the scope. An audit-only request allows findings, not repairs.
+A comparison starts only when the user asks for it: with `--compare` and a scope, or in words, such as "compare the Review feature with its spec". `--breaking` alone doesn't start it or widen the scope. A comparison finds differences, explains them, and asks. It changes nothing by itself.
 
 **Why:** differences pile up quietly, and a broad check is the only way to find code nobody specified and specs nobody built. It's large, so it runs only on request.
 
@@ -35,9 +35,77 @@ Don't limit the check to the current diff. A matching name or helper function do
 
 > Example (made up): the spec has `REVIEW-014`, "a Review exercise can be retried once". No test cites it. The code has a `retryExercise()` helper, but no screen calls it. Finding: specified, but not working.
 
-Keep findings in the work record: the requirement or code feature, evidence, current state, proposed action, API and data impact, user decision, and verification result. Track areas checked and areas still unknown. Group findings with one cause into one coherent change; don't open a worktree for every helper.
+### Show the table first
+
+List every difference in one table, numbered and grouped by feature, before you explain any of them:
+
+| # | Difference | Where | Evidence |
+| --- | --- | --- | --- |
+| 1 | `REVIEW-014`: a Review exercise can be retried once | Spec only | No test cites it, and nothing calls `retryExercise()` |
+| 2 | A Class can be exported as CSV | Code only | `GET /classes/{id}/export`, called from Settings |
+| 3 | The Pause limit: the spec says 3, the code allows 5 | Both, but different | `PAUSE-003`, and `canPause()` in `PauseLimit.ts` |
+
+- **A planned spec isn't a difference.** A rule whose feature document says `implementation: backlog` is listed under the table as planned, not as a row.
+- **Internal code is never a row.** A helper, vendor code, and generated code need no spec.
+- **Say what wasn't read.** Name the areas the comparison didn't reach, under the table.
+
+**Why a table first:** the user sees how much there is to decide, and can choose where to start and where to stop.
+
+### Walk the differences one at a time
+
+Then go through the rows one at a time, in the style of a [guided review](../../guided-review/SKILL.md): explain one difference in detail, then stop and wait. Don't run that skill for this. A comparison only reads: it runs no cleanup pass, no bug review, and no tests. Its purpose is that the user understands each difference and decides what happens to it.
+
+Start each difference with a heading that has its number and its title from the table, such as `## Difference 2 of 7: A Class can be exported as CSV`. Then explain in detail and in easy words, with examples:
+
+- **What differs:** what the spec says, quoted with its ID, and what the code does, shown as the code itself: the file, the commit, and a line number in front of each line. Where one side has nothing, say so.
+- **Why:** what the history shows about how it came about, such as the commit that added the code, or the change that wrote the rule. Separate evidence from guesses.
+- **How it's used:** who calls it, what data it touches, and who would notice a change.
+- **Before you decide:** each option that fits, from [Route each finding](#route-each-finding), with what it would change in the spec, the code, the API, and saved data. Then your recommendation, and the reason for it.
+
+Then stop and wait. Stay on this difference while the user asks about it, such as "show the callers" or "what breaks if it goes". The user decides each difference:
+
+| Decision | What it starts later |
+| --- | --- |
+| Keep it and write it down | The rule is written from the code, as [Spec from code](spec-from-code.md) describes |
+| Remove it | A change that removes the code, in the task's [mode](#use-the-tasks-mode) |
+| Build it | A change that builds what the spec describes |
+| Change the code | A repair that makes the code match the spec |
+| Change the spec | A spec change that states the behavior the user wants |
+| Defer | Nothing. The row stays open in the work record |
+
+Don't decide for the user, and don't apply anything during the walk. Write each decision next to its row in the work record as soon as it's made, so a walk that stops loses nothing. The user can stop the walk at any row, and the rows that are left stay open. Show the table again, with the decisions so far, when the user asks and when the walk ends.
+
+One difference might look like this (made up):
+
+> ## Difference 2 of 7: A Class can be exported as CSV
+>
+> **What differs:** the code can export a Class as CSV. No rule in the spec describes an export. The route is `GET /classes/{id}/export`, in `ClassRoutes.ts`, lines 88 to 104, at `9b3e1d4`.
+>
+> **Why:** commit `4c1a2f7` added it as "temporary export for the pilot". No decision record mentions it.
+>
+> **How it's used:** the Settings screen has an Export button. No test covers the route.
+>
+> **Before you decide:** keep it and write it down, which adds one rule to Class history and the route to the contract. Or remove it, which deletes the button, the route, and two helpers. I'd remove it: it was added as temporary, and nothing tests it.
+
+**Why in this style:** keeping or removing a feature is a product decision, and the user can only make it with the code, its history, and the cost of each option in front of them.
+
+### Turn the decisions into changes
+
+A decision in the walk changes nothing yet. It's the user's answer for one row. When the walk ends, or the user stops it:
+
+1. **Group the decided rows** that have one cause into one change. Don't plan a change for every row.
+2. **Show the changes** the decisions lead to: each with its rows, the repositories it touches, and a suggested order. Add them to the work record's priorities.
+3. **Start a change when the user says so.** It then runs through the usual workflow: the spec first where it changes, then the code, with the usual reviews and the merge approval.
+
+> Example: rows 2 and 5 are the export's route and its button. Both are decided "remove it", so they become one change. Row 3 is decided "change the spec", and becomes a second change, in the spec only. Row 1 is deferred and stays open.
+
+**Why not right after each decision:** rows often belong together, and a later row can change what an earlier answer means. Carrying one out also takes a worktree, a build, and a review, which would stop the walk for a long time after every row.
+
+Keep each row in the work record: the difference, its evidence, the decision, the change that carries it out, and the verification result. Track the areas read and the areas still unknown.
 
 ## Route each finding
+
+Use this table for the options in each chunk of a comparison's walk, and for a difference that turns up during normal work.
 
 ```mermaid
 flowchart TD
@@ -51,7 +119,7 @@ flowchart TD
 
 | Finding | What to do |
 | --- | --- |
-| An accepted task decision clearly replaces a definition or implementation | Apply the task's mode. With `--not-live`, replace or remove the old definition and its code directly. With live, keep required compatibility and plan the transition. Don't ask again about the same accepted replacement. |
+| An accepted task decision clearly replaces a definition or implementation | Apply the task's mode. With `--breaking`, replace or remove the old definition and its code directly. With live, keep required compatibility and plan the transition. Don't ask again about the same accepted replacement. |
 | A feature or domain concept exists only in code, with no accepted decision | Show what it does, where it's used, its impact, and the missing spec. Ask whether to keep and document it, remove it, or defer it. **Why:** keeping or removing a feature is a product decision. |
 | A spec has no implementation outside the accepted task | Ask whether to include its implementation. Planned or deferred requirements aren't automatically new work. |
 | Code partly or wrongly implements an accepted spec | An authorized sync or repair task includes fixing it through Spec Workflow, using the accepted requirement and the task's mode. |

@@ -6,23 +6,23 @@ The examples use a made-up language-class app. Its spec repository is `specs`, i
 
 ## Choosing the mode
 
-The mode answers one question: does anything released depend on the old behavior? If something does, a change has to keep the old behavior working while it moves to the new one; that's live mode. If nothing does, the change can simply replace the old behavior; that's `--not-live`. Guessing wrong in the `--not-live` direction can break real users, so the mode always comes from the user, and the default is live.
+The mode answers one question: does anything released depend on the old behavior? If something does, a change has to keep the old behavior working while it moves to the new one; that's live mode. If nothing does, the change can simply replace the old behavior; that's `--breaking`. Guessing wrong in the `--breaking` direction can break real users, so the mode always comes from the user, and the default is live.
 
 ```mermaid
 flowchart TD
-    Flag{Does the request say --not-live?} -->|Yes| NotLive[Use --not-live]
+    Flag{Does the request say --breaking?} -->|Yes| NotLive[Use --breaking]
     Flag -->|No| Default{Does a standing user or project instruction set a default?}
     Default -->|Yes| UseDefault[Use that default]
     Default -->|No| Live[Use live]
 ```
 
-**Example: the project sets a default.** The workspace `AGENTS.md` says "use Spec Workflow with `--not-live` by default". The user asks, "add a retention period to Class", without a flag. The mode is `--not-live`, and the work record says where it came from: `Mode: --not-live, from the project default`. The spec gets the new retention rule directly, the code adds the field, and no migration is written for old Classes.
+**Example: the project sets a default.** The workspace `AGENTS.md` says "use Spec Workflow with `--breaking` by default". The user asks, "add a retention period to Class", without a flag. The mode is `--breaking`, and the work record says where it came from: `Mode: --breaking, from the project default`. The spec gets the new retention rule directly, the code adds the field, and no migration is written for old Classes.
 
 **Example: no default.** In another project with no default, the user asks to rename the API field `duration` to `lengthSeconds`. The mode is live, so released clients that still send or read `duration` must keep working. The change adds `lengthSeconds`, keeps `duration` as a deprecated alias, and the spec records when the alias will be removed.
 
-**Example: a child keeps its family's mode.** While building the `--not-live` audio feature, the agent finds that the storage layer needs a fix and gives it its own branch. The fix stays `--not-live`. If it switched to live, it would start writing migrations for data shapes that the parent feature is replacing anyway.
+**Example: a child keeps its family's mode.** While building the `--breaking` audio feature, the agent finds that the storage layer needs a fix and gives it its own branch. The fix stays `--breaking`. If it switched to live, it would start writing migrations for data shapes that the parent feature is replacing anyway.
 
-**Example: old test data.** The audio feature changes how Pause data is saved. The test phone still has Classes saved in the old shape, and they can no longer resume. Under `--not-live` there is no migration, but the agent may not delete those records on its own either. So the change says what happens to them, for example "old paused Classes show as ended", or the agent asks, "Reset the local test database? This deletes 3 test Classes," and waits for a yes.
+**Example: old test data.** The audio feature changes how Pause data is saved. The test phone still has Classes saved in the old shape, and they can no longer resume. Under `--breaking` there is no migration, but the agent may not delete those records on its own either. So the change says what happens to them, for example "old paused Classes show as ended", or the agent asks, "Reset the local test database? This deletes 3 test Classes," and waits for a yes.
 
 **Example: going live.** The app ships. The user tags the spec repository `release-1` and changes the default in the workspace `AGENTS.md` to live. A month later, a change wants to rename a field that `release-1` defines. Live mode applies now: the old name keeps working until a planned removal, because the released app still uses it.
 
@@ -228,7 +228,7 @@ The work record holds the current state only, so the agent can read it quickly a
 ## initial-class-recovery
 - **State:** in review
 - **Goal:** reopening a Class restores its saved audio
-- **Mode:** --not-live, from the project default
+- **Mode:** --breaking, from the project default
 - **Authorized:** build within the accepted spec; the merge isn't approved yet
 - **Parent:** `initial`, because it needs no unfinished work from other branches
 - **Spec:** accepted at `9c1e2f0`
