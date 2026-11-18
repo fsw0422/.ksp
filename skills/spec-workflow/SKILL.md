@@ -25,7 +25,7 @@ flowchart TD
 
 **Why this order:** a decision written in the spec can be reviewed and reused. Code written first tends to become the decision without anyone choosing it. Reviewing the finished change means the user approves exactly what lands.
 
-Details live in reference files: [Git operations](references/git-operations.md) for commands and checks, [Writing specs](references/writing-specs.md), [Code cleanup](references/code-cleanup.md), [Bug review](references/bug-review.md), [Guided review](references/guided-review.md), which fills the brief for the [guided-review](../guided-review/SKILL.md) skill, [Spec and code sync](references/spec-code-sync.md), and [Project setup](references/project-setup.md). [Worked examples](references/worked-examples.md) explains every rule in more detail, with several examples each.
+Details live in reference files: [Git operations](references/git-operations.md) for commands and checks, [Writing specs](references/writing-specs.md), [Code cleanup](references/code-cleanup.md), [Bug review](references/bug-review.md), [Guided review](references/guided-review.md), which fills the brief for the [guided-review](../guided-review/SKILL.md) skill, [Spec and code sync](references/spec-code-sync.md), [Storyboards and screen pictures](references/screen-pictures.md), and [Project setup](references/project-setup.md). [Worked examples](references/worked-examples.md) explains every rule in more detail, with several examples each.
 
 ## Words used here
 
@@ -43,6 +43,8 @@ Details live in reference files: [Git operations](references/git-operations.md) 
 | Bug review | A fresh read of the change's code that looks only for bugs, run once before the guided review | `/code-review medium` on the backend change |
 | Guided review | A walk through the change with the user, one chunk at a time, before they decide | the review before `initial-retained-audio` merges |
 | Test merge | A trial merge of two branches that changes no branch or file. It shows a conflict before the real merge | this change against a paused sibling |
+| Storyboard | A feature's states drawn as screens, in the order a user meets them. Its files live in the spec repository | Loading, then Failed, for a Class's saved audio |
+| Screen picture | An image of one state, drawn by the app's own code | the Failed state in the dark theme |
 
 **Why:** several of these used to have two or three names, which made rules easy to misread.
 
@@ -108,6 +110,7 @@ Decide whether the request needs a spec decision before any code.
 | Change | What to do | Why |
 | --- | --- | --- |
 | New or unclear behavior, API rule, or shared domain term | Update the spec, glossary, or contract that defines it. Review and commit that decision before writing code that depends on it. | Otherwise the code becomes the decision without anyone choosing it. |
+| New or changed rule for the look or the wording, such as a colour, a text style, or a rule for a component, where the spec repository has a design folder | Update the design folder first, as [Use the design folder](references/screen-pictures.md#use-the-design-folder) describes. | The look is a decision too. If each screen's code sets it, the screens drift apart. |
 | Build or fix behavior the spec already defines | Use the accepted spec version. No spec edit is needed. | The decision already exists. |
 | Local rename, proven dead code, internal restructuring, or a clear internal bug | Code-only work is fine if it needs no new product, contract, or domain decision. | Nothing a user or another system sees changes. |
 
@@ -136,6 +139,18 @@ Before writing or revising a spec, read [Writing specs](references/writing-specs
 What only one project knows stays in its own documents, such as the requirement ID prefix in each feature document's header. [Project setup](references/project-setup.md) creates a new spec repository from the template.
 
 **Why:** the general rules are the same in every project, so they live once, in this skill. A project's own facts change along with its files, so they live in its repository and change in the same commit.
+
+## Show screens before deciding
+
+When a change adds or changes a screen, one of its states, or the words a user reads on it, read [Storyboards and screen pictures](references/screen-pictures.md). In short:
+
+1. Before the spec review, sketch each state on the feature's storyboard, in the spec repository. Write no code yet.
+2. After the spec is accepted, build each state as a view with a story.
+3. Before the merge review, draw each story with the app's own code, and make the storyboard match what was built.
+
+> Example: a new Retry line for saved audio is sketched under the app's real player. The user moves it above the message on the storyboard's page and accepts the spec. The merge review then shows the built screen, and says what differs from that sketch.
+
+**Why:** a screen is hard to judge from a table of rules, and a description can't show that a line is cut off.
 
 ## Map domain language into code
 
@@ -341,7 +356,7 @@ sequenceDiagram
 3. **Re-check the parent and run the cleanup pass** for the proposed scope, before the final review.
 4. **Run the bug review,** as described in [Find bugs before review](#find-bugs-before-review).
 5. **Test-merge with the other open branches,** as described in [Check for conflicts before review](#check-for-conflicts-before-review).
-6. **Review.** Run the [guided-review](../guided-review/SKILL.md) skill in this conversation, with the brief that [Guided review](references/guided-review.md) describes: the repositories, the exact parent, head, and spec commits, the cleanup, bug review, and test merge results, the chunk map, and the destination. Reuse a review only while its approval still matches those inputs. **Why:** approval covers exact commits. If they change, nobody approved the new ones.
+6. **Review.** Run the [guided-review](../guided-review/SKILL.md) skill in this conversation, with the brief that [Guided review](references/guided-review.md) describes: the repositories, the exact parent, head, and spec commits, the cleanup, bug review, and test merge results, the chunk map, and the destination. For a change that touches a screen, the brief also names its storyboard and its screen pictures, as [Before the merge review](references/screen-pictures.md#before-the-merge-review) describes. Reuse a review only while its approval still matches those inputs. **Why:** approval covers exact commits. If they change, nobody approved the new ones.
 7. **Squash** each child into its immediate parent as one commit, including the final release merge, following [Git operations](references/git-operations.md). Then push the parent right away if it has a copy on the remote, as a plain push. The merge approval covers that push. **Why:** the parent's history then shows one reviewed commit per change. Pushing at once keeps the remote in step: the child's copy can then be deleted, and the other children's pull requests show only their own work.
 8. **Children first.** A parent can merge into its own parent, or be removed, only after all its children are resolved and removed, at every depth.
 9. **Sync the survivors,** as described in [Keep children on their parent's head](#keep-children-on-their-parents-head).

@@ -11,8 +11,8 @@ Spec Workflow runs the [guided-review](../../guided-review/SKILL.md) skill for a
 | Comparison | For each repository, the base and head commits from the work record, verified in Git, and the change's worktree folder and branch. The scope: spec acceptance, one repository, a coordinated merge, or the final release |
 | Why | The accepted spec commit, and the requirement IDs the chunks implement, such as `REC-012`. A code-only change needs no invented spec counterpart: its why is the goal in the work record |
 | Starting plan | The [chunk map planned before building](../SKILL.md#plan-the-chunks), from the work record |
-| Checks | The [cleanup pass](code-cleanup.md), the [bug review](bug-review.md), the [test merges](git-operations.md#test-merge-with-open-branches), and the tests, each with the heads it covered. That includes a recorded "no code cleanup" result, or a skip reason, where one applies. A spec review has the checks in [Writing specs](writing-specs.md#before-merging-a-spec-change), and no bug review, because there's no code |
-| Extra rules | The domain mapping, the spec guardrail, and the change's mode, as described below |
+| Checks | The [cleanup pass](code-cleanup.md), the [bug review](bug-review.md), the [test merges](git-operations.md#test-merge-with-open-branches), and the tests, each with the heads it covered. That includes a recorded "no code cleanup" result, or a skip reason, where one applies. A spec review has the checks in [Writing specs](writing-specs.md#before-merging-a-spec-change), and no bug review, because there's no code. A change that touches a screen adds its storyboard or its picture run, as [Show them in a review](screen-pictures.md#show-them-in-a-review) describes |
+| Extra rules | The domain mapping, the spec guardrail, the change's mode, and the screens rule, as described below |
 | Edits | Allowed, in the change's worktree. Check each edit as [Limit the reruns](bug-review.md#limit-the-reruns) describes: its tests, the cleanup check, and one re-review of the files it changed |
 | Decision | For a spec review, "accept the spec". For a merge, "approve for `<destination>`". The decision is one of: spec accepted, changes requested, paused, rejected, deferred, walkthrough complete, or merge approved for an exact destination, plus any explicit waiver |
 | Record | The change's entry in the work record, as [The review record](#the-review-record) describes |
@@ -29,6 +29,8 @@ Accepting a spec allows building. It doesn't approve the code or the merge.
 
 **Spec and code sync.** For a [spec and code sync](spec-code-sync.md), include the finding, the accepted decision, and the change's [mode](spec-code-sync.md#use-the-tasks-mode). Explain the affected APIs, consumers, and data, and why old contracts or migrations are kept or removed. `--not-live` allows replacements within the accepted scope; unrelated feature decisions and merge approval still need their usual review.
 
+**Screens.** For a change that touches a screen, each chunk shows its artboards in a spec review, and its pictures in a merge review, as [Show them in a review](screen-pictures.md#show-them-in-a-review) describes. Read the storyboard's page back before each chunk and before you record the decision, so the user's edits on the page are in the commit they decide on.
+
 **Squashes.** The new commit IDs a squash creates don't count as a change when the content is verified unchanged, as [Merge across repositories](git-operations.md#merge-across-repositories) describes.
 
 **One approval covers one thing.** Approving one repository doesn't approve the others, the parent branches, or the final release.
@@ -42,5 +44,5 @@ Keep the skill's review record in the change's entry in the work record, with th
 | Record | Spec Workflow adds |
 | --- | --- |
 | Identity and scope | The mode, live or `--not-live`, and for a sync, the finding and the accepted decision |
-| Commits | Each repository's accepted spec commit, and the cleanup, bug review, and test merge results |
+| Commits | Each repository's accepted spec commit, and the cleanup, bug review, and test merge results. For a change that touches a screen, the storyboard's page and the latest picture run |
 | Decision | The decision, as listed in [Fill the brief](#fill-the-brief), with its destination and the heads it covers |

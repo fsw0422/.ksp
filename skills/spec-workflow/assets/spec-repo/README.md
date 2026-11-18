@@ -21,3 +21,7 @@
 ## Success measures
 
 <How we will know the product works for its customer.>
+
+## Screens
+
+<Only for a product with screens. Say that `design/` holds the rules for the look and the wording, and the token values. Say that each feature's storyboard sits beside its feature document. Name the tool that draws a storyboard's page. Delete this section for a product without screens.>

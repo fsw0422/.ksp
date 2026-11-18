@@ -23,7 +23,7 @@ A whole-project audit starts only when the user asks to compare existing specs a
 
 Identify the repositories, the authoritative spec versions, and the code branches and commits to compare. Account for relevant uncommitted work without resetting it. Keep the chosen implementation separate from alternate worktrees and older saved work. Settle unclear starting versions before claiming a mismatch.
 
-Read every in-scope feature spec, contract, and domain definition. Separately, inspect the project's code through entry points, callers, storage, configuration, and tests. Where tests cite requirement IDs, start by searching the code repositories for each in-scope ID; this shows which requirements have tests and which have none. Check both directions:
+Read every in-scope feature spec, contract, domain definition, storyboard, and design rule. Separately, inspect the project's code through entry points, callers, storage, configuration, and tests. Where tests cite requirement IDs, start by searching the code repositories for each in-scope ID; this shows which requirements have tests and which have none. Check both directions:
 
 ```mermaid
 flowchart LR
@@ -56,6 +56,7 @@ flowchart TD
 | A spec has no implementation outside the accepted task | Ask whether to include its implementation. Planned or deferred requirements aren't automatically new work. |
 | Code partly or wrongly implements an accepted spec | An authorized sync or repair task includes fixing it through Spec Workflow, using the accepted requirement and the task's mode. |
 | The spec is outdated, contradictory, or unclear, and no accepted replacement settles it | Ask which behavior or spec is authoritative before changing dependent code. |
+| A screen's look differs between spec and code: a token value that differs from the design folder, a built state that differs from its artboard, or a state with no artboard | Route it like any other row here, with the design folder and the storyboard as the spec. Where the code is wrong, repair it. Where the code is right or the spec is missing, decide in the spec first, by changing the design folder or the artboard, as [Storyboards and screen pictures](screen-pictures.md#use-the-design-folder) describes. |
 | Internal helper, proven dead code, or code-only maintenance | Explain why no feature spec is needed. Clean it up only within the authorized scope. |
 | Spec and code agree | Record the evidence and continue. |
 
