@@ -32,6 +32,7 @@ This page doesn't apply when no screen looks different afterwards. For example, 
 | Sketch story | A story for a state that isn't built yet. It lives in a scratch worktree, draws the new part from the app's existing components, and never merges | `Failed`, with a Retry line drawn inside the story file |
 | Picture | An image of a story, drawn by the app's own code. A sketch is the picture of a sketch story | `Failed` in the dark theme, drawn by Chrome |
 | Flow sheet | One image of a stories file: all its states side by side, in the file's order, each under its name | The saved-audio states in a row: Loading, Failed, Ready |
+| Moving picture | A short looping recording of a story, drawn by the app's own code, for a change to motion | *Speaking*, with Mila turning, for 3 seconds |
 | Run | One call of the project's picture command, and the folder of pictures it filled | The run at `9b3e1d4` |
 | Stand-in | A fake that takes the place of a data source while pictures are drawn, and returns canned data | A fake API client that returns one saved Class |
 
@@ -62,6 +63,7 @@ The command:
 - on a person's own device, changes no setting, and takes a picture only while its stories are in front
 - stops with an error that names a story it can't draw, instead of saving a picture of something else
 - draws a flow sheet when asked: one PNG for a stories file and theme, with every story of the file side by side, in the file's order, each under its name
+- records a moving picture when asked: a few seconds of a story, with its real timing, as a looping GIF
 - writes each run into its own folder, `<output folder>/<commit>/`: one PNG for each story and theme, with a `pictures.json` that lists exactly what this run drew:
 
 ```json
@@ -78,7 +80,7 @@ The command:
 ]
 ```
 
-`story` is the story's ID in the project's tool, and `title` is its name for people. `rules` can be empty. `device` names what drew it, such as "Chrome, 390×844", an emulator, or a phone. `commit` is `git rev-parse --short HEAD`, with `-dirty` added when `git status --porcelain` prints anything, so uncommitted and untracked work shows as `9b3e1d4-dirty`. A flow sheet is listed too, with `sheet` in place of `story`, and the `stories` it shows, in order. A project can add fields of its own.
+`story` is the story's ID in the project's tool, and `title` is its name for people. `rules` can be empty. `device` names what drew it, such as "Chrome, 390×844", an emulator, or a phone. `commit` is `git rev-parse --short HEAD`, with `-dirty` added when `git status --porcelain` prints anything, so uncommitted and untracked work shows as `9b3e1d4-dirty`. A flow sheet is listed too, with `sheet` in place of `story`, and the `stories` it shows, in order. A moving picture is listed with `moving`: how many seconds and frames it holds. A project can add fields of its own.
 
 **Why a contract:** every app draws its screens with other tools, such as a browser for a React Native app or golden tests for a Flutter app. One command and one list keep those tools in the project, where they change with the app, and this page stays the same for all of them.
 
@@ -86,7 +88,7 @@ The command:
 
 **Why without a phone where possible:** a headless browser or a test runner is quick, works on any machine, and needs nobody watching. A phone or an emulator is for what they can't show, such as the keyboard or the status bar.
 
-**Suggested setup for an app that can run in a browser,** such as a React Native app with react-native-web: Storybook builds the stories, and a script opens each one in a headless browser, such as Playwright with Chrome, and saves its PNG. A flow sheet is one page that shows all the stories of a file, saved the same way.
+**Suggested setup for an app that can run in a browser,** such as a React Native app with react-native-web: Storybook builds the stories, and a script opens each one in a headless browser, such as Playwright with Chrome, and saves its PNG. A flow sheet is one page that shows all the stories of a file, saved the same way. A moving picture comes from the same page: the browser's screen capture records a few seconds of frames, which are joined into a GIF.
 
 ## Stories cite requirement IDs
 
@@ -115,6 +117,10 @@ To find a rule's screens, search for its ID: its stories carry it. A rule about 
 > Example: a Retry button that moves under the message is a change to the look, so *Failed* before and after is enough. A new *Retrying* state between *Failed* and *Ready* is a flow change, so the sheet of the saved-audio stories comes first, and then *Retrying* up close.
 
 **A flow across screens gets its own stories file,** with whole screens as its stories, in the order a user meets them, such as the Class screen, then Home with the paused Class, then End confirmation. Its sheet shows the journey.
+
+**Which changes get a moving picture:** a motion change. A change is a motion change when it changes what moves, its timing, its path, or when it plays or stops, such as Mila's spin, a fade, or the hold that starts a Class. Record each state whose motion changed for a few seconds, before and after where the earlier one is quick to record. A still picture can't show motion, so a motion change always gets one.
+
+> Example: Mila's speaking spin gets faster, from 1500 to 1200 milliseconds a turn. The still pictures look the same, so the change shows *Speaking* moving, before and after.
 
 **A picture shows the smallest view that shows the whole change.** Add the screen around it only when the change moves or resizes something there.
 
@@ -148,6 +154,7 @@ A sketch shows a proposal. A picture of a built state counts only when it shows 
 - **The built screen and its sketch agree at the merge.** Where they differ, fix the code, or explain the difference in its chunk.
 - **A picture shows what a state looks like, not how the app gets there.** It doesn't prove that the app reaches the state, or that a button works. Tests prove that.
 - **Compare by eye, and only like with like.** Clocks, countdowns, and animations can differ on every run, so two files that differ may still show the same screen. A phone and a browser draw fonts and shadows differently, so say which device drew each picture, and what differs for that reason.
+- **A moving picture runs in real time.** Its timing varies a little between runs, and a browser can move differently from a phone. Say which device recorded it, and check its frames: what moves, and that nothing else does.
 - **A person's device stays theirs.** Never unlock it or enter its PIN. If it's locked, ask the user.
 - **Leave nothing running.** Stop what you started, with the README's stop command. Don't touch what you didn't start, such as another session's dev server.
 
@@ -186,6 +193,7 @@ Whenever a change makes a screen look different, show it in your next message, w
 - **Send it as an image,** the way [mermaid-image](../../mermaid-image/SKILL.md#make-and-send-an-image) sends an image. Look at each one first. Several at once go in one message.
 - **Show a changed state beside its earlier look,** where a picture of that exists or is quick to draw, and say in one line what differs.
 - **Show a flow change as a flow sheet first,** then its changed states up close. A change to the look only needs its pictures.
+- **Show a motion change as a moving picture,** beside the still pictures of its states, before and after where the earlier one is quick to record.
 - **Say what it is,** in one line: a sketch or the built app, that the data is sample data, any stand-ins, and the device and commit.
 - **Show each change once.** Don't send an image again when nothing in it changed. A review still shows each one in its chunk, because that's where the user decides.
 - **Seeing approves nothing.** The decision comes in the review, or in the comparison that follows a draft from code.
@@ -202,6 +210,7 @@ Whenever a change makes a screen look different, show it in your next message, w
 - **In a spec review,** send each of the chunk's sketches as an image, right after the What changed sentence. Add one line that says they're sketches, which part each one draws new, and that the data is sample data.
 - **In a merge review,** send the chunk's pictures at the same place: one for each state, in the first theme the README names. Add another theme only for a state whose colours the change touches. Then say in one line what they are: sample data, any stand-ins, the device, and the commit. Then say what differs from the sketch the user accepted, and why.
 - **For a flow change, the flow sheet comes first,** in both reviews: the sheet of each stories file whose flow the chunk changes, before and after where the earlier sheet is quick to draw. Then the changed states up close.
+- **For a motion change, the moving pictures come with the stills,** in both reviews, each with its length and what recorded it.
 - **The heading, the map, and the location line still come first,** as the guided-review skill's [chunk format](../../guided-review/SKILL.md#start-every-chunk-with-a-heading-a-map-and-a-location-line) describes.
 - **Call a state by its story's name,** in notes and in questions, such as "In *Failed*, Retry sits under the message".
 - **Tell the review in the brief.** Name the run in the brief's [Pictures](guided-review.md#fill-the-brief) field, with the commit it covers, such as "Sketches: 2 states, run `4020d91-dirty`" or "2 states at `9b3e1d4`, drawn by Chrome, 1 finding". If the head changes later, they're stale like any other check.
@@ -236,5 +245,6 @@ A state has no sketch or picture when the README of the repository that owns the
 - **Each text** in a story has a named source, and each state is one the app can reach.
 - **Each new or changed screen** was shown when it changed, as an image where one can be made, and not only in the review.
 - **Each flow change** was shown as a flow sheet, and each change to the look as its pictures.
+- **Each motion change** was shown as a moving picture whose frames you checked.
 - **A merge review** draws at the reviewed head and says what differs from the accepted sketches.
 - **Never** call a sketch the built app, unlock a person's device, or leave running what you started.

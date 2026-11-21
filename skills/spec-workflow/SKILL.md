@@ -46,6 +46,7 @@ Details live in reference files: [Git operations](references/git-operations.md) 
 | Screen picture | An image of one state, drawn by the app's own code | the Failed state in the dark theme |
 | Sketch story | A story for a state that isn't built yet, in a scratch worktree. It never merges | the Failed state with a new Retry line, before the spec is accepted |
 | Flow sheet | One image of a stories file: all its states side by side, in order | the saved-audio states in a row: Loading, Failed, Ready |
+| Moving picture | A short looping recording of a story, for a change to motion | Mila speaking, for 3 seconds |
 
 **Why:** several of these used to have two or three names, which made rules easy to misread.
 
@@ -169,7 +170,7 @@ When a change adds or changes a screen, one of its states, or the words a user r
 2. After the spec is accepted, build each state as a view with a story.
 3. Before the merge review, draw each story with the project's picture command, and say what differs from the accepted sketch.
 
-At every step, show a new or changed screen right away, as an image in the conversation, without being asked. The user asks for edits on the pictures. A change to the look only needs the pictures of the states it touches. A flow change, which adds, removes, or reorders states, must also show a flow sheet: one image of all the states, in order.
+At every step, show a new or changed screen right away, as an image in the conversation, without being asked. The user asks for edits on the pictures. A change to the look only needs the pictures of the states it touches. A flow change, which adds, removes, or reorders states, must also show a flow sheet: one image of all the states, in order. A motion change, which changes what moves, its timing, or when it plays, must also show a moving picture: a few seconds of the state, looping.
 
 > Example: a new Retry line for saved audio is drawn in a sketch story, under the app's real player. The user asks to move it above the message, sees the new sketch, and accepts the spec. The merge review then shows the built screen, and says what differs from that sketch.
 
