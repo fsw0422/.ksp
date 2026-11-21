@@ -33,8 +33,6 @@ The spec repository starts with this layout. Each feature document's header name
 <project>-specs/
   README.md                product brief
   features/                one document per feature, each with its own ID prefix
-    <feature>.storyboard/  only with screens: the feature's states drawn as screens
-  design/                  only with screens: the look's rules and token values
   contracts/               API and event shapes (OpenAPI, JSON Schema), and each operation's service level
   architecture/
     domain-model.md        domain terms and their names in code
@@ -65,7 +63,5 @@ If a spec repository has documents in a different layout, don't move or rewrite 
 Start a feature document from [the feature template](../assets/templates/feature.md). Save it as `features/<feature-name>.md` and give it a prefix no other feature uses. Start a decision record from [the decision template](../assets/templates/decision.md) and save it as `decisions/<NN>-<short-title>.md`.
 
 Start a data card from [the data card template](../assets/templates/data-card.md) and save it as `architecture/data/<store>.md`, as [Technical changes](technical-changes.md#a-data-card-for-each-store) describes.
-
-For a product with screens, start the design folder from [the design template](../assets/templates/design.md), saved as `design/README.md`, and fill in the README's Screens section. The template has no design folder and no storyboard, so a product without screens gets neither. [Storyboards and the design folder](writing-specs.md#storyboards-and-the-design-folder) describes what both hold.
 
 Keep these templates in the skill. Copies inside the repository would put sample IDs into every ID search.

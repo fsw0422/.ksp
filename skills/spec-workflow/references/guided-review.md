@@ -1,6 +1,6 @@
 # Guided review
 
-Spec Workflow runs the [guided-review](../../guided-review/SKILL.md) skill for a spec before it's accepted, and before every merge, as [Review and merge](../SKILL.md#review-and-merge) describes. Load that skill and follow it. This page says how Spec Workflow fills the skill's brief, and which rules it adds.
+Spec Workflow runs the [guided-review](../../guided-review/SKILL.md) skill for a spec before it's accepted, and before every merge, as [Review and merge](../SKILL.md#review-and-merge) describes. Load that skill and follow it. This page says how Spec Workflow fills the skill's brief, and which rules it adds. The one exception is a draft from `--from-code`: a [comparison](spec-code-sync.md#after-a-draft-from-code) takes the place of its review.
 
 **Why a separate skill:** walking someone through a change works the same in any workflow, so it lives in one place. Spec Workflow only says what goes into the review, and what an approval does.
 
@@ -11,7 +11,8 @@ Spec Workflow runs the [guided-review](../../guided-review/SKILL.md) skill for a
 | Comparison | For each repository, the base and head commits from the work record, verified in Git, and the change's worktree folder and branch. The scope: spec acceptance, one repository, a coordinated merge, or the final release |
 | Why | The accepted spec commit, and the requirement IDs the chunks implement, such as `REC-012`. A code-only change needs no invented spec counterpart: its why is the goal in the work record |
 | Starting plan | The [chunk map planned before building](../SKILL.md#plan-the-chunks), from the work record |
-| Checks | The [cleanup pass](code-cleanup.md), the [bug review](bug-review.md), the [test merges](git-operations.md#test-merge-with-open-branches), and the tests, each with the heads it covered. That includes a recorded "no code cleanup" result, or a skip reason, where one applies. A spec review has the checks in [Writing specs](writing-specs.md#before-merging-a-spec-change), and no bug review, because there's no code. A change that touches a screen adds its storyboard or its picture run, as [Show them in a review](screen-pictures.md#show-them-in-a-review) describes |
+| Checks | The [cleanup pass](code-cleanup.md), the [bug review](bug-review.md), the [test merges](git-operations.md#test-merge-with-open-branches), and the tests, each with the heads it covered. That includes a recorded "no code cleanup" result, or a skip reason, where one applies. A spec review has the checks in [Writing specs](writing-specs.md#before-merging-a-spec-change), and no bug review, because there's no code. |
+| Pictures | For a change that touches a screen, the change's picture run from the work record, with its flow sheets for a flow change, its folder, the commit it covers, and what drew it: the sketch run for a spec review, and the run at the frozen head for a merge review, as [Show them in a review](screen-pictures.md#show-them-in-a-review) describes. Spec Workflow draws them before the review starts, so the review draws nothing itself |
 | Extra rules | The domain mapping, the spec guardrail, the change's mode, and the screens rule, as described below |
 | Edits | Allowed, in the change's worktree. Check each edit as [Limit the reruns](bug-review.md#limit-the-reruns) describes: its tests, the cleanup check, and one re-review of the files it changed |
 | Decision | For a spec review, "accept the spec". For a merge, "approve for `<destination>`". The decision is one of: spec accepted, changes requested, paused, rejected, deferred, walkthrough complete, or merge approved for an exact destination, plus any explicit waiver |
@@ -29,7 +30,7 @@ Accepting a spec allows building. It doesn't approve the code or the merge.
 
 **Spec and code sync.** For a [spec and code sync](spec-code-sync.md), include the finding, the accepted decision, and the change's [mode](spec-code-sync.md#use-the-tasks-mode). Explain the affected APIs, consumers, and data, and why old contracts or migrations are kept or removed. `--breaking` allows replacements within the accepted scope; unrelated feature decisions and merge approval still need their usual review.
 
-**Screens.** For a change that touches a screen, each chunk shows its artboards in a spec review, and its pictures in a merge review, as [Show them in a review](screen-pictures.md#show-them-in-a-review) describes. Read the storyboard's page back before each chunk and before you record the decision, so the user's edits on the page are in the commit they decide on.
+**Screens.** For a change that touches a screen, each chunk shows its sketches in a spec review, and its pictures in a merge review, as [Show them in a review](screen-pictures.md#show-them-in-a-review) describes. When the user asks for an edit on a picture, make it, draw again, and show the new picture before they decide.
 
 **Squashes.** The new commit IDs a squash creates don't count as a change when the content is verified unchanged, as [Merge across repositories](git-operations.md#merge-across-repositories) describes.
 
@@ -44,5 +45,5 @@ Keep the skill's review record in the change's entry in the work record, with th
 | Record | Spec Workflow adds |
 | --- | --- |
 | Identity and scope | The mode, live or `--breaking`, and for a sync, the finding and the accepted decision |
-| Commits | Each repository's accepted spec commit, and the cleanup, bug review, and test merge results. For a change that touches a screen, the storyboard's page and the latest picture run |
+| Commits | Each repository's accepted spec commit, and the cleanup, bug review, and test merge results. For a change that touches a screen, the accepted sketch run and the latest picture run |
 | Decision | The decision, as listed in [Fill the brief](#fill-the-brief), with its destination and the heads it covers |

@@ -4,7 +4,7 @@ Use this page when the user asks to build a spec from existing code, with `--fro
 
 ```text
 $spec-workflow --from-code the Review feature           in Codex
-/spec-workflow --from-code the screens and the design   in Claude Code
+/spec-workflow --from-code the Class screens            in Claude Code
 ```
 
 Each thing the code does takes one of these paths:
@@ -20,7 +20,7 @@ flowchart TD
     Odd -->|No| Rule[A rule with an ID, an example, and its evidence]
 ```
 
-**Why a switch:** [When to return to specs](../SKILL.md#when-to-return-to-specs) says "Don't change a spec just to justify existing code". That holds for every normal change. Here the user asks for the opposite on purpose, for one scope, and reviews the result.
+**Why a switch:** [When to return to specs](../SKILL.md#when-to-return-to-specs) says "Don't change a spec just to justify existing code". That holds for every normal change. Here the user asks for the opposite on purpose, for one scope, and decides every difference before accepting the result.
 
 ## Words used here
 
@@ -35,12 +35,12 @@ flowchart TD
 
 ## What a run may change
 
-- **The spec repository,** for the named scope: feature documents, contracts, the domain model, data cards, the design folder, and storyboards.
+- **The spec repository,** for the named scope: feature documents, contracts, the domain model, and data cards.
 - **No behavior.** What the code does stays as it is, including what looks like a bug.
 - **Tooling in the code repositories,** and nothing else there: stories and stand-ins that draw existing screens, and requirement IDs in test titles. Each is a code-only change of its own, through the usual review.
 - **Nothing outside the scope.** A second scope needs its own request.
 
-An accepted spec that already covers part of the scope stays as it is. Where it differs from the code, that's a difference for [Compare spec and code when asked](spec-code-sync.md#compare-spec-and-code-when-asked). Don't overwrite it.
+An accepted spec that already covers part of the scope stays as it is. Where it differs from the code, that's a row in the [comparison that follows the draft](spec-code-sync.md#after-a-draft-from-code). Don't overwrite it.
 
 **Why no fixes:** a run that reads and fixes at once leaves nobody able to say what the code did before. The spec of the code as built comes first. A fix is then a normal change against it.
 
@@ -49,8 +49,8 @@ An accepted spec that already covers part of the scope stays as it is. Where it 
 - **Describe, don't improve.** Write what the code does today, not what it should do.
 - **Write only what can be seen from outside:** on a screen, in a message, in a contract, or in saved data that something else reads. A helper, a cache, or a retry that nobody can notice gets no rule.
 - **Take every number and every text from the code,** such as a limit, a timeout, or an error message. Take each rule's example from a test where one exists.
-- **Show the evidence in the review, not in the document.** A file path in a spec is out of date after the next refactoring. What lasts is a test that cites the rule's ID.
-- **Say whether each rule is proven or read.** A rule that no test shows is still a rule, but the review says so.
+- **Keep the evidence out of the document.** A file path in a spec is out of date after the next refactoring. What lasts is a test that cites the rule's ID. Until the draft merges, keep the evidence in `.spec-from-code/<change>/evidence.md` beside the work record, with one row for each rule. The comparison reads it, and it goes to the Trash after the merge.
+- **Say whether each rule is proven or read.** A rule that no test shows is still a rule, but the comparison names it as read.
 - **Use the code's own names, and ask.** The names of features and domain terms are decisions. Propose the names the code uses, and flag two names for one thing, as [Map domain language into code](../SKILL.md#map-domain-language-into-code) describes.
 - **Never turn a finding or a question into a rule.** The user decides each one.
 - **Don't read a target from the code.** A [data card](technical-changes.md#a-data-card-for-each-store) can be filled from the stores, keys, and queries in the code. A service level or a budget can't: the code doesn't know how fast it was meant to be. Leave those to the user.
@@ -62,9 +62,24 @@ An accepted spec that already covers part of the scope stays as it is. Where it 
 1. **Fix the scope and the commits.** Name the scope in the user's words, each repository it covers, and the commit of each one that is read. Record them in the work record.
 2. **Map it from the outside in.** List what can be reached from outside: screens, routes, jobs, messages, saved data, and switches in the configuration. List the tests beside them. Group the list into features, and show it to the user, who confirms the names and the order.
 3. **Draft one feature at a time,** on a spec branch, from the [feature template](../assets/templates/feature.md), as [Writing specs](writing-specs.md) describes. Its header says `status: draft`, and `implementation: complete` or `partial`. Write its contracts from the routes and the message shapes, and its domain terms with their names in code.
-4. **Draw its screens,** when the scope has any, as [Screens and the design folder](#screens-and-the-design-folder) describes.
-5. **Review it** with the [guided review](guided-review.md), as a spec review. Each chunk shows its rules beside the code they were read from, and says which are proven and which are read. Each finding and each question comes up in the chunk it belongs to. The decision is "accept the spec".
-6. **Record what's left** for this feature, as [Keep what is left](#keep-what-is-left) describes. Then take the next feature.
+4. **Draw its screens,** when the scope has any, as [Screens](#screens) describes.
+5. **Compare it** right away, without being asked, as [After a draft from code](spec-code-sync.md#after-a-draft-from-code) describes. The comparison covers this draft's scope only. One table shows every difference between the draft and the code, starting with the findings and the questions, and the user goes through them one at a time. A draft gets no guided review: the comparison takes its place.
+6. **Finish the draft and ask.** Apply the decisions that change the draft's text, and commit them. Run the [spec checks](writing-specs.md#before-merging-a-spec-change) and the [test merges](git-operations.md#test-merge-with-open-branches) on that commit. Show the table again with its decisions, quote each rule that changed, and ask the user to accept the spec at that commit.
+7. **Record what's left** for this feature, as [Keep what is left](#keep-what-is-left) describes. Then take the next feature.
+
+Steps 5 and 6 for one feature:
+
+```mermaid
+flowchart TD
+    Draft[The draft of one feature] --> Table[Comparison of that feature: one table of differences]
+    Table --> Row{What does the user decide for each row, one at a time?}
+    Row -->|Keep it as built| Edit[Edit the draft]
+    Row -->|Fix it later| Later[Plan a change for after the spec is accepted]
+    Row -->|Defer| Open[Leave the row open in the work record]
+    Edit --> Accept[Checks, then the user accepts the spec]
+    Later --> Accept
+    Open --> Accept
+```
 
 A map might look like this (made up):
 
@@ -75,30 +90,31 @@ A map might look like this (made up):
 
 **Why one feature at a time:** nobody can review a whole product's spec in one sitting. One feature is small enough to check against its code, and its names settle before the next feature uses them.
 
-## Screens and the design folder
+**Why a comparison and no guided review:** the code already decided most of a draft, so most rules need only a nod. What needs the user is the list of places where the draft and the code disagree, and one table shows that list at once. The comparison also reads the code a second time, from the spec's side, which catches a rule the draft got wrong.
 
-When the scope has screens, a run also builds what [Storyboards and screen pictures](screen-pictures.md) keeps in the spec repository:
+An accepted draft then merges like any spec change, as [Review and merge](../SKILL.md#review-and-merge) describes, but with no guided review: the user approves the destination, for the commit they accepted.
 
-- **The design folder,** from the theme code and from how the components are used. Token values come from the theme, exactly. A rule goes in only where the code follows one pattern everywhere. A place that breaks the pattern is a finding.
-- **A story for each existing state,** in the repository that owns the screen. That's tooling, so it's allowed.
-- **A storyboard for each feature,** with one artboard for each state, in the order a user meets them. An artboard shows its story where the project can do that, and is named `built`. Otherwise, sketch it from the story's picture, and name it `sketch`.
+## Screens
 
-> Example: the theme code has 29 colours, and every primary button uses the same one. The design folder gets the 29 token values, and the rule "a primary button uses `palette-accent`". One screen uses a literal grey that no token has. That's a finding.
+When the scope has screens, a run also adds a story for each existing state, in the repository that owns the screen, and draws each one with the project's picture command, as [Screen pictures](screen-pictures.md) describes. It shows the flow sheet of each stories file it adds, so the user sees each flow as built. The stories are tooling, so they're allowed. The feature document describes each state in words, as a rule with an example.
+
+> Example: the saved-audio part of a Class has three states in the code: Loading, Ready, and Failed. The run adds three stories, shows their flow sheet, and writes a rule for each state. Failed says "Try again" but shows no button. That looks unintended, so it's a finding.
 
 ## Keep what is left
 
-Keep three lists in the work record, for each feature: findings, questions, and parts that nobody read. Show them when the run ends.
+Keep three lists in the work record, for each feature: findings, questions, and parts that nobody read. The comparison shows the first two as rows, and names the third under its table. Keep each row's decision beside it.
 
 - **A finding** becomes a normal change when the user decides to fix it. The spec changes first then, as always.
 - **A question** stays out of the spec until the user answers it.
 - **A part nobody read** is named, so the spec doesn't claim more than was checked.
 
-Finish only when the scope is drafted and reviewed, or say clearly what remains open.
+Finish only when the scope is drafted, compared, and accepted, or say clearly what remains open.
 
 ## Check before you finish
 
 - **The scope and the commits** are recorded, and nothing outside the scope changed.
-- **Each rule** can be seen from outside, has an example, and was shown beside its code, as proven or as read.
+- **Each rule** can be seen from outside, has an example, and has its evidence on file, as proven or as read.
+- **Each row of the comparison** is decided or deferred, and the user accepted the spec at the commit that holds those decisions.
 - **No rule** describes something that looks unintended, unless the user decided to keep it as built.
 - **The names** of features and domain terms are confirmed by the user.
 - **No behavior changed.** Stories, stand-ins, and IDs in test titles went through their own review.

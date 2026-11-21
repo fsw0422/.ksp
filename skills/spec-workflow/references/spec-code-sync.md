@@ -17,13 +17,13 @@ If evidence contradicts the mode, such as a supported deployed client that would
 
 ## Compare spec and code when asked
 
-A comparison starts only when the user asks for it: with `--compare` and a scope, or in words, such as "compare the Review feature with its spec". `--breaking` alone doesn't start it or widen the scope. A comparison finds differences, explains them, and asks. It changes nothing by itself.
+A comparison starts only when the user asks for it: with `--compare`, or in words, such as "compare the specs with the code". With no scope, it's a full scan: every document in the spec repository, and all the code. A scope after the option narrows it, such as `--compare the Review feature`. One comparison starts by itself: the one that follows each draft from `--from-code`, scoped to that draft, as [After a draft from code](#after-a-draft-from-code) describes. `--breaking` alone doesn't start it or widen the scope. A comparison finds differences, explains them, and asks. It changes nothing by itself.
 
-**Why:** differences pile up quietly, and a broad check is the only way to find code nobody specified and specs nobody built. It's large, so it runs only on request.
+**Why:** differences pile up quietly, and a broad check is the only way to find code nobody specified and specs nobody built. A full scan reads everything, so it's the most expensive thing this workflow does. It runs only on request, now and then, to see what has drifted between spec and code, in both directions, and to bring them back in step.
 
 Identify the repositories, the authoritative spec versions, and the code branches and commits to compare. Account for relevant uncommitted work without resetting it. Keep the chosen implementation separate from alternate worktrees and older saved work. Settle unclear starting versions before claiming a mismatch.
 
-Read every in-scope feature spec, contract, domain definition, storyboard, and design rule. Separately, inspect the project's code through entry points, callers, storage, configuration, and tests. Where tests cite requirement IDs, start by searching the code repositories for each in-scope ID; this shows which requirements have tests and which have none. Check both directions:
+Read every in-scope feature spec, contract, and domain definition. Separately, inspect the project's code through entry points, callers, storage, configuration, and tests. Where tests cite requirement IDs, start by searching the code repositories for each in-scope ID; this shows which requirements have tests and which have none. Check both directions:
 
 ```mermaid
 flowchart LR
@@ -103,6 +103,30 @@ A decision in the walk changes nothing yet. It's the user's answer for one row. 
 
 Keep each row in the work record: the difference, its evidence, the decision, the change that carries it out, and the verification result. Track the areas read and the areas still unknown.
 
+### After a draft from code
+
+A [`--from-code` run](spec-from-code.md) compares each feature's draft with the code as soon as it's written, without being asked. The comparison covers that draft's scope only, and it takes the place of a guided review. Everything above applies, with these differences:
+
+- **Only the draft's scope.** Read the drafted documents, and the code that the run read for them. **Why:** a full scan is expensive, and the draft is what's new. The rest of the product waits for a `--compare` with no scope.
+
+- **Compare fixed commits:** the draft's head, and the code commits that the run read. **Why:** the draft describes those commits. Newer code would show differences that the draft never saw.
+- **Read the code a second time, from the spec's side.** Check each rule against the code that its evidence names, and each entry of the run's map against the rules. Where a rule says something the code doesn't do, correct the draft before you show the table, and name the correction under it. That isn't a difference to decide: a draft only describes.
+- **Start the table with the run's findings and questions,** and add what the second read found. A place that breaks a rule is "both, but different". A finding or a question with no rule yet is "code only".
+- **Send a picture for a row about a screen,** together with the table: the state the row names, or both states when it compares two. Do that only where the project can draw one, and where the difference shows in it. Check it like any other picture, as [Keep sketches and pictures true](screen-pictures.md#keep-sketches-and-pictures-true) describes. **Why:** a picture of the state settles "keep it or fix it" faster than a description of it. A difference that doesn't show on the screen gets no picture.
+- **Rules that agree get no row.** Under the table, name them by evidence, and link the drafted documents, so the user can read any rule. The parts nobody read go there too.
+- **A draft needs only three decisions:** keep it as built, fix it later, or defer. "Keep it as built" changes the draft: a rule is added, or a rule names its exception. An answer to a question adds the rule the user chose, and code that differs from it is fixed later. "Fix it later" leaves the draft as it is, and becomes a change after the spec is accepted, such as a repair or a removal, as [Turn the decisions into changes](#turn-the-decisions-into-changes) describes.
+- **Walk every row, one at a time,** like any other comparison, and change nothing during the walk. When it ends, the run [finishes the draft](spec-from-code.md#the-run) and asks the user to accept the spec.
+
+The table might look like this (made up):
+
+| # | Difference | Where | Evidence |
+| --- | --- | --- | --- |
+| 1 | `PAUSE-003` allows 5 pauses, but a new Class shows "3 pauses left" | Both, but different | `canPause()` in `PauseLimit.ts`, and `PauseScreen.tsx` |
+| 2 | `PAUSE-005` shows the time left in minutes, but the last minute counts down in seconds | Both, but different | `formatTimeLeft()` in `PauseTimer.ts` |
+| 3 | A paused Class ends after 24 hours in the app, and after 48 in the nightly job | Code only: a question | `PauseScreen.tsx`, and `expirePausedClasses()` |
+
+> Proven: `PAUSE-001` and `-002`. Read: `PAUSE-004` and `-006`. Corrected in the draft: `PAUSE-004` said a pause lasts 10 minutes, and the code gives 15. Not read: the recording module's native code. Draft: `features/pausing-a-class.md`.
+
 ## Route each finding
 
 Use this table for the options in each chunk of a comparison's walk, and for a difference that turns up during normal work.
@@ -124,7 +148,6 @@ flowchart TD
 | A spec has no implementation outside the accepted task | Ask whether to include its implementation. Planned or deferred requirements aren't automatically new work. |
 | Code partly or wrongly implements an accepted spec | An authorized sync or repair task includes fixing it through Spec Workflow, using the accepted requirement and the task's mode. |
 | The spec is outdated, contradictory, or unclear, and no accepted replacement settles it | Ask which behavior or spec is authoritative before changing dependent code. |
-| A screen's look differs between spec and code: a token value that differs from the design folder, a built state that differs from its artboard, or a state with no artboard | Route it like any other row here, with the design folder and the storyboard as the spec. Where the code is wrong, repair it. Where the code is right or the spec is missing, decide in the spec first, by changing the design folder or the artboard, as [Storyboards and screen pictures](screen-pictures.md#use-the-design-folder) describes. |
 | Internal helper, proven dead code, or code-only maintenance | Explain why no feature spec is needed. Clean it up only within the authorized scope. |
 | Spec and code agree | Record the evidence and continue. |
 

@@ -47,8 +47,7 @@ Every fact has one owning document. Other documents link to the owner instead of
 | Message shapes | A contract, such as OpenAPI for HTTP or JSON Schema for events |
 | How fast and how reliably an operation must answer | The same contract, as the operation's service level |
 | What a store holds, how it's read and written, and what drives its cost | A data card under `architecture/data/` |
-| What a state of a screen looks like, and where it sits in a flow | The feature's storyboard, beside its feature document |
-| The look and the wording of the whole app: its rules and its token values | The design folder |
+| What a built state of a screen looks like | A story, in the repository that owns the screen |
 | System boundaries and deployment | Architecture documents, which don't own product behavior |
 | Domain terms and their names in code | One place, such as `architecture/domain-model.md` or a glossary |
 | The reasons for a big choice | A decision record |
@@ -122,24 +121,6 @@ A rule that no test cites isn't proven yet. To find a rule's tests, search the c
 
 List each domain term once, with its meaning and its names in code, storage, and APIs. Use the same word everywhere, and agree on a new name in the spec before renaming code. [Map domain language into code](../SKILL.md#map-domain-language-into-code) covers how the names carry into code.
 
-## Storyboards and the design folder
-
-A spec repository can also hold what its screens look like. Its README says whether it does.
-
-| Folder | Holds | Example |
-| --- | --- | --- |
-| `features/<feature>.storyboard/` | The feature's states drawn as screens, one artboard for each state | `features/class-recovery.storyboard/` |
-| `design/` | The rules for the look and the wording of the whole app, and the token values | `design/README.md`, `design/tokens.json` |
-
-- **Version what draws a picture, never the picture.** Commit the storyboard's files and the design files. Don't commit images of screens: they're out of date after the next restyle.
-- **A design rule that a review should check gets a requirement ID,** with the design folder's own prefix, such as `DESIGN-004`: "A screen MUST have at most one primary button."
-- **The design folder owns the token values.** The code's values must equal them, the way the code's messages must match a contract.
-- **A published page is a view.** A storyboard's page and a design system's page are drawn from these files. Nobody edits a page as the source.
-
-[Storyboards and screen pictures](screen-pictures.md) describes how a change sketches, draws, and reviews its screens.
-
-**Why:** a look that only code holds can't be reviewed before it's built. A look that only a design tool holds isn't in the commit the user accepted.
-
 ## Decisions
 
 ```mermaid
@@ -164,9 +145,8 @@ Documents describe the current product. Don't keep task lists, implementation pl
 Check that:
 
 - relative links resolve, and no absolute paths to someone's computer were added
-- requirement IDs are unique and defined only in feature documents and the design folder
+- requirement IDs are unique and defined only in feature documents
 - each new or changed rule has an example, and a test cites its ID once the code exists
-- each changed storyboard is committed with its rules, and each artboard names requirement IDs that exist
 - Mermaid blocks render, which the [mermaid-image](../../mermaid-image/SKILL.md) script checks, and contracts parse
 - the change updates the owning document instead of repeating it elsewhere
 - the repository's own checks pass, such as its CI jobs
