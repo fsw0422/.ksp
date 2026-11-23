@@ -529,9 +529,9 @@ Normal work only updates the code affected by the accepted change. A wider compa
 
 ## Build the spec from code when asked
 
-For code that nobody knows well, or whose spec is missing, the user can turn the direction around for a named scope, with `--from-code`. Read [Spec from code](references/spec-from-code.md). In short: the code at one commit is the source, and the spec describes what it does today. A run changes no behavior. Something that looks unintended becomes a finding, not a rule and not a fix. After each feature's draft, a [comparison](#compare-spec-and-code-when-asked) of that feature follows by itself: one table of every difference between the draft and the code, which the user goes through one at a time. Then the user accepts the spec, with no guided review, and from then on the spec is the source again.
+For code that nobody knows well, or whose spec is missing, the user can turn the direction around for a named scope, with `--from-code`. Read [Spec from code](references/spec-from-code.md). In short: the code at one commit is the source, and the spec describes what it does today. A run changes no behavior. Something that looks unintended becomes a finding, not a rule and not a fix. When the user wants it, the run also proves each feature's rules end to end: it writes flow tests in the e2e repository, creating one if the workspace has none, runs them on the real product, and shows each flow as a picture. After each feature's draft, a [comparison](#compare-spec-and-code-when-asked) of that feature follows by itself: one table of every difference between the draft and the code, which the user goes through one at a time. Then the user accepts the spec, with no guided review, and from then on the spec is the source again.
 
-> Example: `--from-code the Class screens` writes a rule for each state of those screens in its feature document.
+> Example: `--from-code the Class screens` writes a rule for each state of those screens in its feature document. With flow tests, it also starts a Class on the emulator, step by step, and shows that flow's sheet.
 
 ## Stay within the request
 

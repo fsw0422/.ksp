@@ -114,6 +114,8 @@ it('EXAMPLE-001: an empty cart cannot be checked out', () => {
 })
 ```
 
+Where a test's name can't hold the ID, such as a Python function's, the first line of its docstring names it.
+
 A rule that no test cites isn't proven yet. To find a rule's tests, search the code repositories for its ID.
 
 ## Domain terms

@@ -92,10 +92,10 @@ install, and it never touches the shared browser window.
 
 `android-device-tests` is know-how for end-to-end tests that drive a real Android
 app on an emulator through adb: the emulator's one-time setup, starting it
-safely, reading the screen with the app's animations on, step clips and moving
-flow sheets, and the traps found so far. It needs the Android SDK's emulator and
-adb. The e2e repository brings its own Python tools, such as `uiautomator2`,
-`grpcio-tools` and Pillow.
+safely, reading the screen with the app's animations on, writing flow tests,
+step clips and moving flow sheets, and the traps found so far. It needs the
+Android SDK's emulator and adb. The e2e repository brings its own Python tools,
+such as `uiautomator2`, `grpcio-tools` and Pillow.
 
 ### Git worktrees
 

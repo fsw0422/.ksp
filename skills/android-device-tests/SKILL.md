@@ -1,6 +1,6 @@
 ---
 name: android-device-tests
-description: "Set up, run and fix end-to-end tests that drive a real Android app on an emulator through adb: the one-time emulator setup (Google account, screen lock PIN), starting the emulator safely, reading and driving the screen with the app's animations on, step screenshots with looping clips and moving flow sheets, and the known traps, such as PIN lockouts, Play updates after sign-in, and the emulator's silent microphone. Use when an e2e or device-test repository is set up or extended, when device tests run, or when a run fails because of the device rather than the app. Not for unit tests, and never for a person's own phone."
+description: "Set up, write, run and fix end-to-end tests that drive a real Android app on an emulator through adb: the one-time emulator setup (Google account, screen lock PIN), starting the emulator safely, reading and driving the screen with the app's animations on, writing a flow test whose steps name the rules they prove, step screenshots with looping clips and moving flow sheets, and the known traps, such as PIN lockouts, Play updates after sign-in, and the emulator's silent microphone. Use when an e2e or device-test repository is set up or extended, when device tests run, or when a run fails because of the device rather than the app. Not for unit tests, and never for a person's own phone."
 ---
 
 # Android Device Tests
@@ -40,6 +40,8 @@ Before you set anything up, settle the project's facts with the user, and write 
 | The screen lock PIN | The user, or they OK one you pick | Untracked `.env` |
 
 The account's password stays with the user, who types it in the emulator's window. The README names each `.env` key without its value, so the next setup knows what to ask for.
+
+Before its first test, a new repository also needs its runner and helpers: what starts the emulator, reads the screen, and takes the step pictures. The sections below say how each of them works.
 
 ## Set up the emulator once
 
@@ -91,6 +93,41 @@ Only when the user or the project wants them. They are test-run artifacts: never
 - **Moving pictures:** the emulator's gRPC `streamScreenshot` sends each frame as it's drawn, about 60 a second, each with a timestamp. Record a few seconds after each step, sample the frames evenly, such as 10 a second, and save a looping GIF with Pillow; the last frame repeats while the screen stands still. A moving sheet is the still sheet's layout with every step playing. Each clip adds its length to the run, so keep it short, such as 2 seconds, and give the project a setting that turns clips off.
 - **Set both `width` and `height`** in the `ImageFormat` you send. The frame keeps the device's shape and fits inside both, so a tall box such as 360 × 1440 gives frames 360 wide. With either at 0, frames come at full size: 7.8 MB at 1080×2400, above gRPC's 4 MB default, so also raise the client's `grpc.max_receive_message_length`.
 - **The gRPC protocol ships with the SDK,** in `$ANDROID_HOME/emulator/lib/emulator_controller.proto`. Compile it with `grpcio-tools` when the tests start, instead of copying generated code.
+
+## Write a flow test
+
+A flow test walks one flow the way a user does, such as signing up, and checks what the screen shows at each step.
+
+- **One test for one flow.** A flow test starts the real app and drives it step by step, so it's slow: a short one took 39 seconds, sign-up included. Let one test prove several rules on its way, instead of writing one test for each rule.
+- **Name each step:** what the user just did, or what they now see, such as "Tap Verify Email: email sent". The names are the captions of the [pictures](#pictures-of-a-run).
+- **Put a rule's ID where it's proven,** when the project's rules have IDs: in the name of the step that proves it, and in the test's title. Where a test's name can't hold the ID, as in Python, the first line of its docstring does.
+- **Find things the way a user does:** by the text on them, or by their spoken label. Use a test ID only for a view that has neither, such as an avatar. Adding a test ID to the app is a change of its own.
+- **Do only what the user would do.** A restart or a refresh by hand hides what the app should do by itself.
+- **Wait for what the rule names,** such as a text, within the time the rule gives, with room for a slow emulator. Say in a comment where the number comes from. Never sleep for a fixed time instead.
+- **Check only what the rule says.** When a check for something no rule says fails, nobody can tell whether the app is wrong.
+- **Take the step's picture before its checks,** so a failed check still shows its screen.
+- **Say what the flow needs,** such as a new user or a seeded credit, and set it up in a fixture, never by hand.
+- **When it fails, find out who is wrong** before you change anything: the run, the test, the rule, or the app. [When a run fails in the device](#when-a-run-fails-in-the-device) lists the run's traps. Never change a check just to make the test pass.
+
+For example, in Python with pytest (the helper names are made up):
+
+```python
+def test_home_notices_a_verified_email_by_itself(new_learner, flow_pictures):
+    """VERIFY-001: after Verify Email, Home says by itself that the email is verified."""
+    button = find_by_label("Verify Email")
+    flow_pictures.snap("Home: email not verified")
+
+    tap(button)
+    wait_for_text("Verification email sent.")
+    flow_pictures.snap("Tap Verify Email: email sent")
+
+    # The rule gives Home 5 seconds until its next check. 20 leave room for a slow emulator.
+    wait_for_text("Email verified. You can start now.", seconds=20)
+    flow_pictures.snap("VERIFY-001: Home says the email is verified")
+    assert find_by_label("Verify Email") is None
+```
+
+> Example: an older test restarted the app after the email was verified, and then checked Home. It passed, but it never showed that Home notices the verification by itself. The flow test above waits on Home instead, and its third picture shows the result.
 
 ## Sound
 

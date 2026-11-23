@@ -1,10 +1,12 @@
 # Spec from code
 
-Use this page when the user asks to build a spec from existing code, with `--from-code` and a named scope. It's for code that nobody knows well, or whose spec is missing or can't be trusted. For that scope, the usual direction turns around: the code at one commit is the source, and the spec describes what it does today. Once the user accepts that spec, the usual direction applies again.
+Use this page when the user asks to build a spec from existing code, with `--from-code` and a named scope. It's for code that nobody knows well, or whose spec is missing or can't be trusted. For that scope, the usual direction turns around: the code at one commit is the source, and the spec describes what it does today. Once the user accepts that spec, the usual direction applies again. Without a scope, map the whole product first, as step 2 describes, say which features already have an accepted spec, and let the user pick which ones to draft. Draft nothing before they pick.
 
 ```text
 $spec-workflow --from-code the Review feature           in Codex
 /spec-workflow --from-code the Class screens            in Claude Code
+/spec-workflow --from-code the sign-up screens, with flow tests
+/spec-workflow --from-code                              maps the whole product first
 ```
 
 Each thing the code does takes one of these paths:
@@ -30,6 +32,7 @@ flowchart TD
 | Evidence | Where a rule was read: the file and the symbol, and the test that shows it, if one does | `PauseLimit.ts`, `canPause()`, and `pauseLimit.test.ts` |
 | Proven | A rule that a test shows | A test pauses a sixth time and expects a refusal |
 | Read | A rule seen in the code that no test shows | The limit is in the code, but no test reaches it |
+| Flow test | An end-to-end test that walks one flow on the real product, the way a user does. Each step names the rule it proves | Sign up, then verify the email |
 | Finding | Something the code does that looks unintended, or code that nothing calls | A credit is charged twice when a resume fails |
 | Question | Something the code doesn't make clear | Two code paths that set different Pause limits |
 
@@ -37,7 +40,7 @@ flowchart TD
 
 - **The spec repository,** for the named scope: feature documents, contracts, the domain model, and data cards.
 - **No behavior.** What the code does stays as it is, including what looks like a bug.
-- **Tooling in the code repositories,** and nothing else there: requirement IDs in test titles. It's a code-only change of its own, through the usual review.
+- **Tests and tooling in the code repositories,** and nothing else there: requirement IDs in test titles, [flow tests](#prove-the-rules-end-to-end) in the e2e repository, and a test ID on a view that a flow test can't find any other way. Each is a code-only change of its own, through the usual review.
 - **Nothing outside the scope.** A second scope needs its own request.
 
 An accepted spec that already covers part of the scope stays as it is. Where it differs from the code, that's a row in the [comparison that follows the draft](spec-code-sync.md#after-a-draft-from-code). Don't overwrite it.
@@ -60,14 +63,15 @@ An accepted spec that already covers part of the scope stays as it is. Where it 
 ## The run
 
 1. **Fix the scope and the commits.** Name the scope in the user's words, each repository it covers, and the commit of each one that is read. Record them in the work record.
-2. **Map it from the outside in.** List what can be reached from outside: screens, routes, jobs, messages, saved data, and switches in the configuration. List the tests beside them. Group the list into features, and show it to the user, who confirms the names and the order.
+2. **Map it from the outside in.** List what can be reached from outside: screens, routes, jobs, messages, saved data, and switches in the configuration. List the tests beside them. Group the list into features, and show it to the user, who confirms the names and the order. With the map, ask once whether the run should also [prove the rules end to end](#prove-the-rules-end-to-end), unless the request already says.
 3. **Draft one feature at a time,** on a spec branch, from the [feature template](../assets/templates/feature.md), as [Writing specs](writing-specs.md) describes. Its header says `status: draft`, and `implementation: complete` or `partial`. Write its contracts from the routes and the message shapes, and its domain terms with their names in code.
 4. **Describe its screens,** when the scope has any, as [Screens](#screens) describes.
-5. **Compare it** right away, without being asked, as [After a draft from code](spec-code-sync.md#after-a-draft-from-code) describes. The comparison covers this draft's scope only. One table shows every difference between the draft and the code, starting with the findings and the questions, and the user goes through them one at a time. A draft gets no guided review: the comparison takes its place.
-6. **Finish the draft and ask.** Apply the decisions that change the draft's text, and commit them. Run the [spec checks](writing-specs.md#before-merging-a-spec-change) and the [test merges](git-operations.md#test-merge-with-open-branches) on that commit. Show the table again with its decisions, quote each rule that changed, and ask the user to accept the spec at that commit.
-7. **Record what's left** for this feature, as [Keep what is left](#keep-what-is-left) describes. Then take the next feature.
+5. **Prove its rules end to end,** when the user wants that, as [Prove the rules end to end](#prove-the-rules-end-to-end) describes: plan the feature's flow tests, and with the user's OK, write them, run them, and show each flow. What a failed test shows goes into the comparison.
+6. **Compare it** right away, without being asked, as [After a draft from code](spec-code-sync.md#after-a-draft-from-code) describes. The comparison covers this draft's scope only. One table shows every difference between the draft and the code, starting with the findings and the questions, and the user goes through them one at a time. A draft gets no guided review: the comparison takes its place.
+7. **Finish the draft and ask.** Apply the decisions that change the draft's text, and commit them. Run the [spec checks](writing-specs.md#before-merging-a-spec-change) and the [test merges](git-operations.md#test-merge-with-open-branches) on that commit. Show the table again with its decisions, quote each rule that changed, and ask the user to accept the spec at that commit.
+8. **Record what's left** for this feature, as [Keep what is left](#keep-what-is-left) describes. Then take the next feature.
 
-Steps 5 and 6 for one feature:
+Steps 6 and 7 for one feature:
 
 ```mermaid
 flowchart TD
@@ -96,13 +100,67 @@ An accepted draft then merges like any spec change, as [Review and merge](../SKI
 
 ## Screens
 
-When the scope has screens, the feature document describes each state in words, as a rule with an example.
+When the scope has screens, the feature document describes each state in words, as a rule with an example. To see the screens as built, [prove the rules end to end](#prove-the-rules-end-to-end): each flow's sheet shows its states in the order a user meets them.
 
 > Example: the saved-audio part of a Class has three states in the code: Loading, Ready, and Failed. The run writes a rule for each state. Failed says "Try again" but shows no button. That looks unintended, so it's a finding.
 
+## Prove the rules end to end
+
+A draft says what the code seems to do. A **flow test** checks that on the real product: it walks one flow the way a user does, and each step names the rule it proves. When the user wants it, write and run a feature's flow tests before its comparison, so what they show reaches the table.
+
+```mermaid
+flowchart TD
+    Draft[A feature's draft] --> Plan[Plan its flow tests: steps, rules, and what each needs]
+    Plan --> OK[The user OKs the plan]
+    OK --> Run[Write them, and run them]
+    Run --> Pass{Does a test pass?}
+    Pass -->|Yes| Sheet[Show its flow sheet: its rules are proven]
+    Pass -->|No| Who{Who is wrong?}
+    Who -->|The run| Setup[Fix the run]
+    Who -->|The test| Fix[Fix the test]
+    Who -->|The draft| Correct[Correct the draft, and the test with it]
+    Who -->|The product| Finding[A finding for the comparison: no fix, and no check for it]
+    Setup --> Run
+    Fix --> Run
+    Correct --> Run
+```
+
+- **Ask once, with the map,** unless the request already says. When the workspace has no e2e repository, say so with the question, because a yes then starts with building one. Proving rules end to end needs two things: an e2e repository, and something that drives the product. For an Android app, that's an emulator, as the [android-device-tests](../../android-device-tests/SKILL.md) skill describes. For another platform, such as a web app or iOS, first research what can drive the real product and take a picture of each step, and propose it.
+- **Create the e2e repository, when the workspace has none,** with the user's OK: `<workspace>/<project>-e2e/`, with `git init -b main` and no remote, like the spec repository. Its first commit holds a README and a `.gitignore` that covers `.env` and the runs' pictures. First settle its facts, as the platform's skill says, such as [Start a new e2e repository](../../android-device-tests/SKILL.md#start-a-new-e2e-repository). Before its first test, it needs its runner and helpers: what starts the device, reads the screen, and takes the step pictures.
+- **Plan one feature's flows,** after its draft. A flow is what a user does in one go, such as signing up. For each flow, name its steps, the rule each step proves, and what it needs, such as a seeded account. When the product itself has no way to create it, that's a question for the comparison. Plan a flow for a rule even when a unit test already shows it: a unit test with stand-ins can show a rule that the real product breaks. List the rules that no flow test can prove, each with its reason. Show the plan, and wait for the user's OK before you write a test: they can drop a flow, or change what one needs.
+- **Write each test from its rules' examples,** as the platform's skill describes, such as [Write a flow test](../../android-device-tests/SKILL.md#write-a-flow-test). A step that proves a rule carries the rule's ID in its name.
+- **Check only what the rules say.** A flow test never checks a finding or a question, because the user hasn't decided those yet.
+- **When a test fails, find out who is wrong** before you change anything:
+  - **The run:** the device or its setup failed, such as a locked emulator. Fix the run, as the platform's skill says, and run the test again.
+  - **The test:** fix it.
+  - **The draft:** it says more than the code does. Correct the draft, change the test to match it, and name the correction under the comparison's table.
+  - **The product:** it does something that looks unintended. That's a finding, and a row in the comparison. Don't fix it, and don't write a check for it.
+
+  Never change a check just to make a test pass.
+- **Show each flow once it passes.** Send its flow sheet as an image, moving where the platform can record that, and say in one line what it shows. This is the one place where a picture comes without the user asking: seeing the flow is the point.
+- **Update the evidence.** A rule that a flow test shows is proven, and its evidence names that test.
+- **Keep the tests in a change of their own:** a code-only change in the e2e repository, in its own worktree, that waits for the spec. Give it its own entry in the work record, which names the draft it waits for. Once the spec is accepted, it goes through the usual review and merge, as [Review and merge](../SKILL.md#review-and-merge) describes. When a decision in the comparison changes a rule, change its test before that review.
+
+A plan might look like this (made up):
+
+| Flow (one test) | Steps | Proves | Needs |
+| --- | --- | --- | --- |
+| Verify the email from Home | Home, not verified → tap **Verify Email** → Home says it's verified | Step 3: `VERIFY-001` | A new learner |
+| Sign up with a passkey | Welcome → email → passkey sheet → Home | Step 4: `SIGNUP-002` and `-003` | A screen lock on the device |
+
+> No flow test: `VERIFY-004`, a link that expires after 15 minutes, because a test can't wait that long. A unit test fits it better.
+
+> Example: a draft rule said that once the email is verified, Home shows "Email verified. You can start now." and lets the learner start a Class. A unit test showed that, with a made-up learner who has credits. The flow test failed: a new learner has no credit, so the start stayed disabled. The draft was wrong, so the rule lost that clause. Home's message also promises a start that isn't possible, and that became a finding.
+
+**Why before the comparison:** a flow test reads the product a third time, from the outside, and it catches what the code and its unit tests can hide. The comparison is where the user decides, so it should already hold what the tests found. After acceptance, the same failure would mean a wrong rule in an accepted spec.
+
+**Why one test for a flow, and not for a rule:** a flow test starts the real product and drives it step by step, which takes most of a minute. One test for each rule would walk the same screens again and again.
+
+**For a spec that's already accepted,** flow tests are a normal code-only change in the e2e repository. Plan and write them the same way, from the accepted rules. A test that fails then shows a difference between the spec and the code, which the user decides like any other.
+
 ## Keep what is left
 
-Keep three lists in the work record, for each feature: findings, questions, and parts that nobody read. The comparison shows the first two as rows, and names the third under its table. Keep each row's decision beside it.
+Keep three lists in the work record, for each feature: findings, questions, and parts that nobody read. The comparison shows the first two as rows, and names the third under its table. Keep each row's decision beside it. When the run proved rules end to end, also keep the rules that no flow test proves, each with its reason.
 
 - **A finding** becomes a normal change when the user decides to fix it. The spec changes first then, as always.
 - **A question** stays out of the spec until the user answers it.
@@ -117,5 +175,6 @@ Finish only when the scope is drafted, compared, and accepted, or say clearly wh
 - **Each row of the comparison** is decided or deferred, and the user accepted the spec at the commit that holds those decisions.
 - **No rule** describes something that looks unintended, unless the user decided to keep it as built.
 - **The names** of features and domain terms are confirmed by the user.
-- **No behavior changed.** IDs in test titles went through their own review.
+- **Each flow test,** when the run has them, passes and checks only what its rules say. Its sheet was shown, and each rule that no flow test proves has its reason.
+- **No behavior changed.** IDs in test titles, flow tests, and test IDs on views are code-only changes, each with its own review.
 - **Findings, questions, and parts nobody read** are listed.

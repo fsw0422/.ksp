@@ -22,6 +22,7 @@ Every repository has one main checkout. Each change adds a worktree beside it fo
   WORK_HISTORY.md                        finished changes
   <project>-specs/                       main checkout of the spec repository
   <project>-backend/                     main checkout of a code repository
+  <project>-e2e/                         main checkout of the e2e repository, where a project has one
   <project>-specs-checkout/              root change `checkout`
   <project>-backend-checkout/             root change `checkout`
   <project>-backend-checkout-tax-fix/    child `checkout-tax-fix`, backend only
@@ -43,7 +44,7 @@ The spec repository starts with this layout. Each feature document's header name
 
 ## Create a new project
 
-1. Confirm the project name, the workspace folder, and which code repositories exist or are planned. The user creates code repositories; this setup creates only the spec repository. If the project has an Android app, ask whether it needs device tests. Those run on an emulator, from an e2e repository, and the [android-device-tests](../../android-device-tests/SKILL.md) skill sets the emulator up.
+1. Confirm the project name, the workspace folder, and which code repositories exist or are planned. The user creates code repositories; this setup creates only the spec repository. The one exception comes later: a `--from-code` run that [proves rules end to end](spec-from-code.md#prove-the-rules-end-to-end) creates the e2e repository when the workspace has none. If the project has an Android app, ask whether it needs device tests. Those run on an emulator, from an e2e repository, and the [android-device-tests](../../android-device-tests/SKILL.md) skill sets the emulator up.
 2. Create `<workspace>/<project>-specs/` with `git init -b main`. Copy everything in [the spec repository template](../assets/spec-repo/) into it, including the `.gitkeep` files that keep empty folders in Git.
 3. Fill in the placeholders. Write the README from what the user has said, and leave a placeholder in place rather than inventing facts. Put today's date in `architecture/domain-model.md`.
 4. Commit on `main` with a plain subject, such as `Set up the specification`.
