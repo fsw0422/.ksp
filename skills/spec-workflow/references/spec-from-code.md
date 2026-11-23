@@ -37,7 +37,7 @@ flowchart TD
 
 - **The spec repository,** for the named scope: feature documents, contracts, the domain model, and data cards.
 - **No behavior.** What the code does stays as it is, including what looks like a bug.
-- **Tooling in the code repositories,** and nothing else there: stories and stand-ins that draw existing screens, and requirement IDs in test titles. Each is a code-only change of its own, through the usual review.
+- **Tooling in the code repositories,** and nothing else there: requirement IDs in test titles. It's a code-only change of its own, through the usual review.
 - **Nothing outside the scope.** A second scope needs its own request.
 
 An accepted spec that already covers part of the scope stays as it is. Where it differs from the code, that's a row in the [comparison that follows the draft](spec-code-sync.md#after-a-draft-from-code). Don't overwrite it.
@@ -62,7 +62,7 @@ An accepted spec that already covers part of the scope stays as it is. Where it 
 1. **Fix the scope and the commits.** Name the scope in the user's words, each repository it covers, and the commit of each one that is read. Record them in the work record.
 2. **Map it from the outside in.** List what can be reached from outside: screens, routes, jobs, messages, saved data, and switches in the configuration. List the tests beside them. Group the list into features, and show it to the user, who confirms the names and the order.
 3. **Draft one feature at a time,** on a spec branch, from the [feature template](../assets/templates/feature.md), as [Writing specs](writing-specs.md) describes. Its header says `status: draft`, and `implementation: complete` or `partial`. Write its contracts from the routes and the message shapes, and its domain terms with their names in code.
-4. **Draw its screens,** when the scope has any, as [Screens](#screens) describes.
+4. **Describe its screens,** when the scope has any, as [Screens](#screens) describes.
 5. **Compare it** right away, without being asked, as [After a draft from code](spec-code-sync.md#after-a-draft-from-code) describes. The comparison covers this draft's scope only. One table shows every difference between the draft and the code, starting with the findings and the questions, and the user goes through them one at a time. A draft gets no guided review: the comparison takes its place.
 6. **Finish the draft and ask.** Apply the decisions that change the draft's text, and commit them. Run the [spec checks](writing-specs.md#before-merging-a-spec-change) and the [test merges](git-operations.md#test-merge-with-open-branches) on that commit. Show the table again with its decisions, quote each rule that changed, and ask the user to accept the spec at that commit.
 7. **Record what's left** for this feature, as [Keep what is left](#keep-what-is-left) describes. Then take the next feature.
@@ -96,9 +96,9 @@ An accepted draft then merges like any spec change, as [Review and merge](../SKI
 
 ## Screens
 
-When the scope has screens, a run also adds a story for each existing state, in the repository that owns the screen, and draws each one with the project's picture command, as [Screen pictures](screen-pictures.md) describes. It shows the flow sheet of each stories file it adds, so the user sees each flow as built. The stories are tooling, so they're allowed. The feature document describes each state in words, as a rule with an example.
+When the scope has screens, the feature document describes each state in words, as a rule with an example.
 
-> Example: the saved-audio part of a Class has three states in the code: Loading, Ready, and Failed. The run adds three stories, shows their flow sheet, and writes a rule for each state. Failed says "Try again" but shows no button. That looks unintended, so it's a finding.
+> Example: the saved-audio part of a Class has three states in the code: Loading, Ready, and Failed. The run writes a rule for each state. Failed says "Try again" but shows no button. That looks unintended, so it's a finding.
 
 ## Keep what is left
 
@@ -117,5 +117,5 @@ Finish only when the scope is drafted, compared, and accepted, or say clearly wh
 - **Each row of the comparison** is decided or deferred, and the user accepted the spec at the commit that holds those decisions.
 - **No rule** describes something that looks unintended, unless the user decided to keep it as built.
 - **The names** of features and domain terms are confirmed by the user.
-- **No behavior changed.** Stories, stand-ins, and IDs in test titles went through their own review.
+- **No behavior changed.** IDs in test titles went through their own review.
 - **Findings, questions, and parts nobody read** are listed.

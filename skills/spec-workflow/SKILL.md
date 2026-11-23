@@ -25,7 +25,7 @@ flowchart TD
 
 **Why this order:** a decision written in the spec can be reviewed and reused. Code written first tends to become the decision without anyone choosing it. Reviewing the finished change means the user approves exactly what lands.
 
-Details live in reference files: [Git operations](references/git-operations.md) for commands and checks, [Writing specs](references/writing-specs.md), [Code cleanup](references/code-cleanup.md), [Bug review](references/bug-review.md), [Guided review](references/guided-review.md), which fills the brief for the [guided-review](../guided-review/SKILL.md) skill, [Spec and code sync](references/spec-code-sync.md), [Spec from code](references/spec-from-code.md), [Screen pictures](references/screen-pictures.md), [Technical changes](references/technical-changes.md), and [Project setup](references/project-setup.md). [Worked examples](references/worked-examples.md) explains every rule in more detail, with several examples each.
+Details live in reference files: [Git operations](references/git-operations.md) for commands and checks, [Writing specs](references/writing-specs.md), [Code cleanup](references/code-cleanup.md), [Bug review](references/bug-review.md), [Guided review](references/guided-review.md), which fills the brief for the [guided-review](../guided-review/SKILL.md) skill, [Spec and code sync](references/spec-code-sync.md), [Spec from code](references/spec-from-code.md), [Technical changes](references/technical-changes.md), and [Project setup](references/project-setup.md). [Worked examples](references/worked-examples.md) explains every rule in more detail, with several examples each.
 
 ## Words used here
 
@@ -43,10 +43,6 @@ Details live in reference files: [Git operations](references/git-operations.md) 
 | Bug review | A fresh read of the change's code that looks only for bugs, run once before the guided review | `/code-review medium` on the backend change |
 | Guided review | A walk through the change with the user, one chunk at a time, before they decide | the review before `initial-retained-audio` merges |
 | Test merge | A trial merge of two branches that changes no branch or file. It shows a conflict before the real merge | this change against a paused sibling |
-| Screen picture | An image of one state, drawn by the app's own code | the Failed state in the dark theme |
-| Sketch story | A story for a state that isn't built yet, in a scratch worktree. It never merges | the Failed state with a new Retry line, before the spec is accepted |
-| Flow sheet | One image of a stories file: all its states side by side, in order | the saved-audio states in a row: Loading, Failed, Ready |
-| Moving picture | A short looping recording of a story, for a change to motion | Mila speaking, for 3 seconds |
 
 **Why:** several of these used to have two or three names, which made rules easy to misread.
 
@@ -161,20 +157,6 @@ Before writing or revising a spec, read [Writing specs](references/writing-specs
 What only one project knows stays in its own documents, such as the requirement ID prefix in each feature document's header. [Project setup](references/project-setup.md) creates a new spec repository from the template.
 
 **Why:** the general rules are the same in every project, so they live once, in this skill. A project's own facts change along with its files, so they live in its repository and change in the same commit.
-
-## Show screens before deciding
-
-When a change adds or changes a screen, one of its states, or the words a user reads on it, read [Screen pictures](references/screen-pictures.md). In short:
-
-1. Before the spec review, draw each new or changed state as a sketch story: a story in a scratch worktree, made from the app's own components, that never merges. It's the only code before the spec is accepted.
-2. After the spec is accepted, build each state as a view with a story.
-3. Before the merge review, draw each story with the project's picture command, and say what differs from the accepted sketch.
-
-At every step, show a new or changed screen right away, as an image in the conversation, without being asked. The user asks for edits on the pictures. A change to the look only needs the pictures of the states it touches. A flow change, which adds, removes, or reorders states, must also show a flow sheet: one image of all the states, in order. A motion change, which changes what moves, its timing, or when it plays, must also show a moving picture: a few seconds of the state, looping.
-
-> Example: a new Retry line for saved audio is drawn in a sketch story, under the app's real player. The user asks to move it above the message, sees the new sketch, and accepts the spec. The merge review then shows the built screen, and says what differs from that sketch.
-
-**Why:** a screen is hard to judge from a table of rules, and a description can't show that a line is cut off.
 
 ## Decide a technical change before building it
 
@@ -393,7 +375,7 @@ sequenceDiagram
 3. **Re-check the parent and run the cleanup pass** for the proposed scope, before the final review.
 4. **Run the bug review,** as described in [Find bugs before review](#find-bugs-before-review).
 5. **Test-merge with the other open branches,** as described in [Check for conflicts before review](#check-for-conflicts-before-review).
-6. **Review.** Run the [guided-review](../guided-review/SKILL.md) skill in this conversation, with the brief that [Guided review](references/guided-review.md) describes: the repositories, the exact parent, head, and spec commits, the cleanup, bug review, and test merge results, the chunk map, and the destination. For a change that touches a screen, the brief also names its screen pictures, as [Before the merge review](references/screen-pictures.md#before-the-merge-review) describes. Reuse a review only while its approval still matches those inputs. **Why:** approval covers exact commits. If they change, nobody approved the new ones. The one exception is a draft from `--from-code`: its [comparison](references/spec-code-sync.md#after-a-draft-from-code) takes the place of this review, so its merge needs only the user's approval for the destination, for the commit they accepted.
+6. **Review.** Run the [guided-review](../guided-review/SKILL.md) skill in this conversation, with the brief that [Guided review](references/guided-review.md) describes: the repositories, the exact parent, head, and spec commits, the cleanup, bug review, and test merge results, the chunk map, and the destination. Reuse a review only while its approval still matches those inputs. **Why:** approval covers exact commits. If they change, nobody approved the new ones. The one exception is a draft from `--from-code`: its [comparison](references/spec-code-sync.md#after-a-draft-from-code) takes the place of this review, so its merge needs only the user's approval for the destination, for the commit they accepted.
 7. **Squash** each child into its immediate parent as one commit, including the final release merge, following [Git operations](references/git-operations.md). Then push the parent right away if it has a copy on the remote, as a plain push. The merge approval covers that push. **Why:** the parent's history then shows one reviewed commit per change. Pushing at once keeps the remote in step: the child's copy can then be deleted, and the other children's pull requests show only their own work.
 8. **Children first.** A parent can merge into its own parent, or be removed, only after all its children are resolved and removed, at every depth.
 9. **Sync the survivors,** as described in [Keep children on their parent's head](#keep-children-on-their-parents-head).
@@ -549,7 +531,7 @@ Normal work only updates the code affected by the accepted change. A wider compa
 
 For code that nobody knows well, or whose spec is missing, the user can turn the direction around for a named scope, with `--from-code`. Read [Spec from code](references/spec-from-code.md). In short: the code at one commit is the source, and the spec describes what it does today. A run changes no behavior. Something that looks unintended becomes a finding, not a rule and not a fix. After each feature's draft, a [comparison](#compare-spec-and-code-when-asked) of that feature follows by itself: one table of every difference between the draft and the code, which the user goes through one at a time. Then the user accepts the spec, with no guided review, and from then on the spec is the source again.
 
-> Example: `--from-code the Class screens` adds a story for each existing state of those screens, shows the flow sheet of each stories file, and writes a rule for each state in its feature document.
+> Example: `--from-code the Class screens` writes a rule for each state of those screens in its feature document.
 
 ## Stay within the request
 

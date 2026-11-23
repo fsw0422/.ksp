@@ -47,7 +47,6 @@ Every fact has one owning document. Other documents link to the owner instead of
 | Message shapes | A contract, such as OpenAPI for HTTP or JSON Schema for events |
 | How fast and how reliably an operation must answer | The same contract, as the operation's service level |
 | What a store holds, how it's read and written, and what drives its cost | A data card under `architecture/data/` |
-| What a built state of a screen looks like | A story, in the repository that owns the screen |
 | System boundaries and deployment | Architecture documents, which don't own product behavior |
 | Domain terms and their names in code | One place, such as `architecture/domain-model.md` or a glossary |
 | The reasons for a big choice | A decision record |

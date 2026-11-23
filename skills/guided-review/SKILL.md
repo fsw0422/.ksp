@@ -1,13 +1,13 @@
 ---
 name: guided-review
-description: "Walk the user through a code or spec change one chunk at a time, with the changed code shown as diffs and changed screens as pictures, so they can question it and decide. Works on its own, for a local branch, a colleague's pull request, or a Jira ticket's change, and as the review step of a workflow such as Spec Workflow, which hands it a brief. Use when the user wants to go through a change with you: a guided review, 'walk me through' a branch, PR, diff, or commit, or reviewing a PR or a ticket's change together. Not for a one-shot bug hunt, which a code review command does alone. Reviewing approves nothing by itself: edits, posts, and merges each need their own OK."
+description: "Walk the user through a code or spec change one chunk at a time, with the changed code shown as diffs, so they can question it and decide. Works on its own, for a local branch, a colleague's pull request, or a Jira ticket's change, and as the review step of a workflow such as Spec Workflow, which hands it a brief. Use when the user wants to go through a change with you: a guided review, 'walk me through' a branch, PR, diff, or commit, or reviewing a PR or a ticket's change together. Not for a one-shot bug hunt, which a code review command does alone. Reviewing approves nothing by itself: edits, posts, and merges each need their own OK."
 ---
 
 # Guided Review
 
 Walk the user through a change, one chunk at a time, so they can question it and decide. Stay in the current conversation.
 
-A workflow can hand the review a **brief**: what to compare, why the change exists, a starting plan, the checks already run, pictures of changed screens, extra rules, whether edits are allowed, what the decision means, and where to keep the record. Every field has a default, so the review also runs with no workflow at all, such as for a colleague's pull request. [The brief](references/brief.md) lists the fields, their defaults, how to find the comparison, and sample briefs.
+A workflow can hand the review a **brief**: what to compare, why the change exists, a starting plan, the checks already run, extra rules, whether edits are allowed, what the decision means, and where to keep the record. Every field has a default, so the review also runs with no workflow at all, such as for a colleague's pull request. [The brief](references/brief.md) lists the fields, their defaults, how to find the comparison, and sample briefs.
 
 ```mermaid
 sequenceDiagram
@@ -16,7 +16,7 @@ sequenceDiagram
     participant U as User
     W->>R: A brief, or nothing
     R->>U: The "Starting Guided Review" banner
-    R->>R: Fill gaps with defaults, read the whole change, bug-review its code and draw its changed screens if none did
+    R->>R: Fill gaps with defaults, read the whole change, and bug-review its code if none did
     R->>U: Inputs and their sources, the chunk map, then chunk 1
     U->>R: next, why, line by line, or change this
     R->>U: One chunk at a time, until the last
@@ -62,23 +62,6 @@ Every check in the brief must cover the exact commits under review. If a check i
 
 **Why:** whoever explains a change tends to accept its choices. A bug review reads the code fresh, and in a review without a workflow, it's the only bug hunt the change gets.
 
-## Draw the screens the change touches
-
-When the change touches a screen, the user reviews its pictures, not only its code. A change touches a screen when it changes a view, a style, a story, or a text that a user reads.
-
-- **Use the pictures in the brief** when they cover the exact head. Pictures of an older head are stale, like any other check.
-- **Otherwise draw them before the first chunk,** unless the user says not to. That works when the repository's README has a **Screen pictures** section with one command that draws stories, and the head is checked out with nothing uncommitted. Draw the stories the change touches, into a folder outside every repository. Draw the same stories at the base too, where the base is checked out, so a chunk can show before and after.
-- **Draw a flow sheet for a flow change,** where the command can: one image of a stories file, with all its states side by side, in order. A change is a flow change when it adds, removes, or reorders states, or changes which state follows which. A change to the look only needs the single pictures.
-- **Record a moving picture for a motion change,** where the command can: a few seconds of the state, looping, with its real timing. A change is a motion change when it changes what moves, its timing, its path, or when it plays. Check its frames: what moves, and that nothing else does.
-- **Don't check out a head to draw it.** For a pull request that isn't checked out, say that no picture was drawn, and offer once to draw them in a temporary worktree.
-- **Look at every picture before you show it:** the right state, the right theme, and nothing cut off. A fault in a picture goes into its chunk as a finding, with a suggested change.
-- **Draw again after an edit that changes a screen,** and show the new picture before the user decides.
-- **Without pictures, say why in the opening,** such as "Pictures: none, because the README has no Screen pictures section". Then describe each changed state in its chunk: what the user sees, top to bottom.
-
-> Example: a pull request moves the Retry button under the error message. The web repository's README has a Screen pictures section, so the review draws the *Failed* story at the base and at the head, in a headless browser. Chunk 1 then shows both pictures.
-
-**Why:** a diff shows that a margin went from 12 to 16. Only the picture shows whether the screen looks right. Drawing at the exact head means the user approves the screen they saw.
-
 ## Open the review
 
 Start with the purpose, the comparison, and the checks, then explain the first chunk right away. Its progress map shows the whole plan. Say where each input came from, and flag any that came from a default or is missing. For example, for a Jira ticket (made up):
@@ -89,7 +72,6 @@ Why         AUTH-88's 3 acceptance criteria                                     
 Plan        3 chunks, one per criterion                                             (from the ticket)
 Checks      CI passed at 8d41e07                                                    (from the PR)
             Bug review: none yet, so running one at medium first                     (default)
-Pictures    none yet, so drawing the login screen's Locked state first              (default)
 Edits       none: it's Priya's branch                                               (default)
 Decision    your verdict, posted only if you ask                                    (default)
 ```
@@ -132,12 +114,6 @@ For the current chunk, explain each of these in detail, in easy words, with as m
 - For a spec or other prose, quote the new wording, and the old wording when it matters, instead of a diff. Code blocks don't wrap, so a diff of long lines scrolls sideways, worst on a phone.
 
 **Why:** a link opens the whole file as it is today, not the change, and its line numbers drift after edits and rebases. It often can't open at all: the desktop app opens only files inside the session's folders, and a phone may not open it. The user approves the code, so they need to see the code, not only a description of it. Line numbers let a note or a question point at a line, such as "line 22", and let the user find it in the IDE.
-
-**Show the screen when the chunk changes one.** Right after the What changed sentence, send each changed state's picture as an image, the way [mermaid-image](../mermaid-image/SKILL.md#make-and-send-an-image) sends one, before and after where both exist. For a flow change, send the flow sheet first, then the changed states up close. For a motion change, add its moving pictures. Then say in one line what they are: the state, that the data is sample data, what drew them, and the commit. Call a state by its story's name in notes and questions. Where images can't be sent, give the pictures' folder and describe the state.
-
-> For chunk 3, "Say when it unlocks", two images follow the What changed sentence: *Locked* before and after. Then: "The login screen's *Locked* state, drawn by Chrome at `8d41e07`, with sample data. The new line says "Try again at 14:35"."
-
-**Why:** the user approves what a person will see, and a diff can't show that a line is cut off or sits in the wrong place.
 
 A chunk might start with this heading and map (made up). The map is sent as an image:
 
@@ -241,7 +217,7 @@ flowchart TD
 | Why / show callers / what if it fails | Stay on this chunk and explain the requested path |
 | Line by line | Go through the chunk's other changed lines in small groups of about 10 lines or one function. Show each group as a diff with notes, and wait between steps |
 | Looks good / approve this chunk | Record this chunk as accepted and present the next one. It covers only this chunk, not the whole change |
-| Change this, or accept a suggested change | Pause the review. If the brief allows edits, make only the requested edit where it says, check it the way it says, draw a changed screen again, and refresh the affected chunks. If not, write the change as a suggestion the user can pass on, such as a draft review comment, record it, and mark the chunk ✎ |
+| Change this, or accept a suggested change | Pause the review. If the brief allows edits, make only the requested edit where it says, check it the way it says, and refresh the affected chunks. If not, write the change as a suggestion the user can pass on, such as a draft review comment, record it, and mark the chunk ✎ |
 | Skip / pause | Record the skipped part, or save the position. Neither is approval |
 | The final decision, such as "approve" or "approve for `<destination>`" | Record that exact decision, in the words the brief defines. Recognize an explicit waiver if the user deliberately skips the rest |
 
@@ -258,7 +234,7 @@ Keep the record where the brief says. Without a brief, keep it in the conversati
 | Record | Content |
 | --- | --- |
 | Identity and scope | The change's name; its repositories, and evidence for unaffected ones; worktree folders, branches, and paths; purpose; what the decision is for |
-| Commits | Per repository: base and head; the version of the why, such as a spec commit or a ticket; each check and each picture run, and whether it's still current |
+| Commits | Per repository: base and head; the version of the why, such as a spec commit or a ticket; each check, and whether it's still current |
 | Progress | Stable chunk IDs, paths and hunks, each chunk's status (discussed, accepted, skipped, or needs a change), the current chunk or line, questions, edits and suggestions, and the user's decision on each finding |
 | Decision | Approved, changes requested, paused, rejected, or walkthrough complete, plus any explicit waiver. A brief can add its own |
 
@@ -271,9 +247,8 @@ When coverage is complete or explicitly waived, recap the scope, open issues, ch
 ## Check before you send
 
 - **The banner,** "Starting Guided Review", comes before everything else, once for each review.
-- **The first reply** names the comparison, from the merge base to a pinned head, and where each input came from. It flags each gap. If the change has code and no bug review covered it, one ran first. If it touches a screen and no pictures covered the head, they were drawn first, or the opening says why not.
+- **The first reply** names the comparison, from the merge base to a pinned head, and where each input came from. It flags each gap. If the change has code and no bug review covered it, one ran first.
 - **Each chunk** starts with its heading, such as "Chunk 2 of 3: Lock after 5 failures", then the progress map, then the location line. It covers what changed, why, how it's used, and what to know before you accept it, with the key lines as a `diff` and the file, lines, and commit above them. Each line-by-line step shows its lines the same way, after the location line.
-- **Each chunk that changes a screen** shows its pictures at the reviewed head, which you looked at first, or says why it has none. A chunk that changes the flow shows a flow sheet first, and a chunk that changes motion shows a moving picture.
 - **Each reply** explains one chunk at most, and ends with one line of choices. Each line of code it shows has its number from Git, except a removed line.
 - **Never** take "next" or "looks good" as approval of the whole change, or show the base branch's newer commits as part of the change. Never edit, switch branches, commit, push, or post unless the brief or the user allows it.
 

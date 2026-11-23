@@ -8,7 +8,6 @@ A workflow hands the [guided review](../SKILL.md) a brief: what to review, and w
 | **Why** | What the change must do, and its version, such as requirement IDs at a spec commit, or a ticket's acceptance criteria | The PR description and the commit messages. If they don't say, ask |
 | **Starting plan** | A chunk map planned before building, or one chunk per acceptance criterion | Chunks cut from the diff |
 | **Checks** | Checks already run, each with the commits it covered and its findings | Whatever is visible, such as CI on a PR, plus a bug review if none ran and the change has code |
-| **Pictures** | For a change that touches a screen: the pictures already drawn, with a flow sheet for a flow change and a moving picture for a motion change, their folder, the commit they cover, and what drew them | Drawn before the first chunk, where the repository has a Screen pictures command and the head is checked out, as [Draw the screens the change touches](../SKILL.md#draw-the-screens-the-change-touches) describes. Otherwise none, and the opening says why |
 | **Extra rules** | Rules to check each chunk against, such as a domain glossary or team conventions | None |
 | **Edits** | Whether edits are allowed, where, and how to check one | Read-only: changes go back as suggestions |
 | **Decision** | What the decision is for, its words, and what approval does | The user's verdict, with nothing posted |
@@ -41,7 +40,6 @@ Comparison   backend: 6ace5c4..72894cf, in backend-initial-class-recovery
 Why          REC-012 and REC-013, at spec commit 4c7a113
 Plan         the chunk map in the work record
 Checks       cleanup pass: no edits. Bug review at medium: 1 fixed, 1 plausible. Test merges: clean. 18 tests pass
-Pictures     2 states at 9b3e1d4, drawn by Chrome, in .screen-pictures/initial-class-recovery/9b3e1d4
 Extra rules  domain mapping, the spec guardrail, --breaking
 Edits        in the change's worktree, then its tests, the cleanup check, and one re-review
 Decision     "approve for initial", after which Spec Workflow squashes and merges
@@ -55,7 +53,6 @@ Comparison   merge base 2c81f0a to 4be91c0, the head of origin/fix/retry-timeout
 Why          the PR description
 Plan         none, so the chunks are cut from the diff
 Checks       CI passed at 4be91c0. Bug review: none yet
-Pictures     none: the change touches no screen
 Extra rules  none
 Edits        none: it's a colleague's branch
 Decision     the user's verdict: approve, request changes, or comment. Nothing is posted unless they ask
@@ -69,7 +66,6 @@ Comparison   the merge base with main to the head of login-limit, in the folder 
 Why          the commit messages
 Plan         none, so the chunks are cut from the diff
 Checks       none yet, so a bug review runs first
-Pictures     none: the change touches no screen
 Extra rules  none
 Edits        none until the user asks, then only the edit they asked for, with its tests rerun
 Decision     the user's verdict
@@ -83,7 +79,6 @@ Comparison   AUTH-88-login-limit against main, from their merge base
 Why          AUTH-88's acceptance criteria, as pasted or read from Jira
 Plan         one chunk per acceptance criterion
 Checks       CI on the ticket's pull request, if it has one. Bug review: none yet
-Pictures     none yet, so the login screen's changed states are drawn first, if the web repository can draw them
 Extra rules  the team's review checklist, if the user names one
 Edits        none: it's Priya's branch
 Decision     the user's verdict. A Jira or PR comment only if they ask, after they see its text
