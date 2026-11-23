@@ -99,6 +99,7 @@ Only when the user or the project wants them. They are test-run artifacts: never
 A flow test walks one flow the way a user does, such as signing up, and checks what the screen shows at each step.
 
 - **One test for one flow.** A flow test starts the real app and drives it step by step, so it's slow: a short one took 39 seconds, sign-up included. Let one test prove several rules on its way, instead of writing one test for each rule.
+- **Walk one path of the journey map,** when the project's spec has one, as Spec Workflow's [Writing specs](../spec-workflow/references/writing-specs.md#paths-and-flow-tests) describes. The test's steps follow that path's boxes, in order, and its title says which path it is, such as "Try again after the audio fails to load".
 - **Name each step:** what the user just did, or what they now see, such as "Tap Verify Email: email sent". The names are the captions of the [pictures](#pictures-of-a-run).
 - **Put a rule's ID where it's proven,** when the project's rules have IDs: in the name of the step that proves it, and in the test's title. Where a test's name can't hold the ID, as in Python, the first line of its docstring does.
 - **Find things the way a user does:** by the text on them, or by their spoken label. Use a test ID only for a view that has neither, such as an avatar. Adding a test ID to the app is a change of its own.

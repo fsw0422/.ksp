@@ -17,7 +17,7 @@ last-reviewed: <YYYY-MM-DD>
 
 ## Main flow
 
-<A Mermaid diagram if the flow branches; otherwise numbered steps.>
+<When a person walks through the feature: its journey map, a Mermaid flowchart of what they see, with a rule's ID in each box and a branch for each error they see. For any other flow: a Mermaid diagram if it branches. Numbered steps when nothing branches.>
 
 ## States and rules that always hold
 

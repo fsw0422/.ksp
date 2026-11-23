@@ -35,6 +35,10 @@ Don't limit the check to the current diff. A matching name or helper function do
 
 > Example (made up): the spec has `REVIEW-014`, "a Review exercise can be retried once". No test cites it. The code has a `retryExercise()` helper, but no screen calls it. Finding: specified, but not working.
 
+A feature's [journey map](writing-specs.md#the-journey-map) is part of its spec, so compare it too: each box and arrow against what a user can really reach, and each state a user can reach against the map.
+
+> Example (made up): the journey map shows Try again after a failed load, but the Failed screen has no such button. Finding: specified, but not working.
+
 ### Show the table first
 
 List every difference in one table, numbered and grouped by feature, before you explain any of them:
@@ -110,7 +114,7 @@ A [`--from-code` run](spec-from-code.md) compares each feature's draft with the 
 - **Only the draft's scope.** Read the drafted documents, and the code that the run read for them. **Why:** a full scan is expensive, and the draft is what's new. The rest of the product waits for a `--compare` with no scope.
 
 - **Compare fixed commits:** the draft's head, and the code commits that the run read. **Why:** the draft describes those commits. Newer code would show differences that the draft never saw.
-- **Read the code a second time, from the spec's side.** Check each rule against the code that its evidence names, and each entry of the run's map against the rules. Where a rule says something the code doesn't do, correct the draft before you show the table, and name the correction under it. That isn't a difference to decide: a draft only describes.
+- **Read the code a second time, from the spec's side.** Check each rule, and each arrow of a journey map, against the code that its evidence names, and each entry of the run's map against the rules. Where a rule says something the code doesn't do, correct the draft before you show the table, and name the correction under it. That isn't a difference to decide: a draft only describes.
 - **Start the table with the run's findings and questions,** and add what the second read found, and what the run's [flow tests](spec-from-code.md#prove-the-rules-end-to-end) found, if it has them. A row from a flow test names the flow and its step, so the user can look at its picture. A place that breaks a rule is "both, but different". A finding or a question with no rule yet is "code only".
 - **Rules that agree get no row.** Under the table, name them by evidence, and link the drafted documents, so the user can read any rule. The parts nobody read go there too.
 - **A draft needs only three decisions:** keep it as built, fix it later, or defer. "Keep it as built" changes the draft: a rule is added, or a rule names its exception. An answer to a question adds the rule the user chose, and code that differs from it is fixed later. "Fix it later" leaves the draft as it is, and becomes a change after the spec is accepted, such as a repair or a removal, as [Turn the decisions into changes](#turn-the-decisions-into-changes) describes.

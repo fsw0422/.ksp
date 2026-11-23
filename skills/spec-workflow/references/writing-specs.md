@@ -31,6 +31,7 @@ Prefer a diagram when it explains the idea more clearly than prose. Use Mermaid,
 | Sequence diagram | Interactions and competing operations, such as two devices resuming the same Class |
 | State diagram | Lifecycles, such as active, paused, and ended |
 | Flowchart | Flows with branches only. Use a numbered list for simple steps |
+| Journey map | What the user sees in a feature, from start to end, as [The journey map](#the-journey-map) describes |
 
 Give every diagram a short explanation in prose. The prose owns the exact, testable rules and any detail that would make the diagram unreadable, and the diagram must agree with it.
 
@@ -75,7 +76,7 @@ Then it uses this order:
 
 1. Purpose
 2. Scope and non-goals
-3. Main flow
+3. Main flow: the [journey map](#the-journey-map), when a person walks through the feature
 4. States and rules that always hold
 5. Failure and recovery
 6. Requirements
@@ -118,6 +119,47 @@ Where a test's name can't hold the ID, such as a Python function's, the first li
 
 A rule that no test cites isn't proven yet. To find a rule's tests, search the code repositories for its ID.
 
+## The journey map
+
+When a person walks through a feature, its Main flow is a **journey map**: one diagram of what that person sees, from start to end, with every error they can see on the way.
+
+```mermaid
+flowchart TD
+    Open([A learner reopens a Class]) --> Loading[Player: loading · AUDIO-001]
+    Loading -->|The audio loads| Ready[Player: ready to play · AUDIO-002]
+    Loading -->|Loading fails| Failed[Player: failed, with Try again · AUDIO-003]
+    Failed -->|Tap Try again| Loading
+```
+
+- **A box is something the user sees:** a screen, or one state of it. Label it with the screen, what it shows, and its rule's ID, such as "Player: loading · AUDIO-001". The first box is how the user gets in, and needs no rule.
+- **An arrow is what the user does, or what happens in front of them,** such as "Tap Try again" or "Loading fails". Draw no decision diamond: the user sees what a decision leads to, never the decision itself.
+- **An error gets a branch only when the user sees it.** What happens out of sight stays off the map, such as a retry in the background, or a status check every 10 seconds.
+- **Each box names the rule that defines it:** the rule says when the user sees the box, and what it shows. The exact words, numbers, and times stay in the rule.
+- **Never guess an arrow.** When no rule says what comes next, such as what a second failure shows, the rules have a gap. Ask, write the rule, then draw the arrow.
+
+> Example: the app tries three times to load the audio before it gives up. During those tries the user sees only "Loading", so the map has one Loading box and no retries. When the third try fails, the user sees Try again, so that failure is a branch.
+
+**Keep a map small,** at about 10 boxes. A feature with more than one journey gets a map for each, such as starting a Class and resuming one. A journey with no branch is a numbered list, with each step's rule. A box on another feature's screen names that feature's rule, and that feature's document still owns the rule.
+
+**When several boxes name the same rule,** that rule probably joins separate behaviors. Split it, as [Requirements](#requirements) says, so each box has a rule of its own.
+
+**A feature that nobody walks through,** such as a nightly job or an API for another system, has no journey map. Its Main flow is a diagram if the flow branches, and numbered steps if it doesn't.
+
+### Paths and flow tests
+
+A **path** is one way through the map, from its start to an end, and it takes a loop once. A map's paths are the one with no error, then one more for each branch, until every arrow is on a path. The map above has two paths:
+
+1. The audio loads: loading, then ready.
+2. Loading fails: loading, failed, Try again, loading, then ready.
+
+Errors that don't depend on each other get a path each, and no path for both. If playing could fail too, the map above would have three paths, not four: a fourth would walk no new arrow.
+
+Where the project has [flow tests](spec-from-code.md#prove-the-rules-end-to-end), one test walks each path on the real product, and each of its steps names the rule of the box it reaches. A path that no flow test walks is a journey that nobody has tried.
+
+**Why a map:** a rule states one fact, so no rule shows the whole journey, and a table of rules doesn't show that a branch is missing. On a map, a failure with no branch and a box with no way out both show at a glance.
+
+**Why only what the user sees:** a person can check such a map by using the product, and a flow test can walk it. How the product gets from one box to the next, such as its retries, belongs to the rules and the other diagrams.
+
 ## Domain terms
 
 List each domain term once, with its meaning and its names in code, storage, and APIs. Use the same word everywhere, and agree on a new name in the spec before renaming code. [Map domain language into code](../SKILL.md#map-domain-language-into-code) covers how the names carry into code.
@@ -148,6 +190,7 @@ Check that:
 - relative links resolve, and no absolute paths to someone's computer were added
 - requirement IDs are unique and defined only in feature documents
 - each new or changed rule has an example, and a test cites its ID once the code exists
+- each journey map shows only what the user sees, each of its boxes names a rule that exists, and each error the user sees has its branch
 - Mermaid blocks render, which the [mermaid-image](../../mermaid-image/SKILL.md) script checks, and contracts parse
 - the change updates the owning document instead of repeating it elsewhere
 - the repository's own checks pass, such as its CI jobs
