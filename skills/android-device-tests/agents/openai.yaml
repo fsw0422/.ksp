@@ -1,0 +1,4 @@
+interface:
+  display_name: "Android Device Tests"
+  short_description: "Run end-to-end tests of an Android app on an emulator"
+  default_prompt: "Use $android-device-tests to run the device tests."

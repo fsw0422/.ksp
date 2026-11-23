@@ -43,7 +43,7 @@ The spec repository starts with this layout. Each feature document's header name
 
 ## Create a new project
 
-1. Confirm the project name, the workspace folder, and which code repositories exist or are planned. The user creates code repositories; this setup creates only the spec repository.
+1. Confirm the project name, the workspace folder, and which code repositories exist or are planned. The user creates code repositories; this setup creates only the spec repository. If the project has an Android app, ask whether it needs device tests. Those run on an emulator, from an e2e repository, and the [android-device-tests](../../android-device-tests/SKILL.md) skill sets the emulator up.
 2. Create `<workspace>/<project>-specs/` with `git init -b main`. Copy everything in [the spec repository template](../assets/spec-repo/) into it, including the `.gitkeep` files that keep empty folders in Git.
 3. Fill in the placeholders. Write the README from what the user has said, and leave a placeholder in place rather than inventing facts. Put today's date in `architecture/domain-model.md`.
 4. Commit on `main` with a plain subject, such as `Set up the specification`.

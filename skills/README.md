@@ -88,6 +88,15 @@ the desktop and the phone. It works offline: it bundles Mermaid 12.2.0 in
 MCP's Chrome for Testing, which `browser.sh path` finds. It needs no extra
 install, and it never touches the shared browser window.
 
+### Android device tests
+
+`android-device-tests` is know-how for end-to-end tests that drive a real Android
+app on an emulator through adb: the emulator's one-time setup, starting it
+safely, reading the screen with the app's animations on, step clips and moving
+flow sheets, and the traps found so far. It needs the Android SDK's emulator and
+adb. The e2e repository brings its own Python tools, such as `uiautomator2`,
+`grpcio-tools` and Pillow.
+
 ### Git worktrees
 
 `git-worktrees` creates and removes worktrees beside each repository's main
