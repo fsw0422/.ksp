@@ -22,7 +22,7 @@ flowchart TD
 
 ## Emulator only
 
-Device tests run on an emulator, never on a person's phone.
+Device tests run on an emulator, never on a person's phone. The runner enforces it: it accepts only serials that start with `emulator-`, and stops with a message when `ANDROID_SERIAL` names a phone.
 
 **Why:** a phone holds a real account and real data, it's often locked, and its owner may be using it. Each wrong PIN locks it for longer. An emulator can be started, reset and driven by the run alone.
 
@@ -41,7 +41,9 @@ Before you set anything up, settle the project's facts with the user, and write 
 
 The account's password stays with the user, who types it in the emulator's window. The README names each `.env` key without its value, so the next setup knows what to ask for.
 
-Before its first test, a new repository also needs its runner and helpers: what starts the emulator, reads the screen, and takes the step pictures. The sections below say how each of them works.
+Before its first test, a new repository also needs its runner and helpers: what starts the emulator, reads the screen, and takes the step pictures. The sections below say how each of them works. The runner's own tests replace its emulator start with a stub, so testing the runner never boots a real emulator.
+
+> Example: a few of the runner's own tests called its real start step, and running them booted the Pixel 8 emulator.
 
 ## Set up the emulator once
 
@@ -57,22 +59,48 @@ Do this with the user, once for each AVD.
 ## Start it for a run
 
 ```sh
-emulator -avd <AVD> -qt-hide-window -no-boot-anim -no-snapshot-save -grpc 8554 -grpc-use-token
+emulator -avd <AVD> -port 5554 -qt-hide-window -no-boot-anim -no-snapshot-save -grpc 8554 -grpc-use-token
 ```
 
+- **`-port 5554`** fixes the console port, so the emulator's serial is `emulator-5554`.
 - **`-qt-hide-window`, not `-no-window`.** `-no-window` runs a separate headless binary without working audio.
-- **`-grpc <port> -grpc-use-token`, never `-grpc` alone.** Alone, the control port listens on every network interface with no login. With the token, it listens on `127.0.0.1` only. On macOS, the port and token are in the emulator's discovery file, `~/Library/Caches/TemporaryItems/avd/running/pid_<pid>.ini`, as `grpc.port` and `grpc.token`. An emulator started without the control port still runs the tests, but its pictures stay still.
+- **`-grpc <port> -grpc-use-token`, never `-grpc` alone.** Alone, the control port listens on every network interface with no login. With the token, it listens on `127.0.0.1` only. On macOS, the port and token are in the emulator's discovery file, `~/Library/Caches/TemporaryItems/avd/running/pid_<pid>.ini`, as `grpc.port` and `grpc.token`. An emulator that crashes can leave its file behind, and its process ID can later belong to another program, so read the file of the `qemu-system` process that holds the console port. An emulator started without the control port still runs the tests, but its pictures stay still.
 - **`-no-snapshot-save`** leaves the saved state as it was. The account and the PIN stay on the AVD's disk anyway.
 - **Wait for boot:** `adb shell getprop sys.boot_completed` prints `1`. After a first sign-in, also check `sys.boot.reason`, since an early restart can lock the device again.
-- **Stop what you started,** with `adb -s <serial> emu kill`. Leave an emulator you didn't start alone.
+
+### Stop only the emulator you started
+
+The serial can't tell you which emulator is yours: any emulator on console port 5554 answers to `emulator-5554`, including one that another session started. The program that holds the port can, and `lsof +c 0 -nP -iTCP:5554 -sTCP:LISTEN` names it.
+
+```mermaid
+flowchart TD
+    Run[A device test run] --> Who{What listens on console port 5554?}
+    Who -->|An emulator, qemu-system| Use[Use it, and never stop it]
+    Who -->|Another program| Taken[Stop the run: the port is taken]
+    Who -->|Nothing| Launch[Start the AVD with -port 5554, and keep its process ID]
+    Launch --> Boot{Booted, while that process holds the port?}
+    Boot -->|Yes| Tests[Run the tests, then stop it with emu kill]
+    Boot -->|It quit| Log[Stop waiting, and show its log]
+    Boot -->|Not in time| Leave[Stop waiting, and stop nothing]
+```
+
+- **Look at the port before you start one,** not only at `adb devices`. A booting emulator already holds its port while `adb devices` still lists it as `offline`. A stale `offline` line left by a crash holds no port.
+- **The emulator you start keeps its process ID,** because the `emulator` program turns itself into `qemu-system-…`. `lsof -nP -a -p <pid> -iTCP:5554 -sTCP:LISTEN` shows whether it holds the port.
+- **Count its boot, and stop it, only while it holds the port.** Stop it with `adb -s emulator-5554 emu kill` at the end of the run, also when the run fails, such as from an exit trap. When it doesn't hold the port, stop nothing, and say why.
+- **If it quits while you wait,** stop waiting and show its log, which says why, such as a taken port.
+
+> Example: another session's emulator is still booting on port 5554, so `adb devices` lists it as `offline`. A run that looks only at `adb devices` starts its own emulator on the same port, which fails to start, because the port is taken. Then the other emulator finishes booting and looks like the run's own, and stopping it by serial would kill the other session's emulator.
 
 ## The screen lock PIN
 
-- **Type it once.** After a few wrong PINs, Android locks the device, for longer each time, such as 5 minutes, then 15, then 30, and the wait starts again at every boot.
-- **On "Wrong PIN", stop the run** with a message that names the `.env` setting. Never type it again, and never try PINs with `adb shell locksettings verify`, because each try counts.
+- **Type it once,** key by key with `adb shell input keyevent`. After a few wrong PINs, Android locks the device, for longer each time, such as 5 minutes, then 15, then 30, and the wait starts again at every boot.
+- **On "Wrong PIN", stop the whole run,** not just the test, with a message that names the `.env` setting: in pytest, with `pytest.exit`. After `pytest.fail` in a step that every test runs, such as making a passkey, the next test types the PIN again. Never type it again, and never try PINs with `adb shell locksettings verify`, because each try counts.
+- **Stop the same way when you can't tell,** such as when the PIN screen still shows, or can't be read, a few seconds after the PIN.
 - **The PIN screen is secure,** so a screenshot of it comes out black. Read it with a UI dump instead.
 
 > Example: the `.env` held the phone's PIN, not the emulator's. After five tries, the emulator was locked for 30 minutes, again at every boot.
+
+> Example: an older helper typed the PIN with `input text`, and when the PIN screen stayed, typed it again key by key: two tries for each unlock.
 
 ## Read and drive the screen
 
@@ -90,7 +118,7 @@ Only when the user or the project wants them. They are test-run artifacts: never
 
 - **A still:** `adb exec-out screencap -p` returns the screen as a PNG.
 - **Named steps and a flow sheet:** a test names each step, such as "Paused Home", and gets a numbered screenshot. When the test ends, also when it fails, its steps are joined side by side into one sheet, so the user sees the flow, and where it stopped.
-- **Moving pictures:** the emulator's gRPC `streamScreenshot` sends each frame as it's drawn, about 60 a second, each with a timestamp. Record a few seconds after each step, sample the frames evenly, such as 10 a second, and save a looping GIF with Pillow; the last frame repeats while the screen stands still. A moving sheet is the still sheet's layout with every step playing. Each clip adds its length to the run, so keep it short, such as 2 seconds, and give the project a setting that turns clips off.
+- **Moving pictures:** the emulator's gRPC `streamScreenshot` sends each frame as it's drawn, about 60 a second, each with a timestamp. Record a few seconds after each step, sample the frames evenly, such as 10 a second, and save a looping GIF with Pillow; the last frame repeats while the screen stands still. A moving sheet is the still sheet's layout with every step playing. When Pillow saves a GIF, it merges identical frames in a row into one longer frame: a clip of 10 frames came back as 3, lasting 300, 200 and 500 ms. To read a clip back frame by frame, such as for a moving sheet, repeat each frame for as long as it lasts. Each clip adds its length to the run, so keep it short, such as 2 seconds, and give the project a setting that turns clips off.
 - **Set both `width` and `height`** in the `ImageFormat` you send. The frame keeps the device's shape and fits inside both, so a tall box such as 360 × 1440 gives frames 360 wide. With either at 0, frames come at full size: 7.8 MB at 1080×2400, above gRPC's 4 MB default, so also raise the client's `grpc.max_receive_message_length`.
 - **The gRPC protocol ships with the SDK,** in `$ANDROID_HOME/emulator/lib/emulator_controller.proto`. Compile it with `grpcio-tools` when the tests start, instead of copying generated code.
 
@@ -100,7 +128,7 @@ A flow test walks one flow the way a user does, such as signing up, and checks w
 
 - **One test for one flow.** A flow test starts the real app and drives it step by step, so it's slow: a short one took 39 seconds, sign-up included. Let one test prove several rules on its way, instead of writing one test for each rule.
 - **Walk one path of the journey map,** when the project's spec has one, as Spec Workflow's [Writing specs](../spec-workflow/references/writing-specs.md#paths-and-flow-tests) describes. The test's steps follow that path's boxes, in order, and its title says which path it is, such as "Try again after the audio fails to load".
-- **Name each step:** what the user just did, or what they now see, such as "Tap Verify Email: email sent". The names are the captions of the [pictures](#pictures-of-a-run).
+- **Name each step:** what the user just did, or what they now see, such as "Tap Verify Email: email sent". The names are the captions of the [pictures](#pictures-of-a-run), so a name says only what its picture shows: "Home enables a new Class" is wrong for a learner with no credits, whose Home can't.
 - **Put a rule's ID where it's proven,** when the project's rules have IDs: in the name of the step that proves it, and in the test's title. Where a test's name can't hold the ID, as in Python, the first line of its docstring does.
 - **Find things the way a user does:** by the text on them, or by their spoken label. Use a test ID only for a view that has neither, such as an avatar. Adding a test ID to the app is a change of its own.
 - **Do only what the user would do.** A restart or a refresh by hand hides what the app should do by itself.
@@ -155,6 +183,7 @@ def test_home_notices_a_verified_email_by_itself(new_learner, flow_pictures):
 | --- | --- | --- |
 | A UI dump keeps failing while the app animates | `uiautomator dump` waits for a still screen | Read with `uiautomator2` |
 | The app vanishes soon after the first sign-in | Play is updating WebView | Wait until Play is quiet, then run again |
+| In the middle of a test, the app restarts or is back at its first screen | Another run is using the same emulator. Its install and `pm clear` reset the app | Wait until the other run ends, then run again |
 | The device is still locked right after boot | Android restarted itself, or is still booting | Check `sys.boot.reason` and the uptime, then run again |
 | "Wrong PIN" | The `.env` PIN isn't this emulator's | Stop, and ask the user for the emulator's PIN |
 | The emulator quits, and gRPC says "Connection reset by peer" | `injectAudio` while no app records | Don't inject sound |
@@ -168,4 +197,4 @@ To dig further, read `adb logcat -d` for the app and `ActivityManager`, `adb log
 - **Its control port** has `-grpc-use-token`, never `-grpc` alone.
 - **The PIN** comes from `.env`, and is typed at most once.
 - **The app** runs with its animations on, and the tests read the screen with `uiautomator2`.
-- **Nothing you started** is left running.
+- **Nothing you started** is left running, and nothing you didn't start is stopped.
