@@ -34,20 +34,21 @@ def update(pictures, folder, title, every):
     flows = [flow for _, flow in by_title]
     starts = join(flows)
     (folder / 'index.html').write_text(draw(saved['title'], flows, starts, place(starts)), encoding='utf-8')
-    shown = sorted({screen.picture for screen in each(starts)})
+    screens = list(each(starts))
+    shown = sorted({picture for screen in screens for picture in screen.own.values()})
     (folder / 'pictures.json').write_text(json.dumps(shown, indent=2) + '\n', encoding='utf-8')
-    report(folder, saved['flows'], shown, changed)
+    report(folder, saved['flows'], len(screens), shown, changed)
 
 
-def report(folder, flows, shown, changed):
-    print(f'Flow map: {counted(len(flows), "flow")} on {counted(len(shown), "screen")}, in {folder / "index.html"}')
+def report(folder, flows, screens, shown, changed):
+    print(f'Flow map: {counted(len(flows), "flow")} on {counted(screens, "screen")}, in {folder / "index.html"}')
     for word, titles in (('New', changed['new']), ('Walked again', changed['again']), ('Gone', changed['gone'])):
         if titles:
             print(f'{word}: {", ".join(titles)}')
     kept = len(flows) - len(changed['new']) - len(changed['again'])
     if kept:
         print(f'Kept from earlier runs: {counted(kept, "flow")}')
-    print(f'The page shows {counted(len(shown), "picture")}, listed in {folder / "pictures.json"}')
+    print(f'The page uses {counted(len(shown), "picture")}, listed in {folder / "pictures.json"}')
     link = folder / 'link.txt'
     if link.is_file():
         print(f'Published at {link.read_text(encoding="utf-8").strip()}: update that page.')

@@ -1,5 +1,6 @@
 """Draw the map as one page: each screen at its place, with an arrow to each screen that follows it."""
 import html
+import json
 import re
 from pathlib import Path
 from urllib.parse import quote
@@ -27,7 +28,7 @@ PAGE = '''<meta charset="utf-8">
 <div class="tools">
 <div class="pick">
 <label for="flow">Show</label>
-<select id="flow">
+<select id="flow" autocomplete="off">
 <option value="">All flows</option>
 {options}
 </select>
@@ -41,7 +42,7 @@ PAGE = '''<meta charset="utf-8">
 </div>
 </header>
 <main class="board" id="board" tabindex="0" aria-label="The map. It scrolls both ways.">
-<p class="hint">Flows that start with the same steps share those screens, and an arrow leaves the screen where they part. A flow's name stands under its last screen. Click a picture to see it larger.</p>
+<p class="hint">Flows that start with the same steps share those screens, and an arrow leaves the screen where they part. A flow's name stands under its last screen. A screen that flows share plays the clip of the flow walked last, which runs on to that flow's next screen. Pick a flow in the list to see its own clips, with what it did on each screen. Click a picture to see it larger.</p>
 <div class="map" id="map" data-width="{width}" data-height="{height}" style="width:{width}px;height:{height}px">
 <svg class="arrows" width="{width}" height="{height}" viewBox="0 0 {width} {height}" aria-hidden="true">
 <defs>
@@ -95,7 +96,7 @@ def label(flow):
 
 
 def option(number, flow):
-    return f'<option value="{number}">{label(flow)}</option>'
+    return f'<option value="{number}" data-title="{html.escape(flow["title"])}">{label(flow)}</option>'
 
 
 def figure(screen, flows):
@@ -104,11 +105,22 @@ def figure(screen, flows):
                    f'{label(flows[number])}</li>' for number in screen.ends)
     name = html.escape(screen.name)
     return (f'<figure class="screen{" stopped" if stopped else ""}" data-flows="{numbers(screen.flows)}" '
-            f'data-name="{name}" style="left:{left(screen)}px;top:{top(screen)}px">'
+            f'data-name="{name}"{own_pictures(screen)} style="left:{left(screen)}px;top:{top(screen)}px">'
             f'<figcaption>{caption(screen.name)}</figcaption>'
             f'<button class="picture" type="button" aria-label="Show it larger: {name}">'
             f'<img src="{quote(screen.picture)}" alt="" loading="lazy" width="{WIDTH}" height="{HEIGHT}"></button>'
             f'<ul class="ends">{ends}</ul></figure>')
+
+
+def own_pictures(screen):
+    """For a screen that flows share: each flow's own picture of it, which the page shows once that flow is picked.
+
+    A step's clip shows what its flow did on the screen, and two flows can do different things there.
+    """
+    if len(screen.own) < 2:
+        return ''
+    own = json.dumps({str(number): quote(picture) for number, picture in screen.own.items()})
+    return f' data-own="{html.escape(own)}"'
 
 
 def caption(name):

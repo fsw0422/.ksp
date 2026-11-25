@@ -12,6 +12,7 @@ class Screen:
         self.row = 0.0      # its place among the screens of the same depth
         self.picture = None
         self.walked = ''
+        self.own = {}       # each flow's own picture of it, by the flow's number
         self.flows = []     # the flows that walk through it, by number
         self.ends = []      # the flows that end here
         self.next = {}      # the screens that follow, by step name
@@ -27,6 +28,7 @@ def join(flows):
                 following[step['name']] = Screen(step['name'], depth)
             screen = following[step['name']]
             screen.flows.append(number)
+            screen.own[number] = step['picture']
             if flow['walked'] >= screen.walked:  # the picture comes from the flow that was walked last
                 screen.picture, screen.walked = step['picture'], flow['walked']
             following = screen.next

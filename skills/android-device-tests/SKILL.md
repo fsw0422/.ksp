@@ -1,6 +1,6 @@
 ---
 name: android-device-tests
-description: "Set up, write, run and fix end-to-end tests that drive a real Android app on an emulator through adb: the one-time emulator setup (Google account, screen lock PIN), starting the emulator safely, reading and driving the screen with the app's animations on, writing a flow test whose steps name the rules they prove, step screenshots with looping clips and moving flow sheets, one map that joins all flows, and the known traps, such as PIN lockouts, Play updates after sign-in, and the emulator's silent microphone. Use when an e2e or device-test repository is set up or extended, when device tests run, when the flow map is drawn after a run, or when a run fails because of the device rather than the app. Not for unit tests, and never for a person's own phone."
+description: "Set up, write, run and fix end-to-end tests that drive a real Android app on an emulator through adb: the one-time emulator setup (Google account, screen lock PIN), starting the emulator safely, reading and driving the screen with the app's animations on, writing a flow test whose steps name the rules they prove, step screenshots with clips that show what the test types and taps, moving flow sheets, one map that joins all flows, and the known traps, such as PIN lockouts, Play updates after sign-in, and the emulator's silent microphone. Use when an e2e or device-test repository is set up or extended, when device tests run, when the flow map is drawn after a run, or when a run fails because of the device rather than the app. Not for unit tests, and never for a person's own phone."
 ---
 
 # Android Device Tests
@@ -118,9 +118,50 @@ Only when the user or the project wants them. They are test-run artifacts: never
 
 - **A still:** `adb exec-out screencap -p` returns the screen as a PNG.
 - **Named steps and a flow sheet:** a test names each step, such as "Paused Home", and gets a numbered screenshot. When the test ends, also when it fails, its steps are joined side by side into one sheet, so the user sees the flow, and where it stopped.
-- **Moving pictures:** the emulator's gRPC `streamScreenshot` sends each frame as it's drawn, about 60 a second, each with a timestamp. Record a few seconds after each step, sample the frames evenly, such as 10 a second, and save a looping GIF with Pillow; the last frame repeats while the screen stands still. A moving sheet is the still sheet's layout with every step playing. When Pillow saves a GIF, it merges identical frames in a row into one longer frame: a clip of 10 frames came back as 3, lasting 300, 200 and 500 ms. To read a clip back frame by frame, such as for a moving sheet, repeat each frame for as long as it lasts. Each clip adds its length to the run, so keep it short, such as 2 seconds, and give the project a setting that turns clips off.
+- **Moving pictures:** the emulator's gRPC `streamScreenshot` sends each frame as it's drawn, about 60 a second, and none while the screen stands still. Keep about 10 a second, the newest of each tenth of a second, and save each step's frames as a looping GIF with Pillow, as [A clip of each step](#a-clip-of-each-step) describes. When Pillow saves a GIF, it merges identical frames in a row into one longer frame: a clip of 10 frames came back as 3, lasting 300, 200 and 500 ms. To read a clip back frame by frame, such as for a moving sheet, repeat each frame for as long as it lasts. Give the project a setting that turns clips off.
+- **A moving sheet** is the still sheet's layout with the steps playing their clips one after another, from left to right. While a step plays, each other step shows the first frame of its own clip. With every step playing at once, nobody can follow clips that each show what happens.
+- **Give all frames of a moving sheet one palette, without dithering.** Then two frames differ only in the playing step, and the GIF stores only that part. With a palette for each frame, Pillow stores the whole sheet again for every frame: 9.7 MB for a sheet of 5 steps, where one palette gives 0.8 MB. Take the palette from the sheet together with a small copy of every frame, so a screen that shows only inside a clip keeps its colours. Pick it by fast octree, not by Pillow's default, median cut: median cut gives most of its 256 colours to the large areas of white and grey, so a small bright area, such as a blue button, turns grey-blue.
 - **Set both `width` and `height`** in the `ImageFormat` you send. The frame keeps the device's shape and fits inside both, so a tall box such as 360 × 1440 gives frames 360 wide. With either at 0, frames come at full size: 7.8 MB at 1080×2400, above gRPC's 4 MB default, so also raise the client's `grpc.max_receive_message_length`.
 - **The gRPC protocol ships with the SDK,** in `$ANDROID_HOME/emulator/lib/emulator_controller.proto`. Compile it with `grpcio-tools` when the tests start, instead of copying generated code.
+
+### A clip of each step
+
+A step's clip runs from its picture to the next step's picture. It shows the step's screen, what the test does on it, and the next screen as it arrives.
+
+> Example: the clip of "The email screen" opens on the empty field. The email goes in, a dot lands on **Continue with Passkey**, the button says "Creating passkey...", and the passkey sheet slides up. The next step's clip opens on that sheet.
+
+```mermaid
+sequenceDiagram
+    participant Test as Flow test
+    participant Recording
+    participant Screen as Emulator screen
+    Test->>Recording: Start, at the first step
+    Screen-->>Recording: Each frame, as it's drawn
+    Test->>Screen: Take the picture of "The email screen"
+    Test->>Screen: Type the email, tap the button
+    Test-->>Recording: What it typed and tapped, where, and when
+    Test->>Screen: Take the picture of "The passkey sheet"
+    Test->>Recording: Stop, when the test ends
+    Recording-->>Test: The clip of "The email screen": from its picture to the next
+```
+
+- **Record beside the test, not after each step.** Read the stream in a background thread, from the first step until the test ends, and cut the clips then. A recording that stops the test after each step ends before the test acts, so it shows only a screen that stands still, and it adds its length to the run.
+- **Note what the test does, where every input passes,** such as the one helper that runs `adb shell input`: the command, and when it returned. On an emulator, the stream's frames show an adb touch about 0.05 seconds after the command returns. Measure it, and don't guess: with Android's pointer location overlay on, the first frame that changes after a tap shows the touch.
+- **Read a tap or a swipe the way Android does.** A place may be a decimal or negative, and a swipe's length is whole milliseconds, 300 without one. A reader with rules of its own puts a dot in the wrong place, or leaves a real touch out.
+- **Draw no dot for a touch that may not have happened on the recorded screen:** a command that failed, such as one Android refuses with exit code 255, or one that names a display with `-d`. A missing dot is seen and fixed. A wrong dot misleads.
+- **Draw a dot for each touch.** An adb tap leaves no mark on the screen. Show the dot from 0.3 seconds before the touch lands until 0.2 seconds after, and move it along a swipe. With the touch noted where the frames show it, the dot sits on a button as it reacts, and is gone before the next screen comes. Give it a dark edge and a light halo, so it shows on light and dark screens.
+- **Show one finger, in the step where it lands.** The next step's first tap lands right after a step ends, so its dot would show on this step's last frames. And of two touches that follow each other closely, such as a tap and then a swipe, show only the nearer one.
+- **Cut the waits.** Keep the seconds around what happens: the step's own picture, each input, each time much of the screen changes, and the next step's picture. Cut everything between, such as a wait for the server.
+- **Tell a move by how much changes, not by whether anything does.** A waiting screen never stands still: a text cursor blinks, and a spinner turns. Compare small grey copies of the frames, a tenth as wide. A sheet, a keyboard or a new screen changes far more than 8% of such a copy, and a spinner far less.
+- **Open and close a clip calmly.** Hold its first frame before anything happens, such as for 0.4 seconds, and its last frame before the clip starts again, such as for 0.6.
+- **Cap a clip,** such as at 6 seconds, by keeping its start and its end.
+- **Never record a secret.** The stream shows the secure screens that a screenshot shows as black, such as the PIN prompt of the screen lock, and a PIN field can show each digit for a moment. Keep no frame from before the first key until that screen is gone, and for half a second more, while it fades. A frame from before the secret says nothing about the screen after it, so the clip goes on with the next frame the screen draws, or with the next step's screenshot. When typing the secret fails, keep the recording paused for the rest of the test: the secret's screen may still be up.
+- **Take a step's picture once the screen stands still:** when it hasn't moved for 0.3 seconds, or after 2 seconds at most. The recording knows when the screen last moved, so no step waits a fixed time. Count the test's last input as a move, from when the frames show it: a picture taken right after a tap would otherwise come before the tap shows, and the tap's dot would land in the next step. Before the stream's first frame, nothing is known about the screen: wait for that frame, but only for the recording's first half second. On an emulator it comes within 0.15 seconds, and a display that's off never sends one.
+- **Never show a frozen frame as a still screen.** A stream that fails, or ends by itself, loses the clips from then on, with a warning that names the step and the reason.
+- **End the recording first when the test ends,** before the sheets are drawn, also when the test failed or took no step. Then draw the still sheet, then cut the clips, so no error in one costs the others more than it must.
+- **Pack the frames while the test runs.** A frame 360 pixels wide is 864 KB as it comes, and about 30 KB packed with `zlib`.
+
+> Example: the Sign up flow has 5 steps. With a 2-second clip after each step, it took 28 seconds from its first picture to its sheet. Recorded beside the test, it takes about 15. Its five clips are 2 to 5.4 seconds long, and 110 to 320 KB each. Its moving sheet plays for 16 seconds, and is 0.9 MB.
 
 ### One map of all flows
 
@@ -141,7 +182,7 @@ Flow map: 3 flows on 9 screens, in /Users/kev/projects/shop/flow-map/index.html
 New: Sign up
 Walked again: Sign in
 Kept from earlier runs: 1 flow
-The page shows 9 pictures, listed in /Users/kev/projects/shop/flow-map/pictures.json
+The page uses 11 pictures, listed in /Users/kev/projects/shop/flow-map/pictures.json
 ```
 
 - **It only draws.** It reads the run's pictures and writes into the map folder. It changes no test, no sheet, and nothing in a repository.
@@ -156,6 +197,7 @@ The page shows 9 pictures, listed in /Users/kev/projects/shop/flow-map/pictures.
 
 - **Two flows share a screen while their step names agree from the start.** The same name later, on another path, is drawn again.
 - **Show it once it's drawn.** `index.html` in the map folder opens in any browser, so tell the user where it is. It scrolls and zooms, its list picks one flow and fades the others, and a click shows a picture larger.
+- **A shared screen plays one flow's clip:** the clip of the flow that was walked last. A clip shows what its flow did on the screen, and two flows can do different things there. So once a flow is picked in the list, each of its screens plays that flow's own clip, and on a shared screen, the large view names that flow when it plays that flow's clip. Keep a reload from bringing the list back picked, with `autocomplete="off"`: the page applies a pick only when it changes. Before a flow is picked, say on the page that a shared screen plays the walked-last flow's clip: where flows part, it runs on to that flow's next screen.
 - **Publish it only with the user's OK.** Where you can publish a page for the user, such as an artifact in Claude, ask once, before the first time: the pictures show whatever the screens showed, such as the test account's address. After a yes, publish `index.html` with the pictures that `pictures.json` lists as files beside it, and save the page's link as `link.txt` in the map folder. From then on, the script's report names that page, and each later run updates it without asking again.
 
 **Why by the start, and not by the name alone:** a step's name says what its picture shows, and two screens can share a name. "The same button opens the sheet again" follows both a sign-up and a sign-in, on two different screens. Flows that have walked the same steps from the same start are on the same screen.

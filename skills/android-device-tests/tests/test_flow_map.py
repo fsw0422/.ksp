@@ -1,4 +1,5 @@
 """Tests of the flow map script, on made-up runs in throwaway folders."""
+import html
 import json
 import os
 import subprocess
@@ -93,8 +94,24 @@ class JoiningFlows(FlowMapTest):
 
         draw(self.pictures, self.map)
 
-        self.assertIn('screens/test-new/01-welcome.png', self.shown())
-        self.assertNotIn('screens/test-old/01-welcome.png', self.shown())
+        welcome = self.page().split('data-name="Welcome"')[1].split('</figure>')[0]
+        self.assertIn('<img src="screens/test-new/01-welcome.png"', welcome)
+
+    def test_a_shared_screen_keeps_each_flows_own_picture_for_when_that_flow_is_picked(self):
+        walk(self.pictures, 'test-sign-in', ['welcome', 'home'], clips=['welcome'], at=1_000_000)
+        walk(self.pictures, 'test-sign-up', ['welcome', 'setup'], clips=['welcome'], at=2_000_000)
+
+        draw(self.pictures, self.map)
+
+        welcome, home = (self.page().split(f'data-name="{name}"')[1].split('</figure>')[0] for name in ('Welcome', 'Home'))
+        own = json.loads(html.unescape(welcome.split('data-own="')[1].split('"')[0]))
+        self.assertEqual(own, {'0': 'screens/test-sign-in/01-welcome.gif', '1': 'screens/test-sign-up/01-welcome.gif'})
+        self.assertNotIn('data-own', home)  # Only Sign in walks it, so its one picture is already shown.
+        self.assertIn('<option value="1" data-title="Sign up">', self.page())  # The large view names the flow it plays.
+        # A list that a reload brings back picked would name one flow over another's clip: the page applies a pick only when it changes.
+        self.assertIn('<select id="flow" autocomplete="off">', self.page())
+        self.assertEqual(self.shown(), ['screens/test-sign-in/01-welcome.gif', 'screens/test-sign-in/02-home.png',
+                                        'screens/test-sign-up/01-welcome.gif', 'screens/test-sign-up/02-setup.png'])
 
 
 class ReadingARun(FlowMapTest):
