@@ -102,7 +102,7 @@ For the current chunk, explain each of these in detail, in easy words, with as m
 - **What changed:** before and after in words, then the code itself, as described below.
 - **Why:** the requirement, defect, or tradeoff, from the brief's why. Separate evidence from guesses about past intent.
 - **How it's used:** real callers, data movement, side effects, and failure paths.
-- **Before you accept it:** simpler alternatives, the checks that actually ran, each check's findings for this chunk, and open questions. Say what a check confirmed and how it was fixed. Give each plausible issue with a suggested change, for the user to accept or reject.
+- **Before you accept it:** simpler alternatives, the checks that actually ran, each check's findings for this chunk, and open questions. Say what a check confirmed and how it was fixed. Give each plausible issue with a suggested change and your pick, for the user to accept or reject, each as its own block, as described below.
 
 **Show the code itself, not only a link.** Under What changed, show the lines that carry the chunk's decision as a `diff` block, plus the test lines that check it. That's usually 5 to 20 lines.
 
@@ -164,7 +164,24 @@ Where images can't be sent, the same map as text:
 >
 > **How it's used:** `login()` calls `record_failure()` after a wrong password, and checks `locked_until` before it checks the password. A locked account gets "Try again at 14:35", not "Wrong password".
 >
-> **Before you accept it:** a simpler option is a delay after each failure, but that ties up a worker for every attempt. CI ran with 42 passing tests. The bug review found one plausible issue: two logins at the same moment can both read 4 failures, so a sixth try gets through. Suggested change: increase the count in the database, in one step. Make that change, or keep the current behavior?
+> **Before you accept it:** a simpler option is a delay after each failure, but that ties up a worker for every attempt. CI ran with 42 passing tests. The bug review found one plausible issue:
+>
+> **Two logins at the same moment can both read 3 failures,** and both save 4. So the fifth wrong password doesn't lock the account, and a sixth try gets through. Each login adds 1 to the count it read, in line 19, and the later `save()`, in line 23, overwrites the other.
+>
+> `auth/limiter.py`, lines 19–23, at `8d41e07`, linked to the file at line 19:
+>
+> ```python
+> 19      account.failures += 1
+> 20      if account.failures >= MAX_FAILURES:
+>   …
+> 23      save(account)
+> ```
+>
+> **Suggested change:** increase the count in the database, in one step.
+>
+> **My pick:** make the change. A script that guesses passwords can easily send two logins at once.
+>
+> Make that change, or keep the current behavior?
 >
 > Reply `next` or `line by line`, or ask anything.
 
@@ -191,6 +208,17 @@ Use a small Mermaid diagram when it helps, sent as an image like the map, or as 
 >
 > - Line 32 checks the lock before the password, so a locked account gets "Try again at 14:35", even with the right password.
 > - Line 35 is the only call to `record_failure()`.
+
+**Show each finding as its own block, never as a table row.** Give each finding in this order:
+
+1. What goes wrong, in a sentence or two, with an example.
+2. The lines it points at, right there: a numbered snippet with the file, its lines, and the commit above it, or a single line's text in quotes. Link the file at that line too.
+3. **Suggested change:** what to change, in a sentence.
+4. **My pick:** change it or not, and why.
+
+**Why:** a table cell can't hold a code block, so line numbers in a table end up bare, such as "line 63", with no text to read and no link to open. A wide table also scrolls sideways on a phone.
+
+> The **Before you accept it** part of the chunk above shows one finding this way.
 
 ## Pause after each chunk
 
@@ -250,6 +278,7 @@ When coverage is complete or explicitly waived, recap the scope, open issues, ch
 - **The first reply** names the comparison, from the merge base to a pinned head, and where each input came from. It flags each gap. If the change has code and no bug review covered it, one ran first.
 - **Each chunk** starts with its heading, such as "Chunk 2 of 3: Lock after 5 failures", then the progress map, then the location line. It covers what changed, why, how it's used, and what to know before you accept it, with the key lines as a `diff` and the file, lines, and commit above them. Each line-by-line step shows its lines the same way, after the location line.
 - **Each reply** explains one chunk at most, and ends with one line of choices. Each line of code it shows has its number from Git, except a removed line.
+- **Each finding** is its own block, never a table row: what goes wrong, the lines it points at with their text and a link, the suggested change, and your pick.
 - **Never** take "next" or "looks good" as approval of the whole change, or show the base branch's newer commits as part of the change. Never edit, switch branches, commit, push, or post unless the brief or the user allows it.
 
 More examples, such as which code goes in the chat: [Examples](references/examples.md).
