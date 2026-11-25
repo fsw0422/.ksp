@@ -20,6 +20,7 @@ Every repository has one main checkout. Each change adds a worktree beside it fo
   <project>.code-workspace
   WORK_RECORD.md                         current work
   WORK_HISTORY.md                        finished changes
+  flow-map/                              one map of all flows the e2e tests walked, where a project has flow tests
   <project>-specs/                       main checkout of the spec repository
   <project>-backend/                     main checkout of a code repository
   <project>-e2e/                         main checkout of the e2e repository, where a project has one

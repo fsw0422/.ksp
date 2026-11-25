@@ -34,6 +34,7 @@ flowchart TD
 | Read | A rule seen in the code that no test shows | The limit is in the code, but no test reaches it |
 | Journey map | A feature's Main flow as one diagram of what the user sees, as [Writing specs](writing-specs.md#the-journey-map) describes | Reopen a Class: loading, then ready or failed |
 | Flow test | An end-to-end test that walks one flow on the real product, the way a user does. Each step names the rule it proves | Sign up, then verify the email |
+| Flow map | One page with the pictures of all flows that the tests walked. Flows that start with the same steps share those screens | Welcome and the email screen once, for both Sign up and Sign in |
 | Finding | Something the code does that looks unintended, or code that nothing calls | A credit is charged twice when a resume fails |
 | Question | Something the code doesn't make clear | Two code paths that set different Pause limits |
 
@@ -122,6 +123,7 @@ flowchart TD
     OK --> Run[Write them, and run them]
     Run --> Pass{Does a test pass?}
     Pass -->|Yes| Sheet[Show its flow sheet: its rules are proven]
+    Sheet --> Map[After the last test: create or update the map of all flows]
     Pass -->|No| Who{Who is wrong?}
     Who -->|The run| Setup[Fix the run]
     Who -->|The test| Fix[Fix the test]
@@ -145,6 +147,9 @@ flowchart TD
 
   Never change a check just to make a test pass.
 - **Show each flow once it passes.** Send its flow sheet as an image, moving where the platform can record that, and say in one line what it shows: which path of the journey map, when the feature has one. This is the one place where a picture comes without the user asking: seeing the flow is the point.
+- **Then show every flow on one map,** as the last step, after the last test has run. Create the workspace's flow map, or update it when it already exists, as the platform's skill describes, such as [One map of all flows](../../android-device-tests/SKILL.md#one-map-of-all-flows). Flows that start with the same steps share those screens on it, and an arrow leaves the screen where they part. Keep it in `<workspace>/flow-map/`, beside the work record. This step only draws: it changes no test, no sheet, and no rule. The journey map is the spec's drawing of what the user should see. The flow map shows what the tests really walked, with pictures of the real screens.
+
+  > Example: "Sign up" and "Sign in" both start with Welcome and the email screen. The map shows those two screens once, with one arrow on to the new passkey sheet and one on to the screen lock.
 - **Update the evidence.** A rule that a flow test shows is proven, and so is an arrow that it walks. The evidence of each names that test.
 - **Keep the tests in a change of their own:** a code-only change in the e2e repository, in its own worktree, that waits for the spec. Give it its own entry in the work record, which names the draft it waits for. Once the spec is accepted, it goes through the usual review and merge, as [Review and merge](../SKILL.md#review-and-merge) describes. When a decision in the comparison changes a rule, change its test before that review.
 
@@ -184,6 +189,6 @@ Finish only when the scope is drafted, compared, and accepted, or say clearly wh
 - **No rule** describes something that looks unintended, unless the user decided to keep it as built.
 - **The names** of features and domain terms are confirmed by the user.
 - **Each journey map,** when the scope has screens, shows only what the user sees, as built. Each arrow has its evidence, and none is a guess.
-- **Each flow test,** when the run has them, passes and checks only what its rules say. Its sheet was shown, and each rule that no flow test proves, and each arrow that no flow walks, has its reason.
+- **Each flow test,** when the run has them, passes and checks only what its rules say. Its sheet was shown, the flow map holds it, and each rule that no flow test proves, and each arrow that no flow walks, has its reason.
 - **No behavior changed.** IDs in test titles, flow tests, and test IDs on views are code-only changes, each with its own review.
 - **Findings, questions, and parts nobody read** are listed.

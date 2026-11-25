@@ -1,6 +1,6 @@
 ---
 name: android-device-tests
-description: "Set up, write, run and fix end-to-end tests that drive a real Android app on an emulator through adb: the one-time emulator setup (Google account, screen lock PIN), starting the emulator safely, reading and driving the screen with the app's animations on, writing a flow test whose steps name the rules they prove, step screenshots with looping clips and moving flow sheets, and the known traps, such as PIN lockouts, Play updates after sign-in, and the emulator's silent microphone. Use when an e2e or device-test repository is set up or extended, when device tests run, or when a run fails because of the device rather than the app. Not for unit tests, and never for a person's own phone."
+description: "Set up, write, run and fix end-to-end tests that drive a real Android app on an emulator through adb: the one-time emulator setup (Google account, screen lock PIN), starting the emulator safely, reading and driving the screen with the app's animations on, writing a flow test whose steps name the rules they prove, step screenshots with looping clips and moving flow sheets, one map that joins all flows, and the known traps, such as PIN lockouts, Play updates after sign-in, and the emulator's silent microphone. Use when an e2e or device-test repository is set up or extended, when device tests run, when the flow map is drawn after a run, or when a run fails because of the device rather than the app. Not for unit tests, and never for a person's own phone."
 ---
 
 # Android Device Tests
@@ -122,13 +122,53 @@ Only when the user or the project wants them. They are test-run artifacts: never
 - **Set both `width` and `height`** in the `ImageFormat` you send. The frame keeps the device's shape and fits inside both, so a tall box such as 360 × 1440 gives frames 360 wide. With either at 0, frames come at full size: 7.8 MB at 1080×2400, above gRPC's 4 MB default, so also raise the client's `grpc.max_receive_message_length`.
 - **The gRPC protocol ships with the SDK,** in `$ANDROID_HOME/emulator/lib/emulator_controller.proto`. Compile it with `grpcio-tools` when the tests start, instead of copying generated code.
 
+### One map of all flows
+
+A sheet shows one flow. The **flow map** shows every flow on one page: flows that start with the same steps share those screens, and an arrow leaves the screen where they part.
+
+> Example: "Sign up" walks Welcome → the email screen → the new passkey sheet. "Sign in" walks Welcome → the email screen → the screen lock. The map shows Welcome and the email screen once, and two arrows leave the email screen.
+
+Draw it as the last step of a run with pictures, after its last test, with this skill's script. A run that only repeats one test to find a failure needs no map.
+
+```sh
+python3 <this skill's folder>/scripts/flow_map.py <pictures folder> <map folder> [--title "<Project> Flow Map"] [--all]
+```
+
+For example, a run of two flows, into a map that already held a third (made up):
+
+```text
+Flow map: 3 flows on 9 screens, in /Users/kev/projects/shop/flow-map/index.html
+New: Sign up
+Walked again: Sign in
+Kept from earlier runs: 1 flow
+The page shows 9 pictures, listed in /Users/kev/projects/shop/flow-map/pictures.json
+```
+
+- **It only draws.** It reads the run's pictures and writes into the map folder. It changes no test, no sheet, and nothing in a repository.
+- **It creates the map, or updates it.** The map folder outlives the runs, so keep it outside the folder that a run cleans, such as `<workspace>/flow-map/`. It keeps every flow the map has seen, each with a copy of its pictures. A flow that ran again gets its new pictures, and a flow that didn't run stays as it was. `--title` names the page the first time.
+- **After a run of every flow test, add `--all`.** A flow that the run didn't walk then leaves the map, such as one whose test was renamed or removed.
+- **It reads one folder for each flow** in the pictures folder: the step pictures, numbered in order, such as `02-the-email-screen.png`, and for a step with a clip, the clip of the same name that ends in `.gif`. A step is named after its file, so `03-ident-004-home-signed-in.png` becomes "IDENT-004: home signed in".
+- **For the exact words, save a `flow.json` in the flow's folder,** from the helper that takes the pictures. With an outcome, the map marks each flow as ✓ or ✗, and the screen where a failed flow stopped:
+
+  ```json
+  {"title": "Sign in", "outcome": "passed", "steps": [{"name": "IDENT-004: Home, signed in", "picture": "03-ident-004-home-signed-in.png"}]}
+  ```
+
+- **Two flows share a screen while their step names agree from the start.** The same name later, on another path, is drawn again.
+- **Show it once it's drawn.** `index.html` in the map folder opens in any browser, so tell the user where it is. It scrolls and zooms, its list picks one flow and fades the others, and a click shows a picture larger.
+- **Publish it only with the user's OK.** Where you can publish a page for the user, such as an artifact in Claude, ask once, before the first time: the pictures show whatever the screens showed, such as the test account's address. After a yes, publish `index.html` with the pictures that `pictures.json` lists as files beside it, and save the page's link as `link.txt` in the map folder. From then on, the script's report names that page, and each later run updates it without asking again.
+
+**Why by the start, and not by the name alone:** a step's name says what its picture shows, and two screens can share a name. "The same button opens the sheet again" follows both a sign-up and a sign-in, on two different screens. Flows that have walked the same steps from the same start are on the same screen.
+
+The script needs only Python 3, and its page loads nothing from the network. Its tests run on made-up pictures: `python3 -m unittest discover -s <this skill's folder>/tests`.
+
 ## Write a flow test
 
 A flow test walks one flow the way a user does, such as signing up, and checks what the screen shows at each step.
 
 - **One test for one flow.** A flow test starts the real app and drives it step by step, so it's slow: a short one took 39 seconds, sign-up included. Let one test prove several rules on its way, instead of writing one test for each rule.
 - **Walk one path of the journey map,** when the project's spec has one, as Spec Workflow's [Writing specs](../spec-workflow/references/writing-specs.md#paths-and-flow-tests) describes. The test's steps follow that path's boxes, in order, and its title says which path it is, such as "Try again after the audio fails to load".
-- **Name each step:** what the user just did, or what they now see, such as "Tap Verify Email: email sent". The names are the captions of the [pictures](#pictures-of-a-run), so a name says only what its picture shows: "Home enables a new Class" is wrong for a learner with no credits, whose Home can't.
+- **Name each step:** what the user just did, or what they now see, such as "Tap Verify Email: email sent". The names are the captions of the [pictures](#pictures-of-a-run), so a name says only what its picture shows: "Home enables a new Class" is wrong for a learner with no credits, whose Home can't. Where two flows walk the same steps from the same start, give those steps the same names, so the [flow map](#one-map-of-all-flows) shows their screens once.
 - **Put a rule's ID where it's proven,** when the project's rules have IDs: in the name of the step that proves it, and in the test's title. Where a test's name can't hold the ID, as in Python, the first line of its docstring does.
 - **Find things the way a user does:** by the text on them, or by their spoken label. Use a test ID only for a view that has neither, such as an avatar. Adding a test ID to the app is a change of its own.
 - **Do only what the user would do.** A restart or a refresh by hand hides what the app should do by itself.
