@@ -74,6 +74,13 @@ class WhatAClipShows(unittest.TestCase):
 
         self.assertNotIn('next screen', screens(made, shots))
 
+    def test_a_clip_ends_on_the_frame_at_the_next_steps_picture(self):
+        made = recording([(0, 'form'), (2.37, 'home')], keys=[0.2])
+
+        shots = cut(made, 0, 2.37)
+
+        self.assertEqual(screens(made, shots)[-1], 'home')
+
     def test_a_typed_key_counts_as_something_happening(self):
         made = recording([(0, 'form~1'), (0.5, 'form~2')], keys=[0.5])
 

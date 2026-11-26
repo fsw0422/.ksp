@@ -188,6 +188,37 @@ class TellingAChange(FlowSheetsTest):
         self.assertTrue((run.folder / '01-home-not-verified.gif').is_file())
 
 
+class AfterASecret(FlowSheetsTest):
+    def secret_then_home(self):
+        """A password goes in while paused, and Home stands still after it, so no frame comes."""
+        run = Run(self.pictures / 'test-sign-up')
+        run.step('the-password-screen', 100.0, 'email')
+        run.frame(99.9, 'email')
+        run.tap(100.5, 320, 300)
+        run.line(at=101.0, pause='a secret was typed')
+        run.step('home-not-verified', 102.37, 'orange')  # not a whole number of tenths after the step before
+        run.frame(104.0, 'green')
+        run.step('home-verified', 104.83, 'green')
+        run.line(at=105.0, end=True)
+        run.save()
+        draw(self.pictures)
+        return run
+
+    def test_the_clip_goes_on_with_the_next_steps_picture(self):
+        run = self.secret_then_home()
+
+        frames = frames_of(run.folder / '01-the-password-screen.gif')
+        self.assertTrue(near(frames[0][0].getpixel((5, 5)), 'email'))
+        self.assertTrue(near(frames[-1][0].getpixel((5, 5)), 'orange'))
+
+    def test_the_next_step_starts_from_its_own_picture(self):
+        run = self.secret_then_home()
+
+        frames = frames_of(run.folder / '02-home-not-verified.gif')
+        self.assertTrue(near(frames[0][0].getpixel((5, 5)), 'orange'))
+        self.assertTrue(near(frames[-1][0].getpixel((5, 5)), 'green'))
+
+
 class WhatAClipLeavesOut(FlowSheetsTest):
     def test_a_broken_stream_costs_the_clips_from_then_on(self):
         run = self.sign_up()

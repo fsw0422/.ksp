@@ -43,9 +43,11 @@ def ticks(start, end, frames, pauses):
 
     A frame from before a pause says nothing about the screen after it, so the clip goes on with the next frame.
     """
+    times = [start + count * TICK for count in range(int((end - start) / TICK + 1e-6) + 1)]
+    if end - times[-1] > 1e-6:
+        times.append(end)  # the clip ends on the next step's picture
     shown, newest = [], -1
-    for count in range(int((end - start) / TICK + 1e-6) + 1):
-        time = start + count * TICK
+    for time in times:
         while newest + 1 < len(frames) and frames[newest + 1].at <= time:
             newest += 1
         if newest >= 0 and not any(frames[newest].at < pause <= time for pause in pauses):

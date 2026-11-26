@@ -190,7 +190,7 @@ What a clip shows:
 - **A move is told by how much changes, not by whether anything does.** A waiting screen never stands still: a text cursor blinks, and a spinner turns. The script compares small copies of the frames, a tenth as wide, colour by colour, since a banner that turns from orange to green keeps its brightness. A sheet, a keyboard or a new screen changes far more than 8% of such a copy, and a spinner far less.
 - **It opens and closes calmly.** It holds its first frame for 0.4 seconds before anything happens, and its last frame for 0.6 seconds before it starts again.
 - **It's 6 seconds at most,** by keeping its start and its end.
-- **After a `pause`, it goes on with the next frame,** or with the next step's picture. A frame from before a secret says nothing about the screen after it.
+- **After a `pause`, it goes on with the next frame,** or with the next step's picture, since the script counts each step's picture as a frame at its time. A frame from before a secret says nothing about the screen after it, and a screen that stands still after it sends no new frame.
 
 > Example: the web shop's "The email screen" clip opens on the empty field for 0.4 seconds. A dot lands on **Continue**, the email goes in, and the spinner turns for one second of its 2.5-second wait. The clip then ends on "Choose a password", 2.6 seconds in all, and 30 KB.
 

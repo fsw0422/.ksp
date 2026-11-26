@@ -18,8 +18,8 @@ except ImportError:
     sys.exit('Pillow is missing. Run this script with `uv run --no-project --with pillow python -I ...`.')
 
 from clip_cut import joined, plan  # noqa: E402
-from pictures import Frames, fitted, one_palette, save_gif, with_finger  # noqa: E402
-from recording import read_recording  # noqa: E402
+from pictures import Frames, clip_size, fitted, one_palette, save_gif, with_finger  # noqa: E402
+from recording import Frame, read_recording  # noqa: E402
 from sheets import Sheet  # noqa: E402
 
 
@@ -67,8 +67,10 @@ def cut_clips(folder, told, steps, notes, tile):
     if any('at' not in step for step in steps):
         notes.append('flow.json gives no time for each step, so no clips')
         return [None] * len(steps)
-    frames = Frames(recording)
-    scale = scale_of(told, frames)
+    size = clip_size(recording.frames[0].file)
+    with_steps(recording, folder, steps)
+    frames = Frames(recording, size)
+    scale = scale_of(told, size)
     ends = [step['at'] for step in steps[1:]] + [recording.end]
     clips = []
     for step, end in zip(steps, ends):
@@ -94,10 +96,19 @@ def cut_one(folder, step, end, recording, frames, scale, notes):
         return None
 
 
-def scale_of(told, frames):
+def with_steps(recording, folder, steps):
+    """Count each step's picture as a frame at its time: a real view of the screen, with any secret masked.
+
+    After a pause, a still screen sends no new frame, so the clip goes on with the next step's picture.
+    """
+    pictures = [Frame(step['at'], folder / Path(step['picture']).name) for step in steps]
+    recording.frames = sorted(recording.frames + pictures, key=lambda frame: frame.at)
+
+
+def scale_of(told, size):
     """From the screen's units, such as CSS pixels, to the clip's pixels."""
     screen = told.get('screen')
-    return frames.full(0).width / screen[0] if screen else 1.0
+    return size[0] / screen[0] if screen else 1.0
 
 
 def picture_of(frames, frame, place, scale):

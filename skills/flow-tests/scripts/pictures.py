@@ -7,23 +7,39 @@ CLIP_BOX = 800, 800         # a clip's frames fit inside this, and are never mad
 CHANGED_BY = 24             # a pixel of a small copy changed when one of its colours differs by more than this
 
 
+def fit(size, box):
+    """The size that fits inside the box, keeping the shape, and never larger than it was."""
+    scale = min(box[0] / size[0], box[1] / size[1], 1.0)
+    return max(1, round(size[0] * scale)), max(1, round(size[1] * scale))
+
+
 def fitted(image, box):
-    scale = min(box[0] / image.width, box[1] / image.height, 1.0)
-    size = max(1, round(image.width * scale)), max(1, round(image.height * scale))
+    size = fit(image.size, box)
     return image if size == image.size else image.resize(size, Image.Resampling.LANCZOS)
 
 
-class Frames:
-    """A recording's frames, read when a clip needs them."""
+def clip_size(first_frame):
+    """The size of a clip's frames: the recording's own frame size, made to fit CLIP_BOX."""
+    with Image.open(first_frame) as image:
+        return fit(image.size, CLIP_BOX)
 
-    def __init__(self, recording):
+
+class Frames:
+    """A recording's frames, read when a clip needs them, all at one size.
+
+    A step's picture can be larger than the recorded frames, such as a phone's full screenshot.
+    """
+
+    def __init__(self, recording, size):
         self.files = [frame.file for frame in recording.frames]
+        self.size = size
         self.full = lru_cache(maxsize=48)(self._full)
         self.small = lru_cache(maxsize=256)(self._small)
 
     def _full(self, number):
         with Image.open(self.files[number]) as image:
-            return fitted(image.convert('RGB'), CLIP_BOX)
+            picture = image.convert('RGB')
+        return picture if picture.size == self.size else picture.resize(self.size, Image.Resampling.LANCZOS)
 
     def _small(self, number):
         """A small copy, a tenth as wide, so a blinking cursor counts for little."""
