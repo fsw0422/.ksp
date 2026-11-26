@@ -73,13 +73,14 @@ Settle the facts that [flow-tests](../flow-tests/SKILL.md#start-a-new-e2e-reposi
 ## Secrets
 
 - **Read secrets from the environment,** such as `SHOP_PASSWORD` from the untracked `.env`, and stop when one is missing. Never write one in a test, not even as a fallback, a step name, a title, or a log. When a test fails, Playwright copies its source into the `error-context.md` of its output.
+- **Run a flow that types a real secret without the HTML or blob reporter.** Both name each typed value in the step's title, such as `Fill "<the password>"`, and no way of typing avoids it: `fill`, `pressSequentially`, `keyboard.type`, `keyboard.insertText`, and a boxed `test.step` all did, on Playwright 1.64.1. The `list`, `json` and `junit` reporters kept it out. Pass one for such a run, such as `--reporter=list`, since the config that `npm init playwright` writes uses `html`.
 - **Turn the trace off in a flow that types a real secret,** with `test.use({ trace: 'off' })`. Playwright's trace keeps the text that `fill` and `type` send, and the HTML report keeps a copy of the trace.
 - **Turn the video off where a secret shows in clear,** such as a code in a plain text field. A password field shows only dots.
 - **Type a secret inside `flow.secret(field, act)`,** naming the field where it shows. The recorder writes no frame from the first key until that field is hidden, and for half a second more. No step picture can be taken meanwhile.
 - **A mask covers a step's picture only,** such as `flow.snap(name, { mask: [field] })`, never the frames. Keep a secret that the frames could show inside `flow.secret`.
 - **A saved `storageState` is a secret:** it holds the session's cookies. Keep it in a gitignored folder.
 
-> Example: a made-up password typed with `fill()` showed up 6 times in the run's `trace.zip`, and the HTML report held a copy of it. A fallback password written in the test showed up in a failed test's `error-context.md`, though that test never typed it. With the password in the environment only, the trace off, and the password typed inside `flow.secret`, it was in none of the run's files.
+> Example: a made-up password typed with `fill()` showed up 6 times in the run's `trace.zip`, and the HTML report held a copy of it. A fallback password written in the test showed up in a failed test's `error-context.md`, though that test never typed it. With the password in the environment only, the trace off, the `list` reporter, and the password typed inside `flow.secret`, it was in none of the run's files. With the HTML reporter, the report named it in its `Fill` step.
 
 ## Record the pictures
 
@@ -170,6 +171,6 @@ To dig further, read the `error-context.md` that Playwright writes in the failed
 - **The browser** is Playwright's own, with a fresh context, never a person's own.
 - **The browser build** is installed, and you installed nothing on the machine.
 - **The base URL** isn't production, unless the user said so.
-- **Each secret** comes from the environment, stays out of names, and is typed inside `flow.secret(field, act)`, with the trace off.
+- **Each secret** comes from the environment, stays out of names, and is typed inside `flow.secret(field, act)`, with the trace off and no HTML or blob report.
 - **The pictures** come from one project, such as `chromium`.
 - **Nothing you started** is left running, except the server that shows the flow map, and nothing you didn't start is stopped.
