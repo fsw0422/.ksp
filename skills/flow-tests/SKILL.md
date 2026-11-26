@@ -172,9 +172,9 @@ uv run --no-project --with pillow python -I <this skill's folder>/scripts/flow_s
 It needs uv. If uv is missing, stop and say so. The script takes a run's pictures folder, or one flow's folder. For example, after a web run of three made-up flows (paths shortened):
 
 ```text
-SHOP-001: A new shopper signs up, and Home notices the verified email by itself: 6 steps, 4 with a clip. flow.png, flow.gif (93 KB). Clips 1.5-2.6 s
-SHOP-002: A shopper signs in with their password: 4 steps, 2 with a clip. flow.png, flow.gif (57 KB). Clips 1.5-2.7 s
-SHOP-003: Help names the shop phone number: 3 steps, 1 with a clip. flow.png, flow.gif (31 KB). Clips 1.5-1.5 s
+SHOP-001: A new shopper signs up, and Home notices the verified email by itself: 6 steps, 5 with a clip. flow.png, flow.gif (104 KB). Clips 1.2-2.7 s
+SHOP-002: A shopper signs in with their password: 4 steps, 3 with a clip. flow.png, flow.gif (69 KB). Clips 1.2-2.8 s
+SHOP-003: Help names the shop phone number: 3 steps, 1 with a clip. flow.png, flow.gif (35 KB). Clips 1.6-1.6 s
 ```
 
 Beside each flow's step pictures, it writes:
@@ -192,7 +192,7 @@ What a clip shows:
 - **It's 6 seconds at most,** by keeping its start and its end.
 - **After a `pause`, it goes on with the next frame,** or with the next step's picture, since the script counts each step's picture as a frame at its time. A frame from before a secret says nothing about the screen after it, and a screen that stands still after it sends no new frame.
 
-> Example: the web shop's "The email screen" clip opens on the empty field for 0.4 seconds. A dot lands on **Continue**, the email goes in, and the spinner turns for one second of its 2.5-second wait. The clip then ends on "Choose a password", 2.6 seconds in all, and 30 KB.
+> Example: the web shop's "The email screen" clip opens on the empty field for 0.4 seconds. A dot lands on **Continue**, the email goes in, and the spinner turns for one second of its 2.5-second wait. The clip then ends on "Choose a password", 2.7 seconds in all, and 32 KB.
 
 **Why one palette for each GIF:** the script gives all frames of a GIF one palette, picked by fast octree, without dithering. Then two frames differ only where the screen changed, and the GIF stores only that part. With a palette for each frame, Pillow stored the whole sheet again for every frame: 9.7 MB for a sheet of 5 steps, where one palette gave 0.8 MB. The palette comes from the sheet together with a small copy of every frame, so a screen that shows only inside a clip keeps its colours. Median cut, Pillow's default, gives most of its 256 colours to the large areas of white and grey, so a small bright area, such as a blue button, turns grey-blue.
 
