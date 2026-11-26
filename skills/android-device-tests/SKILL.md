@@ -116,7 +116,7 @@ Record each run in the [flow-tests format](../flow-tests/SKILL.md#the-pictures-o
 
 - **A step's picture:** `adb exec-out screencap -p` returns the screen as a PNG.
 - **`screen` in `flow.json`** is the device's own size, such as 1080 × 2400 from `adb shell wm size`, because adb taps use those pixels.
-- **The frames:** the emulator's gRPC `streamScreenshot` sends each frame as it's drawn, about 60 a second, and none while the screen stands still. Read it in a background thread, keep the newest frame of each tenth of a second, and save it as a PNG. A frame 360 pixels wide is 864 KB as it comes, and about 30 KB packed.
+- **The frames:** the emulator's gRPC `streamScreenshot` sends each frame as it's drawn, about 60 a second, and none while the screen stands still. Read it in a background thread, keep the newest frame of each tenth of a second, and save it as a PNG. A frame 360 pixels wide is 864 KB as it comes, and about 30 KB packed with zlib, the packing a PNG uses.
 - **Set both `width` and `height`** in the `ImageFormat` you send. The frame keeps the device's shape and fits inside both, so a tall box such as 360 × 1440 gives frames 360 wide. With either at 0, frames come at full size: 7.8 MB at 1080×2400, above gRPC's 4 MB default, so also raise the client's `grpc.max_receive_message_length`.
 - **The gRPC protocol ships with the SDK,** in `$ANDROID_HOME/emulator/lib/emulator_controller.proto`. Compile it with `grpcio-tools` when the tests start, instead of copying generated code.
 - **The first frame** comes within 0.15 seconds on an emulator, and a display that's off never sends one.
