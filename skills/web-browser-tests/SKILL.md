@@ -9,7 +9,7 @@ Run end-to-end tests of a web app in a test browser: the real app and its real p
 
 What every platform shares is in [flow-tests](../flow-tests/SKILL.md): how to write a flow test, the pictures a run leaves, and the scripts that draw the clips, the sheets and the flow map. This skill adds what is the web's own.
 
-**When the project has a framework of its own on top of Playwright,** such as Miro's Spectator, follow it for the runner, the test data and the helpers. The method here and in flow-tests still holds, and the recorder in this skill's `assets/` needs only a Playwright `Page`.
+**When the project has a framework of its own on top of Playwright,** such as a company's own test framework, follow it for the runner, the test data and the helpers. The method here and in flow-tests still holds, and the recorder in this skill's `assets/` needs only a Playwright `Page`.
 
 ```mermaid
 flowchart TD
@@ -45,7 +45,7 @@ Settle the facts that [flow-tests](../flow-tests/SKILL.md#start-a-new-e2e-reposi
 | How test data is made | The project, such as its own API, a seed script, or its framework | README |
 
 - **Pin `@playwright/test` to one exact version** in `package.json`. Each version runs its own browser build: 1.64.1 runs Chromium build 1248. A new version needs a new download.
-- **Check for the browser build, and install none.** `npx playwright install --dry-run chromium` prints each build's install location. When those folders are missing, or a run says "Executable doesn't exist at …", stop and give the user `npx playwright install chromium`. It downloads the build into `~/Library/Caches/ms-playwright`, a cache that the whole machine shares: Chromium and its headless shell take about 570 MB.
+- **Check for the browser build, and install none.** `npx playwright install --dry-run chromium` prints each build's install location. When those folders are missing, or a run says "Executable doesn't exist at …", stop and give the user `npx playwright install chromium`. It downloads the build into a cache that the whole machine shares, `~/Library/Caches/ms-playwright` on a Mac: Chromium and its headless shell take about 570 MB.
 - **The machine needs Node.** When it's missing, stop and name it.
 - **Install the repository's own packages** from its lockfile, such as with `npm ci`.
 
@@ -136,7 +136,7 @@ test('SHOP-001: A new shopper signs up, and Home notices the verified email by i
 });
 ```
 
-> Example: three flows of the made-up shop ran in 16 seconds. The run left 6, 4 and 3 step pictures, 30 to 37 frames for each passed flow, and no frame while the password was typed. Drawing their clips and sheets took 1 second: the clips are 15 to 32 KB, and the moving sheets 31 to 93 KB.
+> Example: three flows of the made-up shop ran in 16 seconds. The run left 6, 4 and 3 step pictures, 30 to 37 frames for each passed flow, and no frame while the password was typed. Drawing their clips and sheets took 1 second: the clips are 11 to 36 KB, and the moving sheets 35 to 104 KB.
 
 ## Microphone, camera and permissions
 
