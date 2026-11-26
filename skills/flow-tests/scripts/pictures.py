@@ -103,8 +103,15 @@ def one_palette(base, others):
 def save_gif(path, pictures, palette):
     """A looping GIF of (picture, milliseconds), all on one palette and without dithering.
 
-    Then two frames differ only where the screen changed, and the GIF stores only that part.
+    Then two frames differ only where the screen changed, and the GIF stores only that part. The pictures can come
+    one at a time, and each is turned to the palette as it comes, so no full-colour copy of them all is kept.
     """
-    frames = [picture.quantize(palette=palette, dither=Image.Dither.NONE) for picture, _ in pictures]
-    frames[0].save(path, save_all=True, append_images=frames[1:], duration=[length for _, length in pictures],
-                   loop=0, optimize=False)
+    frames = (on_palette(picture, palette, length) for picture, length in pictures)
+    next_frame = next(frames)
+    next_frame.save(path, save_all=True, append_images=frames, loop=0, optimize=False)
+
+
+def on_palette(picture, palette, length):
+    frame = picture.quantize(palette=palette, dither=Image.Dither.NONE)
+    frame.info['duration'] = length
+    return frame

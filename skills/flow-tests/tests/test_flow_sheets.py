@@ -61,11 +61,11 @@ def write_lines(file, lines):
     file.write_text(''.join(json.dumps(line) + '\n' for line in lines))
 
 
-def draw(folder):
+def draw(folder, fails=False):
     done = subprocess.run([sys.executable, '-I', str(SCRIPT), str(folder)], capture_output=True, text=True)
-    if done.returncode != 0:
+    if (done.returncode != 0) != fails:
         raise AssertionError(done.stdout + done.stderr)
-    return done.stdout
+    return done.stdout + done.stderr
 
 
 def near(colour, name):
@@ -89,9 +89,9 @@ class FlowSheetsTest(unittest.TestCase):
         self.addCleanup(temp.cleanup)
         self.pictures = Path(temp.name).resolve() / 'pictures'
 
-    def sign_up(self, **options):
+    def sign_up(self, folder='test-sign-up', **options):
         """Welcome, then a tap on the email screen brings up the sheet. Nothing happens on the sheet."""
-        run = Run(self.pictures / 'test-sign-up', **options)
+        run = Run(self.pictures / folder, **options)
         run.step('welcome', 100.0, 'welcome')
         run.frame(99.9, 'welcome')
         run.frame(100.8, 'email')
@@ -241,6 +241,33 @@ class WhatAClipLeavesOut(FlowSheetsTest):
         self.assertTrue((run.folder / 'flow.png').is_file())
         self.assertEqual(list(run.folder.glob('*.gif')), [])
         self.assertIn('Sign up: 3 steps, 0 with a clip.', out)
+
+    def test_a_broken_frame_costs_its_flow_the_clips_only(self):
+        broken = self.sign_up('test-a-broken')
+        broken.save()
+        (broken.folder / 'recording' / '00001.png').write_bytes(b'not a picture')
+        fine = self.sign_up('test-b-fine')
+        fine.save()
+
+        out = draw(self.pictures)
+
+        self.assertTrue((broken.folder / 'flow.png').is_file())
+        self.assertEqual(list(broken.folder.glob('*.gif')), [])
+        self.assertIn('no clips: cannot identify image file', out)
+        self.assertTrue((fine.folder / 'flow.gif').is_file())
+
+    def test_a_flow_that_cannot_be_read_is_named_and_the_others_are_drawn(self):
+        broken = self.sign_up('test-a-broken')
+        broken.save()
+        (broken.folder / 'flow.json').write_text('{"title": "Sign up", "ste')
+        fine = self.sign_up('test-b-fine')
+        fine.save()
+
+        out = draw(self.pictures, fails=True)
+
+        self.assertIn('test-a-broken: not drawn:', out)
+        self.assertIn('1 of 2 flows could not be drawn.', out)
+        self.assertTrue((fine.folder / 'flow.gif').is_file())
 
     def test_a_half_written_last_line_is_left_out_and_named(self):
         run = self.sign_up()

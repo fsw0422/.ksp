@@ -41,7 +41,11 @@ def draw_flow(folder):
     still = sheet.still(stills)
     still.save(folder / 'flow.png', optimize=True)
     notes = []
-    clips = cut_clips(folder, told, steps, notes, sheet.tile)
+    try:
+        clips = cut_clips(folder, told, steps, notes, sheet.tile)
+    except Exception as error:  # noqa: BLE001 - the still sheet stays, and so do the other flows
+        notes.append(f'no clips: {error}')
+        clips = [None] * len(steps)
     if any(clips):
         try:
             base, frames = sheet.moving(still, clips)
@@ -146,8 +150,15 @@ def main():
     flows = flows_in(folder)
     if not flows:
         sys.exit(f'{folder} holds no flow.json, so there is nothing to draw.')
+    failed = 0
     for flow in flows:
-        print('\n'.join(draw_flow(flow)))
+        try:
+            print('\n'.join(draw_flow(flow)))
+        except Exception as error:  # noqa: BLE001 - the next flow is still drawn
+            failed += 1
+            print(f'{flow.name}: not drawn: {error}')
+    if failed:
+        sys.exit(f'{failed} of {len(flows)} flows could not be drawn.')
 
 
 if __name__ == '__main__':

@@ -59,20 +59,22 @@ class Sheet:
 
         While one step plays, each other step shows the first frame of its own clip, so the eye can follow one.
         `clips` has a list of (picture, milliseconds) for each step, or None for a step without a clip.
+        It gives the base picture, and the frames as (picture, milliseconds), each made only when it's read.
         """
         base = still.copy()
         for number, clip in enumerate(clips):
             if clip:
                 self.paste(base, number, clip[0][0])
-        frames = []
+        return base, self.turns(base, clips)
+
+    def turns(self, base, clips):
         for number, clip in enumerate(clips):
             for picture, length in clip or [(None, NO_CLIP_TURN)]:
                 frame = base.copy()
                 if picture is not None:
                     self.paste(frame, number, picture)
                 self.outline(frame, number, PLAYING)
-                frames.append((frame, length))
-        return base, frames
+                yield frame, length
 
 
 def caption(draw, text, x, bottom, width):
