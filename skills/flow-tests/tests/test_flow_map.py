@@ -219,6 +219,14 @@ class PictureShape(FlowMapTest):
         self.assertEqual(self.shown(), ['screens/test-sign-in/01-welcome.gif'])
         self.assertIn('--shot-width: 320px; --shot-height: 180px;', self.page())
 
+    def test_a_cut_off_clip_is_passed_over(self):
+        walk(self.pictures, 'test-sign-in', ['welcome', 'home'], clips=['welcome'], size=(1280, 720))
+        (self.pictures / 'test-sign-in' / '01-welcome.gif').write_bytes(b'GIF89a\0')
+
+        draw(self.pictures, self.map)
+
+        self.assertIn('--shot-width: 320px; --shot-height: 180px;', self.page())
+
     def test_pictures_that_give_no_size_are_drawn_as_a_phone_screen(self):
         walk(self.pictures, 'test-sign-in', ['welcome'])
 

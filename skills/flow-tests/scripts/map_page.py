@@ -91,12 +91,12 @@ class Layout:
 
 
 def picture_size(path):
-    """A PNG's or a GIF's width and height, from its header, or None for any other file."""
+    """A PNG's or a GIF's width and height, from its header, or None for any other file, or one cut off."""
     with open(path, 'rb') as file:
         header = file.read(24)
-    if header[:8] == PNG_START and header[12:16] == b'IHDR':
+    if header[:8] == PNG_START and header[12:16] == b'IHDR' and len(header) >= 24:
         return struct.unpack('>II', header[16:24])
-    if header[:6] in GIF_STARTS:
+    if header[:6] in GIF_STARTS and len(header) >= 10:
         return struct.unpack('<HH', header[6:10])
     return None
 
