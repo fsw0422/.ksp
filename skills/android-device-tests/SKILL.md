@@ -1,6 +1,6 @@
 ---
 name: android-device-tests
-description: "Set up, write, run and fix end-to-end tests that drive a real Android app on an emulator through adb: the one-time emulator setup (Google account, screen lock PIN), starting the emulator safely, reading and driving the screen with the app's animations on, writing a flow test whose steps name the rules they prove, step screenshots with clips that show what the test types and taps, moving flow sheets, one map that joins all flows, and the known traps, such as PIN lockouts, Play updates after sign-in, and the emulator's silent microphone. Use when an e2e or device-test repository is set up or extended, when device tests run, when the flow map is drawn after a run, or when a run fails because of the device rather than the app. Not for unit tests, and never for a person's own phone."
+description: "Set up, write, run and fix end-to-end tests that drive a real Android app on an emulator through adb: the one-time emulator setup (Google account, screen lock PIN), starting the emulator safely, reading and driving the screen with the app's animations on, writing a flow test whose steps name the rules they prove, step screenshots with clips that show what the test types and taps, moving flow sheets, one map that joins all flows, and the known traps, such as PIN lockouts, Play updates after sign-in, and the emulator's silent microphone. Use when an e2e or device-test repository is set up or extended, when device tests run, when the flow map is drawn or opened after a run, or when a run fails because of the device rather than the app. Not for unit tests, and never for a person's own phone."
 ---
 
 # Android Device Tests
@@ -169,7 +169,7 @@ A sheet shows one flow. The **flow map** shows every flow on one page: flows tha
 
 > Example: "Sign up" walks Welcome → the email screen → the new passkey sheet. "Sign in" walks Welcome → the email screen → the screen lock. The map shows Welcome and the email screen once, and two arrows leave the email screen.
 
-Draw it as the last step of a run with pictures, after its last test, with this skill's script. A run that only repeats one test to find a failure needs no map.
+Draw it as the last step of a run with pictures, after its last test, with this skill's script, then [open it for the user](#open-the-map-for-the-user). A run that only repeats one test to find a failure needs no map.
 
 ```sh
 python3 <this skill's folder>/scripts/flow_map.py <pictures folder> <map folder> [--title "<Project> Flow Map"] [--all]
@@ -196,13 +196,39 @@ The page uses 11 pictures, listed in /Users/kev/projects/shop/flow-map/pictures.
   ```
 
 - **Two flows share a screen while their step names agree from the start.** The same name later, on another path, is drawn again.
-- **Show it once it's drawn.** `index.html` in the map folder opens in any browser, so tell the user where it is. It scrolls and zooms, its list picks one flow and fades the others, and a click shows a picture larger.
 - **A shared screen plays one flow's clip:** the clip of the flow that was walked last. A clip shows what its flow did on the screen, and two flows can do different things there. So once a flow is picked in the list, each of its screens plays that flow's own clip, and on a shared screen, the large view names that flow when it plays that flow's clip. Keep a reload from bringing the list back picked, with `autocomplete="off"`: the page applies a pick only when it changes. Before a flow is picked, say on the page that a shared screen plays the walked-last flow's clip: where flows part, it runs on to that flow's next screen.
 - **Publish it only with the user's OK.** Where you can publish a page for the user, such as an artifact in Claude, ask once, before the first time: the pictures show whatever the screens showed, such as the test account's address. After a yes, publish `index.html` with the pictures that `pictures.json` lists as files beside it, and save the page's link as `link.txt` in the map folder. From then on, the script's report names that page, and each later run updates it without asking again.
 
 **Why by the start, and not by the name alone:** a step's name says what its picture shows, and two screens can share a name. "The same button opens the sheet again" follows both a sign-up and a sign-in, on two different screens. Flows that have walked the same steps from the same start are on the same screen.
 
 The script needs only Python 3, and its page loads nothing from the network. Its tests run on made-up pictures: `python3 -m unittest discover -s <this skill's folder>/tests`.
+
+#### Open the map for the user
+
+Once the map is drawn, open it for the user in the browser that the `browser-pilot` skill picks, never in their own Chrome. A path in the chat opens nothing. The page scrolls and zooms, its list picks one flow and fades the others, and a click shows a picture larger.
+
+```mermaid
+flowchart TD
+    Drawn[The map is drawn] --> Which{Which browser does browser-pilot pick?}
+    Which -->|The Claude desktop app's browser| Pane[Start the flow-map server with preview_start]
+    Which -->|Another, such as Playwright in a CLI| Other[Run the same server in the background, and open it in a new tab]
+    Which -->|None| Tell[Tell the user where index.html is]
+```
+
+- **Serve the map folder, because a `file://` page won't open.** Neither the Claude desktop app's browser pane nor the `playwright-chromium-browser` server opens one. Serve the folder with Python's `http.server`, on `127.0.0.1` only, and on a port that nothing else uses, such as 8765.
+- **In the Claude desktop app, start it with `preview_start`,** by its name, `flow-map`. Add this entry once, under `configurations` in the session folder's `.claude/launch.json`, with the map folder's full path:
+
+  ```json
+  {"name": "flow-map", "runtimeExecutable": "python3", "runtimeArgs": ["-I", "-m", "http.server", "8765", "--bind", "127.0.0.1", "--directory", "<map folder>"], "port": 8765}
+  ```
+
+- **With another browser,** such as the `playwright-chromium-browser` server in a CLI, run `python3 -I -m http.server 8765 --bind 127.0.0.1 --directory <map folder>` in the background, and open `http://127.0.0.1:8765/` in a new tab.
+- **With no browser tool at all, tell the user where `index.html` is.** Don't run `open` on it: that opens the user's own browser.
+- **A later run reuses the server** while it still runs, and a reload shows the new map.
+
+> Example: a run drew the map and only named `flow-map/index.html`, so the user had to ask where the page that joins all the screens was. With the entry above, `preview_start` opened the map at `http://localhost:8765/`, in the Claude desktop app's browser pane.
+
+**Why `127.0.0.1` only:** `http.server` listens on every network interface unless `--bind` says otherwise, so other devices on the network could open the map. Its pictures show whatever the screens showed, such as the test account's address.
 
 ## Write a flow test
 
@@ -279,4 +305,4 @@ To dig further, read `adb logcat -d` for the app and `ActivityManager`, `adb log
 - **Its control port** has `-grpc-use-token`, never `-grpc` alone.
 - **The PIN** comes from `.env`, and is typed at most once.
 - **The app** runs with its animations on, and the tests read the screen with `uiautomator2`.
-- **Nothing you started** is left running, and nothing you didn't start is stopped.
+- **Nothing you started** is left running, except the server that shows the flow map, and nothing you didn't start is stopped.
