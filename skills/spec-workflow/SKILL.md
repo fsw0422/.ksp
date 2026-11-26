@@ -371,7 +371,7 @@ sequenceDiagram
 ```
 
 1. **Spec first.** For a change with specs and code, accept the spec on its child branch first, and record that spec commit for each code repository. Accepting a spec allows building; it doesn't approve the code or the merge. **Why:** the code review then checks code against a fixed spec version.
-2. **Every repository is ready.** Each required repository is current, tested, and approved, or has evidence that it's unaffected. When the spec repository asks tests to cite requirement IDs, each rule the change adds or alters needs a test that names its ID. Where the project has flow tests, each path that the change adds to a [journey map](references/writing-specs.md#paths-and-flow-tests), or alters, needs a flow test that walks it, or a reason why none can.
+2. **Every repository is ready.** Each required repository is current, tested, and approved, or has evidence that it's unaffected. When the spec repository asks tests to cite requirement IDs, each rule the change adds or alters needs a test that names its ID. Where the project has flow tests, each path that the change adds to a [journey map](references/writing-specs.md#paths-and-flow-tests), or alters, needs a flow test that walks it, or a reason why none can. A path that the change removes takes its flow test with it: a test left behind walks a journey that the spec no longer has.
 3. **Re-check the parent and run the cleanup pass** for the proposed scope, before the final review.
 4. **Run the bug review,** as described in [Find bugs before review](#find-bugs-before-review).
 5. **Test-merge with the other open branches,** as described in [Check for conflicts before review](#check-for-conflicts-before-review).
