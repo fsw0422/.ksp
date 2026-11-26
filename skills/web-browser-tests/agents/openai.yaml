@@ -1,0 +1,4 @@
+interface:
+  display_name: "Web Browser Tests"
+  short_description: "Run end-to-end tests of a web app in a Playwright test browser"
+  default_prompt: "Use $web-browser-tests to run the web flow tests."
