@@ -42,7 +42,7 @@ flowchart TD
 
 - **The spec repository,** for the named scope: feature documents, contracts, the domain model, and data cards.
 - **No behavior.** What the code does stays as it is, including what looks like a bug.
-- **Tests and tooling in the code repositories,** and nothing else there: requirement IDs in test titles, [flow tests](#prove-the-rules-end-to-end) in the e2e repository, and a test ID on a view that a flow test can't find any other way. Each is a code-only change of its own, through the usual review.
+- **Tests and tooling in the code repositories,** and nothing else there: requirement IDs in test titles, [flow tests](#prove-the-rules-end-to-end) in the e2e repository or suite, and a test ID on a view that a flow test can't find any other way. Each is a code-only change of its own, through the usual review.
 - **Nothing outside the scope.** A second scope needs its own request.
 
 An accepted spec that already covers part of the scope stays as it is. Where it differs from the code, that's a row in the [comparison that follows the draft](spec-code-sync.md#after-a-draft-from-code). Don't overwrite it.
@@ -134,8 +134,15 @@ flowchart TD
     Correct --> Run
 ```
 
-- **Ask once, with the map,** unless the request already says. When the workspace has no e2e repository, say so with the question, because a yes then starts with building one. Proving rules end to end needs two things: an e2e repository, and something that drives the product. For an Android app, that's an emulator, as the [android-device-tests](../../android-device-tests/SKILL.md) skill describes. For a web app, that's a test browser, as the [web-browser-tests](../../web-browser-tests/SKILL.md) skill describes. Both take their pictures, and draw them, as the [flow-tests](../../flow-tests/SKILL.md) skill says. For another platform, such as iOS, first research what can drive the real product and take a picture of each step, and propose it.
-- **Create the e2e repository, when the workspace has none,** with the user's OK: `<workspace>/<project>-e2e/`, with `git init -b main` and no remote, like the spec repository. Its first commit holds a README and a `.gitignore` that covers `.env` and the runs' pictures. First settle its facts, as [Start a new e2e repository](../../flow-tests/SKILL.md#start-a-new-e2e-repository) and the platform's skill say. Before its first test, it needs its runner and helpers: what starts the product, reads the screen, and takes the step pictures.
+- **Ask once, with the map,** unless the request already says. When the workspace has no e2e repository, look for an e2e suite first, and offer the two ways on that the next point lists, with the question. Proving rules end to end needs two things: an e2e repository, and something that drives the product. For an Android app, that's an emulator, as the [android-device-tests](../../android-device-tests/SKILL.md) skill describes. For a web app, that's a test browser, as the [web-browser-tests](../../web-browser-tests/SKILL.md) skill describes. Both take their pictures, and draw them, as the [flow-tests](../../flow-tests/SKILL.md) skill says. For another platform, such as iOS, first research what can drive the real product and take a picture of each step, and propose it.
+- **When the workspace has no e2e repository, offer two ways on,** and let the user pick:
+  - **Use an existing suite.** A codebase you haven't read before can have one. Look in the code repositories first, for a folder such as `e2e/` or `e2e-tests/`, or a config for Playwright, Cypress, Detox or Maestro. The user can also point to one, such as a repository elsewhere. Then:
+    - Write the flow tests beside its tests, in its framework and style. Take their pictures as the platform's skill says, with the suite's own helpers where it has them.
+    - Keep each test it already has that proves a rule, and name that test in the rule's evidence. Don't rewrite it as a flow test.
+    - Plan flows only for the paths that no existing test walks.
+  - **Create one,** with the user's OK: `<workspace>/<project>-e2e/`, with `git init -b main` and no remote, like the spec repository. Its first commit holds a README and a `.gitignore` that covers `.env` and the runs' pictures. First settle its facts, as [Start a new e2e repository](../../flow-tests/SKILL.md#start-a-new-e2e-repository) and the platform's skill say. Before its first test, it needs its runner and helpers: what starts the product, reads the screen, and takes the step pictures.
+
+  > Example: a workspace had no e2e repository, but its web app's repository held a Playwright suite in `e2e-tests/`, with one test of the feature already. The user picked that suite. The flow tests went beside that test, in its style, and the test stayed as the evidence of the rule it proves.
 - **Plan one feature's flows,** after its draft. A flow is what a user does in one go, such as signing up. When the feature has a [journey map](writing-specs.md#paths-and-flow-tests), a flow is one path through it: take the path with no error first, then one more for each branch, until every arrow is on a flow. For each flow, name its steps, the rule each step proves, and what it needs, such as a seeded account. When the product itself has no way to create it, that's a question for the comparison. Plan a flow for a rule even when a unit test already shows it: a unit test with stand-ins can show a rule that the real product breaks. List the rules that no flow test can prove, and the arrows that no flow can walk, each with its reason. Show the plan, and wait for the user's OK before you write a test: they can drop a flow, or change what one needs.
 - **Write each test from its rules' examples,** as [Write a flow test](../../flow-tests/SKILL.md#write-a-flow-test) describes, with the platform skill's way to find and drive things. A step that proves a rule carries the rule's ID in its name.
 - **Check only what the rules say.** A flow test never checks a finding or a question, because the user hasn't decided those yet.
@@ -151,7 +158,7 @@ flowchart TD
 
   > Example: "Sign up" and "Sign in" both start with Welcome and the email screen. The map shows those two screens once, with one arrow on to the new passkey sheet and one on to the screen lock.
 - **Update the evidence.** A rule that a flow test shows is proven, and so is an arrow that it walks. The evidence of each names that test.
-- **Keep the tests in a change of their own:** a code-only change in the e2e repository, in its own worktree, that waits for the spec. Give it its own entry in the work record, which names the draft it waits for. Once the spec is accepted, it goes through the usual review and merge, as [Review and merge](../SKILL.md#review-and-merge) describes. When a decision in the comparison changes a rule, change its test before that review.
+- **Keep the tests in a change of their own:** a code-only change in the e2e repository, or in the code repository that holds the suite, in its own worktree, that waits for the spec. Give it its own entry in the work record, which names the draft it waits for. Once the spec is accepted, it goes through the usual review and merge, as [Review and merge](../SKILL.md#review-and-merge) describes. When a decision in the comparison changes a rule, change its test before that review.
 
 A plan might look like this (made up):
 
@@ -169,7 +176,7 @@ A plan might look like this (made up):
 
 **Why one test for a flow, and not for a rule:** a flow test starts the real product and drives it step by step, which takes most of a minute. One test for each rule would walk the same screens again and again.
 
-**For a spec that's already accepted,** flow tests are a normal code-only change in the e2e repository. Plan and write them the same way, from the accepted rules and the journey map. When the feature document has no journey map yet, the change starts with it, in the spec: draw it from the accepted rules, settle each arrow that no rule decides, and get the journey map accepted before you plan a flow. A test that fails then shows a difference between the spec and the code, which the user decides like any other.
+**For a spec that's already accepted,** flow tests are a normal code-only change in the e2e repository or suite. Plan and write them the same way, from the accepted rules and the journey map. When the feature document has no journey map yet, the change starts with it, in the spec: draw it from the accepted rules, settle each arrow that no rule decides, and get the journey map accepted before you plan a flow. A test that fails then shows a difference between the spec and the code, which the user decides like any other.
 
 ## Keep what is left
 
