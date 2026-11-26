@@ -88,16 +88,35 @@ the desktop and the phone. It works offline: it bundles Mermaid 12.2.0 in
 MCP's Chrome for Testing, which `browser.sh path` finds. It needs no extra
 install, and it never touches the shared browser window.
 
+### Flow tests
+
+`flow-tests` holds what end-to-end flow tests share on every platform: how to
+write a flow test that walks one journey and names the rules it proves, the
+pictures a run leaves, and the scripts that draw them. `flow_sheets.py` cuts a
+clip of each step from the recorded frames and inputs, and draws the still and
+moving flow sheets. It runs with `uv run --no-project --with pillow`, so it
+needs uv and brings its own Pillow. `flow_map.py` joins all flows on one page,
+and needs only Python 3.
+
 ### Android device tests
 
 `android-device-tests` is know-how for end-to-end tests that drive a real Android
 app on an emulator through adb: the emulator's one-time setup, starting it
-safely, reading the screen with the app's animations on, writing flow tests,
-step clips that show what the test types and taps, moving flow sheets, one map
-that joins all flows, and the traps found so far. It needs the Android SDK's
-emulator and adb. The e2e repository brings its own Python tools, such as
-`uiautomator2`, `grpcio-tools` and Pillow. The flow map's script needs only
-Python 3.
+safely, reading the screen with the app's animations on, recording the frames
+and taps for `flow-tests` to draw, and the traps found so far. It needs the
+Android SDK's emulator and adb. The e2e repository brings its own Python tools,
+such as `uiautomator2` and `grpcio-tools`.
+
+### Web browser tests
+
+`web-browser-tests` is know-how for end-to-end tests that drive a web app in a
+Playwright test browser: test data made by the project's own means, finding
+things the way a user does, keeping secrets out of pictures and traces, and the
+traps found so far. Its `assets/` holds a recorder for `@playwright/test` that
+reads Chromium's screencast and the page's own clicks and typing, in the format
+`flow-tests` draws. It needs Node. The e2e repository brings Playwright, and
+`npx playwright install chromium` downloads its browser, which the skill leaves
+to you.
 
 ### Git worktrees
 
