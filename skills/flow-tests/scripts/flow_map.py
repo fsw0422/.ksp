@@ -1,4 +1,4 @@
-"""Draw one map of the flows that device tests walked: each screen once, with an arrow to each next one.
+"""Draw one map of the flows that flow tests walked: each screen once, with an arrow to each next one.
 
   python3 flow_map.py <pictures folder> <map folder> [--title <title>] [--all]
 
@@ -13,7 +13,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))  # so `python3 -I` finds the modules beside this file
 
 from map_folder import load, save, take_in  # noqa: E402
-from map_page import counted, draw  # noqa: E402
+from map_page import counted, draw, layout_for  # noqa: E402
 from run_pictures import read_run  # noqa: E402
 from screen_tree import each, join, place  # noqa: E402
 
@@ -33,8 +33,9 @@ def update(pictures, folder, title, every):
     by_title = sorted(saved['flows'].items(), key=lambda named: (named[1]['title'].lower(), named[0]))
     flows = [flow for _, flow in by_title]
     starts = join(flows)
-    (folder / 'index.html').write_text(draw(saved['title'], flows, starts, place(starts)), encoding='utf-8')
     screens = list(each(starts))
+    page = draw(saved['title'], flows, starts, place(starts), layout_for(folder, screens))
+    (folder / 'index.html').write_text(page, encoding='utf-8')
     shown = sorted({picture for screen in screens for picture in screen.own.values()})
     (folder / 'pictures.json').write_text(json.dumps(shown, indent=2) + '\n', encoding='utf-8')
     report(folder, saved['flows'], len(screens), shown, changed)
@@ -55,7 +56,7 @@ def report(folder, flows, screens, shown, changed):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Draw one map of the flows that device tests walked.')
+    parser = argparse.ArgumentParser(description='Draw one map of the flows that flow tests walked.')
     parser.add_argument('pictures', help='the folder where the run left its step pictures, one folder for each flow')
     parser.add_argument('map', help='the folder that keeps the map, which outlives the runs')
     parser.add_argument('--title', help="the page's title, such as 'Shop Flow Map'. The map keeps it once it is set.")

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Flow Tests"
+  short_description: "Write flow tests, and draw their clips, sheets and flow map"
+  default_prompt: "Use $flow-tests to draw the clips, sheets and flow map of the last run."

@@ -2,16 +2,18 @@
 import html
 import json
 import re
+import struct
 from pathlib import Path
 from urllib.parse import quote
 
 from screen_tree import each
 
 ASSETS = Path(__file__).resolve().parent.parent / 'assets'
-WIDTH, HEIGHT = 170, 378    # a picture on the map: a phone screen, 9 wide and 20 tall
+BOX = 320, 378              # the most room a picture takes: a phone screen fills its height, a browser window its width
+PHONE = 1080, 2400          # the shape to draw when no picture gives its own, such as a made-up picture
 CAPTION, ENDS = 76, 58      # the room above a picture for its name, and below it for the flows that end there
-COLUMN = WIDTH + 84         # from one step to the next, with room for the arrow
-ROW = CAPTION + HEIGHT + ENDS + 20
+PNG_START = b'\x89PNG\r\n\x1a\n'
+GIF_STARTS = b'GIF87a', b'GIF89a'
 RULES = re.compile(r'^((?:[A-Z][A-Z0-9]*-\d+)(?:, ?[A-Z][A-Z0-9]*-\d+)*): (.+)$', re.S)
 MARKS = {'passed': '✓ ', 'failed': '✗ '}
 # Claude wraps a page it publishes in a document of its own, so this page has no doctype, html, head or
@@ -21,6 +23,7 @@ PAGE = '''<meta charset="utf-8">
 <meta name="claude:viewport-fit-sides" content="cover">
 <title>{title}</title>
 <style>
+:root {{ {shape} }}
 {style}</style>
 <header class="bar">
 <h1>{title}</h1>
@@ -68,18 +71,58 @@ PAGE = '''<meta charset="utf-8">
 '''
 
 
-def draw(title, flows, starts, rows):
+class Layout:
+    """Where things go on the map, for pictures of one shape, such as a phone's or a browser window's."""
+
+    def __init__(self, picture_size):
+        width, height = picture_size
+        scale = min(BOX[0] / width, BOX[1] / height)
+        self.width, self.height = round(width * scale), round(height * scale)
+        self.column = self.width + 84    # from one step to the next, with room for the arrow
+        self.row = CAPTION + self.height + ENDS + 20
+        self.tall = height > width
+
+    def shape(self):
+        """The page's sizes for this shape, as CSS variables."""
+        corners = '11% / 5%' if self.tall else '8px'  # a phone's round corners, at any size
+        closer = 440 if self.tall else 960            # the widest a picture shows when it's clicked
+        return (f'--shot-width: {self.width}px; --shot-height: {self.height}px; '
+                f'--shot-corners: {corners}; --closer-width: {closer}px;')
+
+
+def picture_size(path):
+    """A PNG's or a GIF's width and height, from its header, or None for any other file."""
+    with open(path, 'rb') as file:
+        header = file.read(24)
+    if header[:8] == PNG_START and header[12:16] == b'IHDR':
+        return struct.unpack('>II', header[16:24])
+    if header[:6] in GIF_STARTS:
+        return struct.unpack('<HH', header[6:10])
+    return None
+
+
+def layout_for(folder, screens):
+    """The layout for the first picture that gives its size: all pictures of a run come from one screen."""
+    for screen in screens:
+        size = picture_size(folder / screen.picture)
+        if size and all(size):
+            return Layout(size)
+    return Layout(PHONE)
+
+
+def draw(title, flows, starts, rows, layout):
     screens = list(each(starts))
-    width = (max(screen.depth for screen in screens) + 1) * COLUMN - (COLUMN - WIDTH)
-    height = round(rows * ROW) - 20
+    width = (max(screen.depth for screen in screens) + 1) * layout.column - (layout.column - layout.width)
+    height = round(rows * layout.row) - 20
     return PAGE.format(
         title=html.escape(title), count=html.escape(count_line(flows, screens)),
+        shape=layout.shape(),
         style=(ASSETS / 'flow-map.css').read_text(encoding='utf-8'),
         script=(ASSETS / 'flow-map.js').read_text(encoding='utf-8'),
         options='\n'.join(option(number, flow) for number, flow in enumerate(flows)),
         width=width, height=height,
-        arrows='\n'.join(arrow(screen, follower) for screen in screens for follower in screen.next.values()),
-        screens='\n'.join(figure(screen, flows) for screen in screens))
+        arrows='\n'.join(arrow(screen, follower, layout) for screen in screens for follower in screen.next.values()),
+        screens='\n'.join(figure(screen, flows, layout) for screen in screens))
 
 
 def count_line(flows, screens):
@@ -99,16 +142,18 @@ def option(number, flow):
     return f'<option value="{number}" data-title="{html.escape(flow["title"])}">{label(flow)}</option>'
 
 
-def figure(screen, flows):
+def figure(screen, flows, layout):
     stopped = any(flows[number]['outcome'] == 'failed' for number in screen.ends)
     ends = ''.join(f'<li class="{html.escape(flows[number]["outcome"] or "")}" title="{label(flows[number])}">'
                    f'{label(flows[number])}</li>' for number in screen.ends)
     name = html.escape(screen.name)
     return (f'<figure class="screen{" stopped" if stopped else ""}" data-flows="{numbers(screen.flows)}" '
-            f'data-name="{name}"{own_pictures(screen)} style="left:{left(screen)}px;top:{top(screen)}px">'
+            f'data-name="{name}"{own_pictures(screen)} '
+            f'style="left:{left(screen, layout)}px;top:{top(screen, layout)}px">'
             f'<figcaption>{caption(screen.name)}</figcaption>'
             f'<button class="picture" type="button" aria-label="Show it larger: {name}">'
-            f'<img src="{quote(screen.picture)}" alt="" loading="lazy" width="{WIDTH}" height="{HEIGHT}"></button>'
+            f'<img src="{quote(screen.picture)}" alt="" loading="lazy" '
+            f'width="{layout.width}" height="{layout.height}"></button>'
             f'<ul class="ends">{ends}</ul></figure>')
 
 
@@ -131,10 +176,10 @@ def caption(name):
     return f'<span class="rule">{html.escape(rules[1])}</span><span class="name">{html.escape(rules[2])}</span>'
 
 
-def arrow(screen, follower):
+def arrow(screen, follower, layout):
     """A curve from the middle of the screen's right edge to the middle of its follower's left edge."""
-    start_x, start_y = left(screen) + WIDTH, middle(screen)
-    end_x, end_y = left(follower), middle(follower)
+    start_x, start_y = left(screen, layout) + layout.width, middle(screen, layout)
+    end_x, end_y = left(follower, layout), middle(follower, layout)
     bend = (start_x + end_x) // 2
     return (f'<path data-flows="{numbers(follower.flows)}" '
             f'd="M{start_x} {start_y}C{bend} {start_y} {bend} {end_y} {end_x} {end_y}"/>')
@@ -145,13 +190,13 @@ def numbers(flows):
     return ' ' + ' '.join(str(number) for number in flows) + ' '
 
 
-def left(screen):
-    return screen.depth * COLUMN
+def left(screen, layout):
+    return screen.depth * layout.column
 
 
-def top(screen):
-    return round(screen.row * ROW)
+def top(screen, layout):
+    return round(screen.row * layout.row)
 
 
-def middle(screen):
-    return top(screen) + CAPTION + HEIGHT // 2
+def middle(screen, layout):
+    return top(screen, layout) + CAPTION + layout.height // 2

@@ -99,7 +99,7 @@ body {
 .arrows .head { fill: var(--arrow); stroke: none; }
 .arrows .head-picked { fill: var(--pick); stroke: none; }
 
-.screen { position: absolute; width: 170px; margin: 0; }
+.screen { position: absolute; width: var(--shot-width); margin: 0; }
 .screen figcaption {
   box-sizing: border-box;
   height: 76px;
@@ -122,12 +122,12 @@ body {
 .picture {
   display: block;
   box-sizing: border-box;
-  width: 170px;
-  height: 378px;
+  width: var(--shot-width);
+  height: var(--shot-height);
   padding: 0;
   overflow: hidden;
   border: 1px solid var(--line);
-  border-radius: 11% / 5%;  /* a phone's round corners, at any size */
+  border-radius: var(--shot-corners);
   background: var(--card);
   cursor: zoom-in;
 }
@@ -155,7 +155,7 @@ body {
 
 dialog {
   box-sizing: border-box;
-  max-width: min(92vw, 440px);
+  max-width: min(92vw, var(--closer-width));
   max-height: 94vh;
   padding: 0;
   border: 1px solid var(--line);
@@ -166,7 +166,7 @@ dialog {
 dialog::backdrop { background: var(--veil); }
 .sheet { display: flex; flex-direction: column; gap: 10px; padding: 16px; }
 .sheet h2 { margin: 0; font-size: 15px; font-weight: 650; text-wrap: balance; }
-.sheet img { display: block; align-self: center; max-width: 100%; max-height: 62vh; border: 1px solid var(--line); border-radius: 11% / 5%; }
+.sheet img { display: block; align-self: center; max-width: 100%; max-height: 62vh; border: 1px solid var(--line); border-radius: var(--shot-corners); }
 .sheet p { margin: 0; color: var(--soft); }
 .sheet ul { margin: 0; padding-left: 18px; }
 .sheet button { align-self: flex-end; }

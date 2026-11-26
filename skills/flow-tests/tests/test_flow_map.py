@@ -5,21 +5,40 @@ import os
 import subprocess
 import sys
 import tempfile
+import struct
 import unittest
+import zlib
 from pathlib import Path
 
 SCRIPT = Path(__file__).resolve().parent.parent / 'scripts' / 'flow_map.py'
 
 
-def walk(pictures, flow, steps, clips=(), told=None, at=None):
-    """Leave a flow's pictures the way a test run does: numbered step pictures, and a clip for some."""
+def png(width, height):
+    """A real, all-black PNG of this size, in grey."""
+    def chunk(kind, data):
+        return struct.pack('>I', len(data)) + kind + data + struct.pack('>I', zlib.crc32(kind + data))
+    rows = (b'\0' + bytes(width)) * height
+    return (b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', width, height, 8, 0, 0, 0, 0))
+            + chunk(b'IDAT', zlib.compress(rows)) + chunk(b'IEND', b''))
+
+
+def gif(width, height):
+    """The start of a GIF of this size: the map reads no further."""
+    return b'GIF89a' + struct.pack('<HH', width, height) + b'\0' * 16
+
+
+def walk(pictures, flow, steps, clips=(), told=None, at=None, size=None):
+    """Leave a flow's pictures the way a test run does: numbered step pictures, and a clip for some.
+
+    With a size, the pictures are real PNGs of that size. Without one, they are made-up bytes.
+    """
     folder = pictures / flow
     folder.mkdir(parents=True)
     for number, step in enumerate(steps, 1):
         picture = folder / f'{number:02d}-{step}.png'
-        picture.write_bytes(f'{flow} {step}'.encode())
+        picture.write_bytes(png(*size) if size else f'{flow} {step}'.encode())
         if step in clips:
-            picture.with_suffix('.gif').write_bytes(f'{flow} {step} moving'.encode())
+            picture.with_suffix('.gif').write_bytes(gif(*size) if size else f'{flow} {step} moving'.encode())
         if at:
             for file in (picture, picture.with_suffix('.gif')):
                 if file.exists():
@@ -169,6 +188,43 @@ class ReadingARun(FlowMapTest):
 
         self.assertIn('holds no flow, so the map is unchanged', out)
         self.assertEqual(self.page(), before)
+
+
+class PictureShape(FlowMapTest):
+    def test_a_browser_window_fills_the_width_of_its_place(self):
+        walk(self.pictures, 'test-sign-in', ['welcome', 'home'], size=(1280, 720))
+
+        draw(self.pictures, self.map)
+
+        page = self.page()
+        self.assertIn('--shot-width: 320px; --shot-height: 180px; --shot-corners: 8px; --closer-width: 960px;', page)
+        self.assertIn('width="320" height="180"', page)
+        self.assertIn('style="left:404px;', page)
+
+    def test_a_phone_screen_fills_the_height_of_its_place(self):
+        walk(self.pictures, 'test-sign-in', ['welcome', 'home'], size=(1080, 2400))
+
+        draw(self.pictures, self.map)
+
+        page = self.page()
+        self.assertIn('--shot-width: 170px; --shot-height: 378px; --shot-corners: 11% / 5%;', page)
+        self.assertIn('width="170" height="378"', page)
+        self.assertIn('style="left:254px;', page)
+
+    def test_a_clip_gives_its_size_too(self):
+        walk(self.pictures, 'test-sign-in', ['welcome'], clips=['welcome'], size=(1280, 720))
+
+        draw(self.pictures, self.map)
+
+        self.assertEqual(self.shown(), ['screens/test-sign-in/01-welcome.gif'])
+        self.assertIn('--shot-width: 320px; --shot-height: 180px;', self.page())
+
+    def test_pictures_that_give_no_size_are_drawn_as_a_phone_screen(self):
+        walk(self.pictures, 'test-sign-in', ['welcome'])
+
+        draw(self.pictures, self.map)
+
+        self.assertIn('--shot-width: 170px; --shot-height: 378px;', self.page())
 
 
 class KeepingTheMap(FlowMapTest):
