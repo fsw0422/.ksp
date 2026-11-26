@@ -97,7 +97,7 @@ How it works:
 - **The screencast runs beside Playwright's own video,** and goes on across a navigation to another site.
 - **`FLOW_CLIPS=off` turns the recording off.** The step pictures stay.
 
-After the run, draw the clips and sheets, and then the map, as [flow-tests](../flow-tests/SKILL.md#draw-the-clips-and-sheets) says.
+After the run, draw the clips and sheets, then the map, and [open it for the user](../flow-tests/SKILL.md#open-the-map-for-the-user), as flow-tests says.
 
 For example, a made-up shop (the shop and its texts are made up):
 
@@ -172,4 +172,4 @@ To dig further, read the `error-context.md` that Playwright writes in the failed
 - **The base URL** isn't production, unless the user said so.
 - **Each secret** comes from the environment, stays out of names, and is typed inside `flow.secret(field, act)`, with the trace off.
 - **The pictures** come from one project, such as `chromium`.
-- **Nothing you started** is left running, and nothing you didn't start is stopped.
+- **Nothing you started** is left running, except the server that shows the flow map, and nothing you didn't start is stopped.

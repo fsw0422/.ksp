@@ -1,6 +1,6 @@
 ---
 name: android-device-tests
-description: "Set up, run and fix end-to-end tests that drive a real Android app on an emulator through adb: the one-time emulator setup (Google account, screen lock PIN), starting the emulator safely, reading and driving the screen with the app's animations on, recording step pictures, frames and taps for flow-tests to draw, and the known traps, such as PIN lockouts, Play updates after sign-in, and the emulator's silent microphone. Use together with flow-tests, which covers writing a flow test and drawing the clips, sheets and flow map, when an Android e2e or device-test repository is set up or extended, when device tests run, or when a run fails because of the device rather than the app. Not for unit tests, and never for a person's own phone."
+description: "Set up, run and fix end-to-end tests that drive a real Android app on an emulator through adb: the one-time emulator setup (Google account, screen lock PIN), starting the emulator safely, reading and driving the screen with the app's animations on, recording step pictures, frames and taps for flow-tests to draw, and the known traps, such as PIN lockouts, Play updates after sign-in, and the emulator's silent microphone. Use together with flow-tests, which covers writing a flow test, drawing the clips, sheets and flow map, and opening the map, when an Android e2e or device-test repository is set up or extended, when device tests run, or when a run fails because of the device rather than the app. Not for unit tests, and never for a person's own phone."
 ---
 
 # Android Device Tests
@@ -169,4 +169,4 @@ To dig further, read `adb logcat -d` for the app and `ActivityManager`, `adb log
 - **The PIN** comes from `.env`, and is typed at most once.
 - **The app** runs with its animations on, and the tests read the screen with `uiautomator2`.
 - **The pictures** follow the flow-tests format, with a `pause` in the recording for the PIN.
-- **Nothing you started** is left running, and nothing you didn't start is stopped.
+- **Nothing you started** is left running, except the server that shows the flow map, and nothing you didn't start is stopped.
