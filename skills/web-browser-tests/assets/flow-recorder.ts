@@ -9,6 +9,7 @@ const SHOWN_AFTER = 0.03; // measured: a screencast frame shows a click about 0.
 const SWIPE_FROM = 10;
 
 type PageInput = { kind: 'down' | 'up' | 'key'; at: number; x?: number; y?: number };
+export type Size = { width: number; height: number };
 type Frame = { at: number; data: string };
 
 const now = () => Date.now() / 1000;
@@ -22,6 +23,7 @@ export class FlowRecorder {
   private lost = false;
   private gotFrame = false;
   private lastMove = 0;
+  private resumedAt = 0;
   private readonly started = now();
   private down?: { at: number; place: number[] };
 
@@ -30,7 +32,7 @@ export class FlowRecorder {
     private readonly folder: string,
   ) {}
 
-  static async start(page: Page, flowFolder: string): Promise<FlowRecorder> {
+  static async start(page: Page, flowFolder: string, screen: Size): Promise<FlowRecorder> {
     const folder = join(flowFolder, 'recording');
     mkdirSync(folder, { recursive: true });
     writeFileSync(join(folder, 'frames.jsonl'), '');
@@ -46,8 +48,7 @@ export class FlowRecorder {
       });
       recorder.frame({ at: frame.metadata.timestamp ?? now(), data: frame.data });
     });
-    const size = page.viewportSize() ?? { width: 1280, height: 720 };
-    await cdp.send('Page.startScreencast', { format: 'jpeg', quality: 80, maxWidth: size.width, maxHeight: size.height });
+    await cdp.send('Page.startScreencast', { format: 'jpeg', quality: 80, maxWidth: screen.width, maxHeight: screen.height });
     return recorder;
   }
 
@@ -63,11 +64,13 @@ export class FlowRecorder {
   pause(why: string): void {
     this.flush();
     this.paused = true;
+    this.down = undefined;
     this.line('frames', { at: now(), pause: why });
   }
 
   resume(): void {
     this.paused = false;
+    this.resumedAt = now();
   }
 
   async stop(): Promise<void> {
@@ -81,7 +84,7 @@ export class FlowRecorder {
   private frame(frame: Frame): void {
     this.gotFrame = true;
     this.lastMove = Math.max(this.lastMove, frame.at);
-    if (this.paused || this.lost) return;
+    if (this.paused || this.lost || frame.at < this.resumedAt) return;
     if (this.held && tenth(this.held.at) !== tenth(frame.at)) this.write(this.held);
     this.held = frame;
   }

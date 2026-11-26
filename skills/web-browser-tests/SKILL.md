@@ -75,23 +75,23 @@ Settle the facts that [flow-tests](../flow-tests/SKILL.md#start-a-new-e2e-reposi
 - **Read secrets from the environment,** such as `SHOP_PASSWORD` from the untracked `.env`, and stop when one is missing. Never write one in a test, not even as a fallback, a step name, a title, or a log. When a test fails, Playwright copies its source into the `error-context.md` of its output.
 - **Turn the trace off in a flow that types a real secret,** with `test.use({ trace: 'off' })`. Playwright's trace keeps the text that `fill` and `type` send, and the HTML report keeps a copy of the trace.
 - **Turn the video off where a secret shows in clear,** such as a code in a plain text field. A password field shows only dots.
-- **Type a secret inside `flow.secret(...)`.** The recorder then writes no frame from the first key until the act is done, and for half a second more.
-- **Mask a field that shows a secret in a step's picture,** with `flow.snap(name, { mask: [field] })`.
+- **Type a secret inside `flow.secret(field, act)`,** naming the field where it shows. The recorder writes no frame from the first key until that field is hidden, and for half a second more. No step picture can be taken meanwhile.
+- **A mask covers a step's picture only,** such as `flow.snap(name, { mask: [field] })`, never the frames. Keep a secret that the frames could show inside `flow.secret`.
 - **A saved `storageState` is a secret:** it holds the session's cookies. Keep it in a gitignored folder.
 
-> Example: a made-up password typed with `fill()` showed up 6 times in the run's `trace.zip`, and the HTML report held a copy of it. A fallback password written in the test showed up in a failed test's `error-context.md`, though that test never typed it. With the password in the environment only, the trace off, and the password typed inside `flow.secret(...)`, it was in none of the run's files.
+> Example: a made-up password typed with `fill()` showed up 6 times in the run's `trace.zip`, and the HTML report held a copy of it. A fallback password written in the test showed up in a failed test's `error-context.md`, though that test never typed it. With the password in the environment only, the trace off, and the password typed inside `flow.secret`, it was in none of the run's files.
 
 ## Record the pictures
 
 This skill's `assets/` holds a recorder that writes the [flow-tests format](../flow-tests/SKILL.md#the-pictures-of-a-run), and follows its [rules for a recorder](../flow-tests/SKILL.md#record-beside-the-test). Copy both files into the e2e repository, such as into `tests/support/`:
 
-- **`flow-pictures.ts`:** the test fixture `flow`, with `flow.snap(name)` for a step's picture and `flow.secret(act)` for a secret. When a test fails, it takes one more picture, "Where it stopped", unless a secret may still show.
+- **`flow-pictures.ts`:** the test fixture `flow`, with `flow.snap(name)` for a step's picture and `flow.secret(field, act)` for a secret. When a test fails, it takes one more picture, "Where it stopped", unless a secret may still show.
 - **`flow-recorder.ts`:** the frames and the inputs.
 
 How it works:
 
-- **The pictures go to `test-results/pictures/<the test's title>/`,** inside Playwright's output folder. Playwright empties that folder when a run starts, so a run never mixes with an earlier one.
-- **The frames come from Chromium's screencast,** through the DevTools protocol (`Page.startScreencast`). It sends a frame each time the page draws, with the time it drew it, and none while the page stands still, like the Android emulator's stream. Firefox and WebKit have no screencast, so their runs get the step pictures and the still sheet only. Take the pictures in one project only, such as `chromium`: two projects that run the same test write into the same folder.
+- **The pictures go to `test-results/pictures/<the test's title>-<an ID>/`,** inside Playwright's output folder. The title includes its `describe` blocks, and the ID is the end of Playwright's test ID, which differs for each test and project, and stays the same from run to run. Playwright empties that folder when a run starts, so a run never mixes with an earlier one.
+- **The frames come from Chromium's screencast,** through the DevTools protocol (`Page.startScreencast`). It sends a frame each time the page draws, with the time it drew it, and none while the page stands still, like the Android emulator's stream. Firefox and WebKit have no screencast, so their runs get the step pictures and the still sheet only. Take the pictures in one project only, such as `chromium`: each project writes its own folder, so a second one would put each flow on the map twice.
 - **The inputs come from the page itself:** its trusted `pointerdown`, `pointerup`, `keydown` and `input` events, in the top frame. Every click and key passes through the page, also those of a framework's helpers. A click inside an iframe gets no dot. `fill()` sends no key events, only an `input` event, which still counts as typing.
 - **A frame shows a click about 0.03 seconds after the page's `pointerdown`,** as measured on Chromium build 1248, headless. The recorder adds that to each input's time.
 - **The screencast runs beside Playwright's own video,** and goes on across a navigation to another site.
@@ -124,10 +124,9 @@ test('SHOP-001: A new shopper signs up, and Home notices the verified email by i
   await expect(page.getByRole('heading', { name: 'Choose a password' })).toBeVisible();
   await flow.snap('The new password screen');
 
-  await flow.secret(async () => {
+  await flow.secret(page.getByLabel('Password'), async () => {
     await page.getByLabel('Password').fill(PASSWORD);
     await page.getByRole('button', { name: 'Done' }).click();
-    await expect(page.getByLabel('Password')).toBeHidden();
   });
   await flow.snap('Home, email not verified');
 
@@ -171,6 +170,6 @@ To dig further, read the `error-context.md` that Playwright writes in the failed
 - **The browser** is Playwright's own, with a fresh context, never a person's own.
 - **The browser build** is installed, and you installed nothing on the machine.
 - **The base URL** isn't production, unless the user said so.
-- **Each secret** comes from the environment, stays out of names, and is typed inside `flow.secret(...)`, with the trace off.
+- **Each secret** comes from the environment, stays out of names, and is typed inside `flow.secret(field, act)`, with the trace off.
 - **The pictures** come from one project, such as `chromium`.
 - **Nothing you started** is left running, and nothing you didn't start is stopped.
